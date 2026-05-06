@@ -2,6 +2,12 @@
 
 Playwright test framework with **Markdown as single source of truth** and **automatic validation**.
 
+> **⚠️ Important note about manual & hybrid tests**
+>
+> This repository makes full sense only when used together with **Cyborgtests** (`@cyborgtests/test`).
+> Without Cyborgtests you can still run **automated** Playwright tests and the **MD ↔ code validator**,
+> but you **cannot** create/run real **manual** or **hybrid** tests (because `manualStep()` and the manual runner come from Cyborgtests).
+>
 > **🎯 Main Idea**
 >
 > Write test documentation **once** in Markdown. Validator ensures MD and test code never drift apart.
@@ -125,6 +131,8 @@ Validator checks each `test()` separately against MD.
 ```bash
 npm install
 ```
+
+This will install required dev dependencies including `@playwright/test` and `@cyborgtests/test`.
 
 ### 2. Create MD file
 
@@ -316,3 +324,5 @@ If not using IDs, disable MD024 (duplicate headings):
 ## 📄 License
 
 MIT
+
+See also: `THIRD_PARTY_NOTICES.md` (licenses for dependencies like Playwright and Cyborgtests).
