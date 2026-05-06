@@ -1,0 +1,46 @@
+{
+  "name": "md-test-framework",
+  "version": "0.1.0",
+  "description": "Playwright Test Framework with Markdown as source of truth and automatic validation",
+  "scripts": {
+    "validate": "tsx scripts/validate-md-sync.ts",
+    "test:manual": "npm run validate && playwright test --project=manual --workers=1",
+    "test:hybrid": "npm run validate && playwright test --project=hybrid --workers=1",
+    "test:auto": "npm run validate && playwright test --project=automated",
+    "report": "playwright show-report",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"**/*.{ts,md,json}\""
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "markdown",
+    "test-cases",
+    "automation",
+    "manual-testing",
+    "cyborg-testing"
+  ],
+  "author": "Andrii Pohanovskyi <poganovsky@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AnPo73/md-test-framework"
+  },
+  "homepage": "https://github.com/AnPo73/md-test-framework#readme",
+  "bugs": {
+    "url": "https://github.com/AnPo73/md-test-framework/issues"
+  },
+  "devDependencies": {
+    "@cyborgtests/test": "^0.3.0",
+    "@faker-js/faker": "^10.4.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "glob": "^11.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

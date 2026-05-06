@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+*.js
+*.d.ts
+!playwright.config.ts
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Screenshots
+screenshots/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
