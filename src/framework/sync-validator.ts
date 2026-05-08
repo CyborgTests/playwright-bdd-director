@@ -1,10 +1,57 @@
-import { ParsedMd, TestCase as MdTestCase } from './md-parser'
-import { ParsedTest, ParsedTestCase as TsTestCase } from './ts-parser'
+import { ParsedMd, TestCase as MdTestCase } from "./md-parser";
+import {
+  ParsedTest,
+  ParsedTestCase as TsTestCase,
+  StepCallKind,
+} from "./ts-parser";
 
 export interface ValidationResult {
-  file: string
-  valid: boolean
-  errors: string[]
+  file: string;
+  valid: boolean;
+  errors: string[];
+}
+
+function jsonStringify(value: string): string {
+  return JSON.stringify(value);
+}
+
+function formatDifference(
+  expectedMarkdown: string,
+  actualTest: string,
+): string {
+  return `  - expected (MD):   ${jsonStringify(expectedMarkdown)}\n  + actual (Test):   ${jsonStringify(actualTest)}`;
+}
+
+function formatTestCaseLabel(
+  testCase: { id: string; title: string },
+  fallbackIndex?: number,
+): string {
+  if (testCase.id) return `[${testCase.id}] ${testCase.title}`;
+  if (typeof fallbackIndex === "number")
+    return `#${fallbackIndex + 1} ${testCase.title}`;
+  return testCase.title;
+}
+
+function formatHeader(title: string): string {
+  return `\n${title}\n${"-".repeat(title.length)}`;
+}
+
+function inferStepCallKindFromFilename(testFile: string): StepCallKind {
+  const file = testFile.toLowerCase();
+  if (file.includes(".manual.")) return "manualStep";
+  if (file.includes(".auto.")) return "test.step";
+  if (file.includes(".hybrid.")) return "test.step";
+  return "test.step";
+}
+
+function generateStepFixCode(kind: StepCallKind, stepText: string): string {
+  if (kind === "manualStep") {
+    return `await manualStep(${jsonStringify(stepText)});`;
+  }
+  if (kind === "playwrightTest.step") {
+    return `await playwrightTest.step(${jsonStringify(stepText)}, async () => {\n      // TODO: Implement step logic\n    });`;
+  }
+  return `await test.step(${jsonStringify(stepText)}, async () => {\n      // TODO: Implement step logic\n    });`;
 }
 
 /**
@@ -18,10 +65,10 @@ export interface ValidationResult {
  * - MD: 'TC01-01', Test: 'TC01-02' → ❌ different IDs
  * - MD: 'TC01', Test: 'TC01-01' → ❌ test is not a suffix variant
  */
-function idsMatch(mdId: string, testId: string): boolean {
-  if (mdId === testId) return true // Exact match
-  if (testId.startsWith(mdId + '-')) return true // Test has suffix after dash
-  return false
+function testIDsMatch(markdownID: string, testID: string): boolean {
+  if (markdownID === testID) return true;
+  if (testID.startsWith(markdownID + "-")) return true;
+  return false;
 }
 
 /**
@@ -33,189 +80,199 @@ function idsMatch(mdId: string, testId: string): boolean {
  * - 'Navigate' → { id: '', title: 'Navigate' }
  */
 function parseStepText(stepText: string): { id: string; title: string } {
-  const match = stepText.match(/^\[([^\]]+)\]\s*(.*)/)
+  const match = stepText.match(/^\[([^\]]+)\]\s*(.*)/);
   if (match) {
-    return { id: match[1].trim(), title: match[2].trim() }
+    return { id: match[1].trim(), title: match[2].trim() };
   }
-  return { id: '', title: stepText.trim() }
+  return { id: "", title: stepText.trim() };
 }
 
 /**
  * Validate that test file matches MD file
  */
-export function validateSync(testFile: string, mdData: ParsedMd, tsData: ParsedTest): ValidationResult {
-  const errors: string[] = []
+export function validateSync(
+  testFile: string,
+  markdownData: ParsedMd,
+  typeScriptData: ParsedTest,
+): ValidationResult {
+  const errors: string[] = [];
 
   // 1. Validate suite title
-  if (mdData.suiteTitle !== tsData.suiteTitle) {
-    errors.push(`
-  Suite title mismatch:
-    MD:   "${mdData.suiteTitle}"
-    Test: "${tsData.suiteTitle}"
-
-    Fix: test.describe('${mdData.suiteTitle}', ...)
-`)
+  if (markdownData.suiteTitle !== typeScriptData.suiteTitle) {
+    errors.push(
+      `${formatHeader("Suite title mismatch")}\n${formatDifference(markdownData.suiteTitle, typeScriptData.suiteTitle)}\n\n  Fix: test.describe(${jsonStringify(markdownData.suiteTitle)}, ...)`,
+    );
   }
 
   // 2. Validate test case count
-  if (mdData.testCases.length !== tsData.testCases.length) {
-    const diff = tsData.testCases.length - mdData.testCases.length
-    const action = diff > 0 ? `Remove ${diff} extra test case(s) from test file` : `Add ${Math.abs(diff)} missing test case(s) to test file`
-    errors.push(`
-  Test case count mismatch:
-    MD has ${mdData.testCases.length} test case(s)
-    Test has ${tsData.testCases.length} test case(s)
-
-    Fix: ${action}
-`)
+  if (markdownData.testCases.length !== typeScriptData.testCases.length) {
+    const diff =
+      typeScriptData.testCases.length - markdownData.testCases.length;
+    const action =
+      diff > 0
+        ? `Remove ${diff} extra test case(s) from test file`
+        : `Add ${Math.abs(diff)} missing test case(s) to test file`;
+    errors.push(
+      `${formatHeader("Test case count mismatch")}\n  - expected (MD):   ${markdownData.testCases.length} test case(s)\n  + actual (Test):   ${typeScriptData.testCases.length} test case(s)\n\n  Fix: ${action}`,
+    );
   }
 
   // 3. Validate each test case
-  const maxCount = Math.max(mdData.testCases.length, tsData.testCases.length)
+  const maxCount = Math.max(
+    markdownData.testCases.length,
+    typeScriptData.testCases.length,
+  );
 
   for (let i = 0; i < maxCount; i++) {
-    const mdTc = mdData.testCases[i]
-    const tsTc = tsData.testCases[i]
+    const markdownTestCase = markdownData.testCases[i];
+    const typeScriptTestCase = typeScriptData.testCases[i];
 
-    if (!mdTc) {
-      const tcLabel = tsTc.id ? `[${tsTc.id}] ${tsTc.title}` : tsTc.title
-      errors.push(`
-  Extra test case in test file:
-    Test: ${tcLabel}
-
-    Fix: Remove this test case or add to MD
-`)
-      continue
+    if (!markdownTestCase) {
+      const label = formatTestCaseLabel(typeScriptTestCase, i);
+      errors.push(
+        `${formatHeader("Extra test case in test file")}\n  Where: test case #${i + 1}\n  + actual (Test):   ${label}\n\n  Fix: Remove this test case or add it to MD`,
+      );
+      continue;
     }
 
-    if (!tsTc) {
-      const mdLabel = mdTc.id ? `[${mdTc.id}] ${mdTc.title}` : mdTc.title
-      const testExample = mdTc.id ? `test('[${mdTc.id}] ${mdTc.title}', ...)` : `test('${mdTc.title}', ...)`
-      errors.push(`
-  Missing test case in test file:
-    MD: ${mdLabel}
-
-    Fix: ${testExample}
-`)
-      continue
+    if (!typeScriptTestCase) {
+      const label = formatTestCaseLabel(markdownTestCase, i);
+      const testExample = markdownTestCase.id
+        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
+        : `test(${jsonStringify(markdownTestCase.title)}, ...)`;
+      errors.push(
+        `${formatHeader("Missing test case in test file")}\n  Where: test case #${i + 1}\n  - expected (MD):   ${label}\n\n  Fix: ${testExample}`,
+      );
+      continue;
     }
 
     // Validate test case ID
-    // Check if only one side has ID - inconsistency
-    if ((mdTc.id && !tsTc.id) || (!mdTc.id && tsTc.id)) {
-      errors.push(`
-  Test case ${i + 1} ID inconsistency:
-    MD:   ${mdTc.id ? `[${mdTc.id}] ${mdTc.title}` : mdTc.title}
-    Test: ${tsTc.id ? `[${tsTc.id}] ${tsTc.title}` : tsTc.title}
-
-    ❌ Only one side has ID. Both must have IDs or both must have no IDs.
-    Fix: ${mdTc.id ? `test('[${mdTc.id}] ${mdTc.title}', ...)` : `Remove [${tsTc.id}] from test or add to MD: ## [${tsTc.id}] ${mdTc.title}`}
-`)
+    if (
+      (markdownTestCase.id && !typeScriptTestCase.id) ||
+      (!markdownTestCase.id && typeScriptTestCase.id)
+    ) {
+      const markdownLabel = formatTestCaseLabel(markdownTestCase, i);
+      const typeScriptLabel = formatTestCaseLabel(typeScriptTestCase, i);
+      const fix = markdownTestCase.id
+        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
+        : `Remove [${typeScriptTestCase.id}] from test or add to MD: ## [${typeScriptTestCase.id}] ${markdownTestCase.title}`;
+      errors.push(
+        `${formatHeader("Test case ID inconsistency")}\n  Where: test case #${i + 1}\n${formatDifference(markdownLabel, typeScriptLabel)}\n\n  Problem: only one side has an ID.\n  Fix: ${fix}`,
+      );
     }
 
-    // MD ID is reference, test ID can have suffixes (only if both have IDs)
-    if (mdTc.id && tsTc.id && !idsMatch(mdTc.id, tsTc.id)) {
-      errors.push(`
-  Test case ${i + 1} ID mismatch:
-    MD:   ${mdTc.id}
-    Test: ${tsTc.id}
-
-    ❌ Test ID must be '${mdTc.id}' or '${mdTc.id}-SUFFIX'
-    Fix: test('[${mdTc.id}] ${mdTc.title}', ...)
-`)
+    if (
+      markdownTestCase.id &&
+      typeScriptTestCase.id &&
+      !testIDsMatch(markdownTestCase.id, typeScriptTestCase.id)
+    ) {
+      errors.push(
+        `${formatHeader("Test case ID mismatch")}\n  Where: test case #${i + 1}\n  - expected (MD):   ${jsonStringify(markdownTestCase.id)}\n  + actual (Test):   ${jsonStringify(typeScriptTestCase.id)}\n\n  Rule: test ID must be ${jsonStringify(markdownTestCase.id)} or ${jsonStringify(`${markdownTestCase.id}-SUFFIX`)}\n  Fix: test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`,
+      );
     }
 
     // Validate test case title
-    if (mdTc.title !== tsTc.title) {
-      const tcLabel = mdTc.id || `#${i + 1}`
-      const fixExample = mdTc.id ? `test('[${mdTc.id}] ${mdTc.title}', ...)` : `test('${mdTc.title}', ...)`
-      errors.push(`
-  Test case ${tcLabel} title mismatch:
-    MD:   "${mdTc.title}"
-    Test: "${tsTc.title}"
-
-    Fix: ${fixExample}
-`)
+    if (markdownTestCase.title !== typeScriptTestCase.title) {
+      const label = markdownTestCase.id || `#${i + 1}`;
+      const fixExample = markdownTestCase.id
+        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
+        : `test(${jsonStringify(markdownTestCase.title)}, ...)`;
+      errors.push(
+        `${formatHeader("Test case title mismatch")}\n  Where: test case ${label}\n${formatDifference(markdownTestCase.title, typeScriptTestCase.title)}\n\n  Fix: ${fixExample}`,
+      );
     }
 
     // Validate step count
-    if (mdTc.stepTitles.length !== tsTc.stepTitles.length) {
-      const tcLabel = mdTc.id || mdTc.title
-      const diff = tsTc.stepTitles.length - mdTc.stepTitles.length
-      const action = diff > 0 ? `Remove ${diff} extra step(s)` : `Add ${Math.abs(diff)} missing step(s)`
-      errors.push(`
-  Test case ${tcLabel} step count mismatch:
-    MD has ${mdTc.stepTitles.length} step(s)
-    Test has ${tsTc.stepTitles.length} step(s)
-
-    Fix: ${action}
-`)
+    if (
+      markdownTestCase.stepTitles.length !==
+      typeScriptTestCase.stepTitles.length
+    ) {
+      const label = markdownTestCase.id || markdownTestCase.title;
+      const diff =
+        typeScriptTestCase.stepTitles.length -
+        markdownTestCase.stepTitles.length;
+      const action =
+        diff > 0
+          ? `Remove ${diff} extra step(s)`
+          : `Add ${Math.abs(diff)} missing step(s)`;
+      errors.push(
+        `${formatHeader("Step count mismatch")}\n  Where: test case ${label}\n  - expected (MD):   ${markdownTestCase.stepTitles.length} step(s)\n  + actual (Test):   ${typeScriptTestCase.stepTitles.length} step(s)\n\n  Fix: ${action}`,
+      );
     }
 
-    // Validate step titles (with ID suffix support)
-    const maxSteps = Math.max(mdTc.stepTitles.length, tsTc.stepTitles.length)
-    const stepMismatches: string[] = []
+    // Validate step titles
+    const maxSteps = Math.max(
+      markdownTestCase.stepTitles.length,
+      typeScriptTestCase.stepTitles.length,
+    );
+    const stepMismatches: string[] = [];
 
     for (let j = 0; j < maxSteps; j++) {
-      const mdStepText = mdTc.stepTitles[j]
-      const tsStepText = tsTc.stepTitles[j]
+      const markdownStepText = markdownTestCase.stepTitles[j];
+      const typeScriptStepText = typeScriptTestCase.stepTitles[j];
 
-      if (!mdStepText || !tsStepText) {
-        const fix = !mdStepText
+      if (!markdownStepText || !typeScriptStepText) {
+        const fix = !markdownStepText
           ? `Remove extra step from test`
-          : `Add missing step: manualStep('${mdStepText}')`
-        stepMismatches.push(`
-    Step ${j + 1}:
-      MD:   ${mdStepText ? `"${mdStepText}"` : '(missing)'}
-      Test: ${tsStepText ? `"${tsStepText}"` : '(missing)'}
-      Fix: ${fix}`)
-        continue
+          : `Add missing step: ${generateStepFixCode(inferStepCallKindFromFilename(testFile), markdownStepText)}`;
+        stepMismatches.push(
+          `  Step #${j + 1}:\n  - expected (MD):   ${markdownStepText ? jsonStringify(markdownStepText) : "(missing)"}\n  + actual (Test):   ${typeScriptStepText ? jsonStringify(typeScriptStepText) : "(missing)"}\n  Fix: ${fix}`,
+        );
+        continue;
       }
 
-      // Parse both steps
-      const mdStep = parseStepText(mdStepText)
-      const tsStep = parseStepText(tsStepText)
+      const markdownStep = parseStepText(markdownStepText);
+      const typeScriptStep = parseStepText(typeScriptStepText);
 
-      // Check if only one side has ID - inconsistency
-      if ((mdStep.id && !tsStep.id) || (!mdStep.id && tsStep.id)) {
-        const fix = mdStep.id
-          ? `manualStep('${mdStepText}')`
-          : `Remove [${tsStep.id}] from step or add to MD: ### ${tsStepText}`
-        stepMismatches.push(`
-    Step ${j + 1} ID inconsistency:
-      MD:   "${mdStepText}"
-      Test: "${tsStepText}"
-      ❌ Only one side has ID. Both must have IDs or both must have no IDs.
-      Fix: ${fix}`)
-        continue
+      if (
+        (markdownStep.id && !typeScriptStep.id) ||
+        (!markdownStep.id && typeScriptStep.id)
+      ) {
+        const callKind =
+          typeScriptTestCase.stepCallKinds[j] ??
+          inferStepCallKindFromFilename(testFile);
+        const fix = markdownStep.id
+          ? generateStepFixCode(callKind, markdownStepText)
+          : `Remove [${typeScriptStep.id}] from step or add to MD: ### ${typeScriptStepText}`;
+        stepMismatches.push(
+          `  Step #${j + 1} ID inconsistency:\n${formatDifference(markdownStepText, typeScriptStepText)}\n\n  Problem: only one side has an ID.\n  Fix: ${fix}`,
+        );
+        continue;
       }
 
-      // Validate step ID (if both have IDs)
-      const idsValid = !mdStep.id || !tsStep.id || idsMatch(mdStep.id, tsStep.id)
-
-      // Validate step title
-      const titlesValid = mdStep.title === tsStep.title
+      const idsValid =
+        !markdownStep.id ||
+        !typeScriptStep.id ||
+        testIDsMatch(markdownStep.id, typeScriptStep.id);
+      const titlesValid = markdownStep.title === typeScriptStep.title;
 
       if (!idsValid || !titlesValid) {
-        stepMismatches.push(`
-    Step ${j + 1}:
-      MD:   "${mdStepText}"
-      Test: "${tsStepText}"${!idsValid ? `\n      ❌ ID must be '${mdStep.id}' or '${mdStep.id}-SUFFIX'` : ''}${!titlesValid ? `\n      ❌ Title must match exactly` : ''}
-      Fix: manualStep('${mdStepText}')`)
+        const problems: string[] = [];
+        if (!idsValid)
+          problems.push(
+            `ID must be ${jsonStringify(markdownStep.id)} or ${jsonStringify(`${markdownStep.id}-SUFFIX`)}`,
+          );
+        if (!titlesValid) problems.push("Title must match exactly");
+        const callKind =
+          typeScriptTestCase.stepCallKinds[j] ??
+          inferStepCallKindFromFilename(testFile);
+        stepMismatches.push(
+          `  Step #${j + 1} mismatch:\n${formatDifference(markdownStepText, typeScriptStepText)}\n\n  Problem: ${problems.join("; ")}\n  Fix: ${generateStepFixCode(callKind, markdownStepText)}`,
+        );
       }
     }
 
     if (stepMismatches.length > 0) {
-      const tcLabel = mdTc.id || mdTc.title
-      errors.push(`
-  Test case ${tcLabel} step mismatch:
-${stepMismatches.join('\n')}`)
+      const label = markdownTestCase.id || markdownTestCase.title;
+      errors.push(
+        `${formatHeader("Step mismatch")}\n  Where: test case ${label}\n\n${stepMismatches.join("\n\n")}`,
+      );
     }
   }
 
   return {
     file: testFile,
     valid: errors.length === 0,
-    errors
-  }
+    errors,
+  };
 }

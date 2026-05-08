@@ -9,7 +9,6 @@ test.describe("TodoMVC Tests", () => {
   });
 
   test("[TC01-01-MANUAL] Add todo", async ({ page, manualStep }) => {
-
     await test.step("[01-01-01] Navigate to TodoMVC", async () => {
       await todoPage.goto();
     });
@@ -35,7 +34,10 @@ test.describe("TodoMVC Tests", () => {
     await manualStep("[01-03-04] Verify todo deleted");
   });
 
-  test("[TC01-04-MANUAL] Clear completed todos", async ({ page, manualStep }) => {
+  test("[TC01-04-MANUAL] Clear completed todos", async ({
+    page,
+    manualStep,
+  }) => {
     await test.step("[01-04-01] Navigate to TodoMVC", async () => {
       await todoPage.goto();
     });

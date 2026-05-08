@@ -1,6 +1,6 @@
-# MD Test Framework
+# 📋 No-Code Test Specs: Always in Sync
 
-Playwright test framework with **Markdown as single source of truth** and **automatic validation**.
+**Playwright Testing Framework where Markdown is the spec and your manual/auto/hybrid tests stay synchronized via automatic validation and scaffolding.**
 
 > **⚠️ Important note about manual & hybrid tests**
 >
@@ -14,10 +14,147 @@ Playwright test framework with **Markdown as single source of truth** and **auto
 >
 > Same MD file → multiple implementations (manual, automated, hybrid) → always synchronized.
 
+## 🚀 Quick Start
+
+### 1. Install Node.JS
+
+```bash
+node --version
+```
+
+Use Node.js 18+ (Node.js 20+ recommended).
+
+### 2. Clone repository
+
+```bash
+git clone <YOUR_REPO_URL>
+cd md-test-framework
+```
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Install Playwright browsers
+
+```bash
+npx playwright install
+```
+
+### 5. Create MD file
+
+`test-cases/login.md`:
+
+```markdown
+# [TS01] Login Tests
+
+## [TC01-01] User can login
+
+### [01-01-01] Navigate to login page
+### [01-01-02] Enter credentials
+### [01-01-03] Click login button
+### [01-01-04] Verify dashboard visible
+```
+
+### 6. Optional: Create test file
+
+You can create tests manually, but the recommended path is auto-generation from MD.
+
+`tests/manual/login.manual.test.ts`:
+
+```typescript
+import test from '@cyborgtests/test'
+
+test.describe('[TS01] Login Tests', () => {
+  test('[TC01-01] User can login', async ({ page, manualStep }) => {
+    await manualStep('[01-01-01] Navigate to login page')
+    await manualStep('[01-01-02] Enter credentials')
+    await manualStep('[01-01-03] Click login button')
+    await manualStep('[01-01-04] Verify dashboard visible')
+  })
+})
+```
+
+`tests/automated/login.auto.test.ts`:
+
+```typescript
+import { test } from '@playwright/test'
+
+test.describe('[TS01] Login Tests', () => {
+  test('[TC01-01-AUTO] User can login', async ({ page }) => {
+    await test.step('[01-01-01] Navigate to login page', async () => {
+      // TODO: Implement step logic
+    })
+    await test.step('[01-01-02] Enter credentials', async () => {
+      // TODO: Implement step logic
+    })
+    await test.step('[01-01-03] Click login button', async () => {
+      // TODO: Implement step logic
+    })
+    await test.step('[01-01-04] Verify dashboard visible', async () => {
+      // TODO: Implement step logic
+    })
+  })
+})
+```
+
+### 7. Generate missing files and validate
+
+Run validation once. If tests are missing, it will auto-generate `*.manual.test.ts` and `*.auto.test.ts` from MD, then validate sync.
+
+```bash
+npm run validate
+# ? All 1 file(s) are in sync with MD!
+```
+
+### 8. Run tests
+
+```bash
+npm run test:auto        # Run automated tests (headless, parallel)
+npm run test:manual      # Run manual tests (headed, workers=1)
+npm run test:hybrid      # Run hybrid tests (headed, workers=1)
+```
+
+## Why MD-first Tests (and what you get)
+
+### ✅ Readable for non-tech teams
+
+- Manual QA and management can read/review/update specs without touching TypeScript
+
+### ✅ Easy to share
+
+- MD specs fit naturally into existing documentation workflows (for example, Notion)
+
+### ✅ One source of truth
+
+- Write once in MD, keep manual/auto/hybrid tests synchronized, and catch drift early with validation
+
+### ✅ Manual-first friendly
+
+- If you only need manual testing, MD specs can be enough without writing automation code
+
+### ✅ Automation-ready
+
+- The same MD scales to pure Playwright (`test.describe`, `test`, `test.step`) with full TypeScript support
+
 ## 🎯 Core Concept
 
-**1 MD file = 1 test suite**  
+**1 MD file = 1 Test Suite**  
 **Multiple implementations = always in sync**
+
+Before validation:
+
+- Parses MD structure (suite, test cases, steps) into a canonical model
+- Parses test files the same way and aligns them to the MD spec
+- Auto-generates missing `*.manual.test.ts` and `*.auto.test.ts` skeletons
+
+Validation:
+
+- Detects mismatches (counts, titles, ids, step structure) with fix suggestions
+- Keeps manual, automated, and hybrid implementations consistent from one source
+- Validator checks all three against todo.md
 
 ```text
 ┌──────────────────────────┐
@@ -33,7 +170,6 @@ Playwright test framework with **Markdown as single source of truth** and **auto
              ├──→ todo.auto.test.ts
              └──→ todo.hybrid.test.ts
              
-Validator checks all three against todo.md
 ```
 
 ## 📝 MD Format
@@ -65,7 +201,7 @@ Validator checks all three against todo.md
 
 **With IDs (recommended):**
 
-Only **brackets format** `[ID]` is recognized as ID:
+Only **brackets format** `[ID]` is recognized as id:
 
 - `## [TC01-01] Test Case title` → ID: `TC01-01`, Title: `Test Case title`
 - Enables suffix support in tests: `[TC01-01-MANUAL]`, `[TC01-01-AUTO]` match `[TC01-01]`
@@ -94,7 +230,7 @@ Validator verifies:
 1. Suite title matches
 2. Test case count and titles match
 3. Step count and titles match per test case
-4. IDs match (if using IDs)
+4. ids match (if using ids)
 
 ### ID Validation Rules
 
@@ -124,60 +260,11 @@ test('[TC01-01-HYBRID] Add todo', ...)  // ✅ Matches [TC01-01]
 
 Validator checks each `test()` separately against MD.
 
-## 🚀 Quick Start
-
-### 1. Install
-
-```bash
-npm install
-```
-
-This will install required dev dependencies including `@playwright/test` and `@cyborgtests/test`.
-
-### 2. Create MD file
-
-`test-cases/login.md`:
-
-```markdown
-# [TS01] Login Tests
-
-## [TC01-01] User can login
-
-### [01-01-01] Navigate to login page
-### [01-01-02] Enter credentials
-### [01-01-03] Click login button
-### [01-01-04] Verify dashboard visible
-```
-
-### 3. Create test file
-
-`tests/manual/login.manual.test.ts`:
-
-```typescript
-import test from '@cyborgtests/test'
-
-test.describe('[TS01] Login Tests', () => {
-  test('[TC01-01] User can login', async ({ page, manualStep }) => {
-    await manualStep('[01-01-01] Navigate to login page')
-    await manualStep('[01-01-02] Enter credentials')
-    await manualStep('[01-01-03] Click login button')
-    await manualStep('[01-01-04] Verify dashboard visible')
-  })
-})
-```
-
-### 4. Validate
-
-```bash
-npm run validate
-# ✅ All 1 file(s) are in sync with MD!
-```
-
 ## 📚 Working Example
 
 Repository includes complete TodoMVC example demonstrating:
 
-- **`test-cases/todo.md`** — 5 test cases with IDs and comments
+- **`test-cases/todo.md`** — 5 test cases with ids and comments
 - **`tests/manual/todo.manual.test.ts`** — manual steps (with one automated `goto()` step)
 - **`tests/automated/todo.auto.test.ts`** — fully automated
 - **`tests/hybrid/todo.hybrid.test.ts`** — automated actions + manual verification
@@ -192,34 +279,6 @@ npm run test:manual      # Run manual tests (headed, workers=1)
 npm run test:auto        # Run automated tests (headless, parallel)
 npm run test:hybrid      # Run hybrid tests (headed, workers=1)
 ```
-
-## 📊 Benefits
-
-### ✅ Single Source of Truth
-
-- Write documentation once in MD
-- Multiple implementations always synchronized
-- Validator prevents drift
-
-### ✅ Flexibility
-
-- IDs are optional
-- Suffix support for test types
-- Works with any ID format in brackets
-
-### ✅ Pure Playwright
-
-- Standard `test.describe()`, `test()`, `test.step()`
-- Supports `test.skip()`, `test.only()`, `test.fixme()`
-- No custom abstractions
-- Full TypeScript support
-
-### ✅ Manual + Automated Support
-
-- Same MD for all test types
-- `manualStep()` for manual steps
-- `test.step()` for automated steps
-- Mix both in any combination (hybrid)
 
 ## ⚙️ Configuration
 
@@ -272,7 +331,7 @@ export default defineConfig({
 Parses MD files and test files, compares structure:
 
 - Extracts test suites, test cases, steps
-- Supports IDs in brackets `[TC01-01]` with suffix detection
+- Supports ids in brackets `[TC01-01]` with suffix detection
 - Validates each `test()` separately
 - Reports mismatches with actionable fixes
 
@@ -280,7 +339,7 @@ Parses MD files and test files, compares structure:
 
 Extracts test structure from:
 
-- **MD files:** Headings (`#`, `##`, `###`) and IDs in brackets
+- **MD files:** Headings (`#`, `##`, `###`) and ids in brackets
 - **Test files:** `test.describe()`, `test()`, `manualStep()`, `test.step()`
 
 Handles:
@@ -315,7 +374,7 @@ echo "npm run validate" > .husky/pre-commit
 
 **MD Linter:**
 
-If not using IDs, disable MD024 (duplicate headings):
+If not using ids, disable MD024 (duplicate headings):
 
 ```json
 { "MD024": false }
