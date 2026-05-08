@@ -47,5 +47,5 @@ ${testCases}
 
   // Write file to disk.
   fs.writeFileSync(manualTestPath, content);
-  console.log(`[OK] Generated: ${manualTestPath}`);
+  console.log(`✅  Generated: ${manualTestPath}`);
 }

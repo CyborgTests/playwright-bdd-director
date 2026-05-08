@@ -229,7 +229,7 @@ Validator verifies:
 1. Suite title matches
 2. Test case count and titles match
 3. Step count and titles match per test case
-4. ids match (if using ids)
+4. IDs match (if using ids)
 
 ### ID Validation Rules
 
@@ -263,7 +263,7 @@ Validator checks each `test()` separately against MD.
 
 Repository includes complete TodoMVC example demonstrating:
 
-- **`test-cases/todo.md`** — 5 test cases with ids and comments
+- **`test-cases/todo.md`** — 5 test cases with IDs and comments
 - **`tests/manual/todo.manual.test.ts`** — manual steps (with one automated `goto()` step)
 - **`tests/automated/todo.auto.test.ts`** — fully automated
 - **`tests/hybrid/todo.hybrid.test.ts`** — automated actions + manual verification
