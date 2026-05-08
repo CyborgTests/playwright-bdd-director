@@ -128,7 +128,7 @@ function main() {
     console.log(`[ERROR] Failed: ${failedResults.length} file(s)\n`);
     for (const result of failedResults) {
       console.log("-".repeat(64));
-      console.log(`[ERROR] ${path.basename(result.file)}`);
+      console.log(`❌ ${path.basename(result.file)}`);
       console.log("-".repeat(64));
       console.log(`File: ${result.file}`);
       console.log();
@@ -137,10 +137,10 @@ function main() {
     }
 
     console.log("-".repeat(64));
-    console.log("\n[HINT] Fix: Update test files to match MD exactly\n");
+    console.log("\n💡 Fix: Update test files to match MD exactly\n");
     process.exit(1);
   }
 
-  console.log(`[OK] All ${results.length} file(s) are in sync with MD!\n`);
+  console.log(`✅ All ${results.length} file(s) are in sync with MD!\n`);
   process.exit(0);
 }

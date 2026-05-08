@@ -116,7 +116,7 @@ npm run test:manual      # Run manual tests (headed, workers=1)
 npm run test:hybrid      # Run hybrid tests (headed, workers=1)
 ```
 
-## Why MD-first Tests (and what you get)
+## 💡 Why MD-first Tests (and what you get)
 
 ### ✅ Readable for non-tech teams
 
