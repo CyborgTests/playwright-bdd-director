@@ -106,7 +106,6 @@ Run validation once. If tests are missing, it will auto-generate `*.manual.test.
 
 ```bash
 npm run validate
-# ? All 1 file(s) are in sync with MD!
 ```
 
 ### 8. Run tests
