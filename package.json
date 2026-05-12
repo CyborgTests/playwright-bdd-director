@@ -1,16 +1,18 @@
 {
-  "name": "md-test-framework",
-  "version": "0.2.0",
-  "description": "Playwright Test Framework with Markdown as source of truth and automatic validation",
+  "name": "markdown-play",
+  "version": "0.3.0",
+  "description": "Write the Script, We'll Play the Show",
   "scripts": {
-    "validate": "tsx scripts/validate-md-sync.ts",
-    "test:manual": "npm run validate && playwright test --project=manual --workers=1",
-    "test:hybrid": "npm run validate && playwright test --project=hybrid --workers=1",
-    "test:auto": "npm run validate && playwright test --project=automated",
-    "report": "playwright show-report",
-    "build": "tsc",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"**/*.{ts,md,json}\""
+    "stage": "tsx scripts/md-ts-director.ts",
+    "dress": "tsx scripts/dress-rehearsal.ts",
+    "play:manual": "npm run dress && playwright test --grep \"@manual\" --workers=1",
+    "play:manual-todo": "npm run dress && playwright test --grep \"@manual.*@todo\" --workers=1",
+    "play:manual-todo-copy": "npm run dress && playwright test --grep \"@manual.*@todo-copy\" --workers=1",
+    "play:hybrid": "npm run dress && playwright test --grep \"@hybrid\" --workers=1",
+    "play:auto": "npm run dress && playwright test --grep \"@auto\"",
+    "review": "npx open-cli test-results/monocart-report/index.html",
+    "format:write": "prettier --write . --log-level silent",
+    "lint:fix": "eslint --fix ."
   },
   "keywords": [
     "playwright",
@@ -25,20 +27,33 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AnPo73/md-test-framework"
+    "url": "https://github.com/AnPo73/markdown-play"
   },
-  "homepage": "https://github.com/AnPo73/md-test-framework#readme",
+  "homepage": "https://github.com/AnPo73/markdown-play#readme",
   "bugs": {
-    "url": "https://github.com/AnPo73/md-test-framework/issues"
+    "url": "https://github.com/AnPo73/markdown-play/issues"
   },
   "devDependencies": {
     "@cyborgtests/test": "^0.3.0",
+    "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.4.0",
     "@playwright/test": "^1.59.1",
-    "@types/node": "^25.6.1",
+    "@types/node": "^25.6.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.10.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "glob": "^13.0.6",
+    "monocart-reporter": "^2.11.1",
+    "prettier": "^3.8.3",
+    "ts-morph": "^28.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.2"
   },
   "engines": {
     "node": ">=18.0.0"

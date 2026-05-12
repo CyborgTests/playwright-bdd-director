@@ -1,182 +1,172 @@
-import fs from "fs";
+import { CallExpression, SyntaxKind } from 'ts-morph'
+
+import {
+  findDescribeCall,
+  findStepCalls,
+  findTestCalls,
+  getSharedProject,
+  getStringLiteralValue
+} from './ts-morph-helpers'
 
 export interface ParsedTestCase {
-  id: string; // TC-001
-  title: string; // User login with valid credentials
-  stepTitles: string[];
-  stepCallKinds: StepCallKind[];
+  id: string | null // TC-001, "" for empty brackets [], or null for no brackets
+  ttl: string // User login with valid credentials
+  stepTtls: string[]
+  stepCallKinds: StepCallKind[]
 }
 
-export type StepCallKind = "manualStep" | "test.step" | "playwrightTest.step";
+export type StepCallKind = 'manualStep' | 'test.step'
 
 export interface ParsedTest {
-  suiteTitle: string;
-  testCases: ParsedTestCase[];
+  suiteID: string | null // "" for [], "TS01" for [TS01], or null for no brackets
+  suiteTtl: string
+  testCases: ParsedTestCase[]
+  tags: string[]
 }
 
 /**
  * Parse TypeScript test file and extract test suite with test cases
- *
- * IDs are extracted "as is" from brackets without any modifications:
- * - test('[TC01-01] Title') → id: 'TC01-01'
- * - test('[TC01-01-MANUAL] Title') → id: 'TC01-01-MANUAL' (kept as is)
- * - test('[USER-LOGIN-E2E] Title') → id: 'USER-LOGIN-E2E' (kept as is)
- * - test('Title') → id: '' (no brackets, cannot determine id)
- * - test('TC01-01: Title') → id: '' (not in brackets format)
- *
- * Validator will handle suffix matching by comparing against MD ID as reference
+ * Using ts-morph for AST-based parsing (more reliable than RegEx)
  */
 export function parseTestFile(filePath: string): ParsedTest {
-  const content = fs.readFileSync(filePath, "utf-8");
+  const project = getSharedProject()
+  const sourceFile = project.addSourceFileAtPath(filePath)
 
-  const describeMatch = content.match(
-    /test\.describe\s*\(\s*['"`]([^'"`]+)['"`]/,
-  );
-  if (!describeMatch) {
-    throw new Error(`No test.describe() found in ${filePath}`);
+  // 1. Find test.describe() call
+  const describeCall = findDescribeCall(sourceFile)
+  if (!describeCall) {
+    throw new Error(`No test.describe() found in ${filePath}`)
   }
 
-  const suiteTitle = describeMatch[1];
-  const testCases: ParsedTestCase[] = [];
+  // 2. Extract suite ID and ttl
+  const suiteText = getStringLiteralValue(describeCall, 0)
+  if (!suiteText) {
+    throw new Error(`Cannot extract suite ttl from test.describe() in ${filePath}`)
+  }
 
-  const testBlocks = content.split(/\n\s*test(?!\.describe)(?:\.\w+)?\s*\(/);
+  const { id: suiteID, ttl: suiteTtl } = parseIDAndTtl(suiteText)
 
-  for (let i = 1; i < testBlocks.length; i++) {
-    const testBlock = testBlocks[i];
+  // 2.5. Extract tags from test.describe()
+  const tags = extractTagsFromDescribe(describeCall)
 
-    const quoteMatch = testBlock.match(/^\s*(['"`])/);
-    if (!quoteMatch) continue;
+  // 3. Find all test() calls within describe
+  const testCalls = findTestCalls(describeCall)
+  const testCases: ParsedTestCase[] = []
 
-    const quote = quoteMatch[1];
+  for (const testCall of testCalls) {
+    const testText = getStringLiteralValue(testCall, 0)
+    if (!testText) continue
 
-    let endPos = quoteMatch.index! + quoteMatch[0].length;
-    let escaped = false;
+    const { id: testCaseID, ttl: testCaseTtl } = parseIDAndTtl(testText)
 
-    while (endPos < testBlock.length) {
-      const char = testBlock[endPos];
+    // 4. Find step calls within test
+    const stepCalls = findStepCalls(testCall)
+    const stepTtls: string[] = []
+    const stepCallKinds: StepCallKind[] = []
 
-      if (escaped) {
-        escaped = false;
-        endPos++;
-        continue;
-      }
-
-      if (char === "\\") {
-        escaped = true;
-        endPos++;
-        continue;
-      }
-
-      if (char === quote) {
-        break;
-      }
-
-      endPos++;
-    }
-
-    let fullTitle = testBlock.slice(
-      quoteMatch.index! + quoteMatch[0].length,
-      endPos,
-    );
-
-    fullTitle = fullTitle
-      .replace(/\\'/g, "'")
-      .replace(/\\"/g, '"')
-      .replace(/\\`/g, "`")
-      .replace(/\\\\/g, "\\")
-      .replace(/\\n/g, "\n")
-      .replace(/\\r/g, "\r")
-      .replace(/\\t/g, "\t");
-
-    const bracketedIDMatch = fullTitle.match(/^\[([^\]]+)\]\s*(.+)$/);
-    let testCaseID = "";
-    let testCaseTitle = "";
-
-    if (bracketedIDMatch) {
-      testCaseID = bracketedIDMatch[1].trim();
-      testCaseTitle = bracketedIDMatch[2].trim();
-    } else {
-      testCaseID = "";
-      testCaseTitle = fullTitle.trim();
-    }
-
-    const stepPattern =
-      /(manualStep|test\.step|playwrightTest\.step)\s*\(\s*(['"`])/g;
-    const stepTitles: string[] = [];
-    const stepCallKinds: StepCallKind[] = [];
-
-    let match;
-    while ((match = stepPattern.exec(testBlock)) !== null) {
-      const callKind = match[1] as StepCallKind;
-      const startPos = match.index + match[0].length - 1;
-      const quote = match[2];
-
-      let endPos = startPos + 1;
-      let escaped = false;
-
-      while (endPos < testBlock.length) {
-        const char = testBlock[endPos];
-
-        if (escaped) {
-          escaped = false;
-          endPos++;
-          continue;
-        }
-
-        if (char === "\\") {
-          escaped = true;
-          endPos++;
-          continue;
-        }
-
-        if (char === quote) {
-          let stepTitle = testBlock.slice(startPos + 1, endPos);
-
-          stepTitle = stepTitle
-            .replace(/\\'/g, "'")
-            .replace(/\\"/g, '"')
-            .replace(/\\`/g, "`")
-            .replace(/\\\\/g, "\\")
-            .replace(/\\n/g, "\n")
-            .replace(/\\r/g, "\r")
-            .replace(/\\t/g, "\t");
-
-          stepTitles.push(stepTitle.trim());
-          stepCallKinds.push(callKind);
-          break;
-        }
-
-        endPos++;
+    for (const stepCall of stepCalls) {
+      const stepText = getStringLiteralValue(stepCall, 0)
+      if (stepText) {
+        stepTtls.push(stepText)
+        stepCallKinds.push(inferStepCallKind(stepCall))
       }
     }
 
     testCases.push({
       id: testCaseID,
-      title: testCaseTitle,
-      stepTitles,
-      stepCallKinds,
-    });
+      ttl: testCaseTtl,
+      stepTtls,
+      stepCallKinds
+    })
   }
 
   if (testCases.length === 0) {
-    throw new Error(`No test cases found in ${filePath}`);
+    throw new Error(`No test cases found in ${filePath}`)
   }
 
+  // 5. Validate no duplicate IDs
+  validateNoDuplicateIDs(testCases, filePath)
+
+  return { suiteID, suiteTtl, testCases, tags }
+}
+
+/**
+ * Parse ID and ttl from text like "[TC01-01] Test ttl"
+ * Returns null for id when no brackets present
+ * Supports empty ID: "[] Test ttl" extracts id="" (allows suffix-only: [MANUAL])
+ */
+function parseIDAndTtl(text: string): { id: string | null; ttl: string } {
+  const match = text.match(/^\[([^\]]*)\]\s*(.*)$/)
+  if (match) {
+    return {
+      id: match[1].trim(),
+      ttl: match[2].trim()
+    }
+  }
+  return {
+    id: null,
+    ttl: text.trim()
+  }
+}
+
+/**
+ * Infer step call kind from call expression
+ */
+function inferStepCallKind(call: CallExpression): StepCallKind {
+  const expression = call.getExpression().getText()
+
+  if (expression === 'manualStep') return 'manualStep'
+  return 'test.step'
+}
+
+/**
+ * Extract tags from test.describe() call
+ * Example: test.describe('title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TODO] }, () => {})
+ */
+function extractTagsFromDescribe(describeCall: CallExpression): string[] {
+  const args = describeCall.getArguments()
+
+  // If 3 args, middle one is options object with tags
+  if (args.length === 3) {
+    const optionsArg = args[1]
+    if (!optionsArg) return []
+
+    // Find 'tag' property in options object
+    const objectLiteral = optionsArg.asKind(SyntaxKind.ObjectLiteralExpression)
+    if (!objectLiteral) return []
+
+    const tagProperty = objectLiteral.getProperty('tag')
+    if (!tagProperty) return []
+
+    // Get array elements
+    const initializer = tagProperty.asKind(SyntaxKind.PropertyAssignment)?.getInitializer()
+    const arrayLiteral = initializer?.asKind(SyntaxKind.ArrayLiteralExpression)
+    if (!arrayLiteral) return []
+
+    return arrayLiteral.getElements().map((el) => el.getText())
+  }
+
+  return []
+}
+
+/**
+ * Validate no duplicate test case IDs
+ * Suffix-only IDs (MANUAL, AUTO, HYBRID) are excluded from duplicate check
+ */
+function validateNoDuplicateIDs(testCases: ParsedTestCase[], filePath: string): void {
   const idsWithBrackets = testCases
-    .filter((tc) => tc.id !== "")
-    .map((tc) => tc.id);
-  const duplicateIDs = idsWithBrackets.filter(
-    (id, index) => idsWithBrackets.indexOf(id) !== index,
-  );
+    .filter((tc) => tc.id !== null && tc.id !== '')
+    .map((tc) => tc.id as string)
+    // Exclude suffix-only IDs (all caps, no dashes/numbers) - these come from empty MD IDs []
+    .filter((id) => !/^[A-Z]+$/.test(id))
+  const duplicateIDs = idsWithBrackets.filter((id, index) => idsWithBrackets.indexOf(id) !== index)
 
   if (duplicateIDs.length > 0) {
-    const uniqueDuplicates = [...new Set(duplicateIDs)];
+    const uniqueDuplicates = [...new Set(duplicateIDs)]
     throw new Error(
       `Duplicate test case IDs found in ${filePath}:\n` +
-        uniqueDuplicates.map((id) => `  - [${id}]`).join("\n") +
-        `\n\nEach test() must have a unique ID within the suite.`,
-    );
+        uniqueDuplicates.map((id) => `  - [${id}]`).join('\n') +
+        `\n\nEach test() must have a unique ID within the suite.`
+    )
   }
-
-  return { suiteTitle, testCases };
 }

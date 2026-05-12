@@ -1,278 +1,279 @@
-import { ParsedMd, TestCase as MdTestCase } from "./md-parser";
-import {
-  ParsedTest,
-  ParsedTestCase as TsTestCase,
-  StepCallKind,
-} from "./ts-parser";
+import { glob } from 'glob'
+import path from 'path'
 
-export interface ValidationResult {
-  file: string;
-  valid: boolean;
-  errors: string[];
-}
+import { PATHS } from '../constants/paths'
+import { FileMatchResult, matchFiles } from './file-matcher'
+import { getErrorMessage, getMarkdownBaseName, getTestFileBaseName } from './helpers'
+import { getIcon } from './icons'
+import { parseMDFile } from './md-parser'
+import { validateMDStructure } from './md-validator'
+import { parseTestFile } from './ts-parser'
 
-function jsonStringify(value: string): string {
-  return JSON.stringify(value);
-}
-
-function formatDifference(
-  expectedMarkdown: string,
-  actualTest: string,
-): string {
-  return `  - expected (MD):   ${jsonStringify(expectedMarkdown)}\n  + actual (Test):   ${jsonStringify(actualTest)}`;
-}
-
-function formatTestCaseLabel(
-  testCase: { id: string; title: string },
-  fallbackIndex?: number,
-): string {
-  if (testCase.id) return `[${testCase.id}] ${testCase.title}`;
-  if (typeof fallbackIndex === "number")
-    return `#${fallbackIndex + 1} ${testCase.title}`;
-  return testCase.title;
-}
-
-function formatHeader(title: string): string {
-  return `\n${title}\n${"-".repeat(title.length)}`;
-}
-
-function inferStepCallKindFromFilename(testFile: string): StepCallKind {
-  const file = testFile.toLowerCase();
-  if (file.includes(".manual.")) return "manualStep";
-  if (file.includes(".auto.")) return "test.step";
-  if (file.includes(".hybrid.")) return "test.step";
-  return "test.step";
-}
-
-function generateStepFixCode(kind: StepCallKind, stepText: string): string {
-  if (kind === "manualStep") {
-    return `await manualStep(${jsonStringify(stepText)});`;
+/**
+ * Validation result with all found errors and parsed data
+ * Used to report errors and pass data to subsequent steps
+ */
+export interface ValidatorResult {
+  success: boolean
+  markdownFiles: string[]
+  parsedMDMap: Map<string, ReturnType<typeof parseMDFile>>
+  markdownByBaseName: Map<string, string>
+  validationResults: FileMatchResult[]
+  errors: {
+    duplicateBaseNames?: string
+    mdStructure?: Array<{ file: string; errors: string[] }>
+    globalIDs?: string[]
+    validationFailures?: FileMatchResult[]
   }
-  if (kind === "playwrightTest.step") {
-    return `await playwrightTest.step(${jsonStringify(stepText)}, async () => {\n      // TODO: Implement step logic\n    });`;
-  }
-  return `await test.step(${jsonStringify(stepText)}, async () => {\n      // TODO: Implement step logic\n    });`;
 }
 
 /**
- * Check if test ID matches MD ID (with optional suffix in test ID)
+ * Main validation function - validates MD files and their sync with TS test files
  *
- * MD ID is the reference (etalon). Test ID can have suffixes.
+ * Validation steps (in order, fail-fast):
+ * 1. Check for duplicate MD base names (e.g., two files named "todo.md")
+ * 2. Validate MD structure (syntax, required sections)
+ * 3. Check for duplicate IDs/titles across all MD files
+ * 4. Match each TS test file against its MD file
  *
- * Examples:
- * - MD: 'TC01-01', Test: 'TC01-01' → ✅ exact match
- * - MD: 'TC01-01', Test: 'TC01-01-MANUAL' → ✅ test has suffix
- * - MD: 'TC01-01', Test: 'TC01-02' → ❌ different IDs
- * - MD: 'TC01', Test: 'TC01-01' → ❌ test is not a suffix variant
+ * Returns success=true only if all checks pass
  */
-function testIDsMatch(markdownID: string, testID: string): boolean {
-  if (markdownID === testID) return true;
-  if (testID.startsWith(markdownID + "-")) return true;
-  return false;
-}
+export function validate(): ValidatorResult {
+  // Find all MD files
+  const markdownFiles = glob.sync(`${PATHS.TEST_SUITES}/**/*.md`)
 
-/**
- * Extract ID and title from step text with brackets
- *
- * Examples:
- * - '[01-01-01] Navigate' → { id: '01-01-01', title: 'Navigate' }
- * - '[01-01-01-CHECK] Navigate' → { id: '01-01-01-CHECK', title: 'Navigate' }
- * - 'Navigate' → { id: '', title: 'Navigate' }
- */
-function parseStepText(stepText: string): { id: string; title: string } {
-  const match = stepText.match(/^\[([^\]]+)\]\s*(.*)/);
-  if (match) {
-    return { id: match[1].trim(), title: match[2].trim() };
-  }
-  return { id: "", title: stepText.trim() };
-}
-
-/**
- * Validate that test file matches MD file
- */
-export function validateSync(
-  testFile: string,
-  markdownData: ParsedMd,
-  typeScriptData: ParsedTest,
-): ValidationResult {
-  const errors: string[] = [];
-
-  // 1. Validate suite title
-  if (markdownData.suiteTitle !== typeScriptData.suiteTitle) {
-    errors.push(
-      `${formatHeader("Suite title mismatch")}\n${formatDifference(markdownData.suiteTitle, typeScriptData.suiteTitle)}\n\n  Fix: test.describe(${jsonStringify(markdownData.suiteTitle)}, ...)`,
-    );
+  // Early return if no MD files found
+  if (markdownFiles.length === 0) {
+    return {
+      success: true,
+      markdownFiles: [],
+      parsedMDMap: new Map(),
+      markdownByBaseName: new Map(),
+      validationResults: [],
+      errors: {}
+    }
   }
 
-  // 2. Validate test case count
-  if (markdownData.testCases.length !== typeScriptData.testCases.length) {
-    const diff =
-      typeScriptData.testCases.length - markdownData.testCases.length;
-    const action =
-      diff > 0
-        ? `Remove ${diff} extra test case(s) from test file`
-        : `Add ${Math.abs(diff)} missing test case(s) to test file`;
-    errors.push(
-      `${formatHeader("Test case count mismatch")}\n  - expected (MD):   ${markdownData.testCases.length} test case(s)\n  + actual (Test):   ${typeScriptData.testCases.length} test case(s)\n\n  Fix: ${action}`,
-    );
+  // Step 1: Check for duplicate base names
+  // Example: "test-suites/todo.md" and "test-suites/subfolder/todo.md" both have base name "todo"
+  const markdownByBaseName = new Map<string, string[]>()
+  for (const markdownFile of markdownFiles) {
+    const baseName = getMarkdownBaseName(markdownFile)
+    const existing = markdownByBaseName.get(baseName) ?? []
+    existing.push(markdownFile)
+    markdownByBaseName.set(baseName, existing)
   }
 
-  // 3. Validate each test case
-  const maxCount = Math.max(
-    markdownData.testCases.length,
-    typeScriptData.testCases.length,
-  );
-
-  for (let i = 0; i < maxCount; i++) {
-    const markdownTestCase = markdownData.testCases[i];
-    const typeScriptTestCase = typeScriptData.testCases[i];
-
-    if (!markdownTestCase) {
-      const label = formatTestCaseLabel(typeScriptTestCase, i);
-      errors.push(
-        `${formatHeader("Extra test case in test file")}\n  Where: test case #${i + 1}\n  + actual (Test):   ${label}\n\n  Fix: Remove this test case or add it to MD`,
-      );
-      continue;
+  const duplicateBaseNames = [...markdownByBaseName.entries()].filter(
+    ([, files]) => files.length > 1
+  )
+  if (duplicateBaseNames.length > 0) {
+    const details = duplicateBaseNames
+      .map(([baseName, files]) => `- ${baseName}.md:\n${files.map((f) => `  ${f}`).join('\n')}`)
+      .join('\n')
+    return {
+      success: false,
+      markdownFiles,
+      parsedMDMap: new Map(),
+      markdownByBaseName: new Map(),
+      validationResults: [],
+      errors: {
+        duplicateBaseNames: `Duplicate markdown base names are not allowed.\n${details}\n\nUse unique MD filenames to avoid ambiguous test-to-MD mapping.`
+      }
     }
+  }
 
-    if (!typeScriptTestCase) {
-      const label = formatTestCaseLabel(markdownTestCase, i);
-      const testExample = markdownTestCase.id
-        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
-        : `test(${jsonStringify(markdownTestCase.title)}, ...)`;
-      errors.push(
-        `${formatHeader("Missing test case in test file")}\n  Where: test case #${i + 1}\n  - expected (MD):   ${label}\n\n  Fix: ${testExample}`,
-      );
-      continue;
-    }
+  // Convert to unique map (take first file if duplicates exist)
+  const markdownByBaseNameUnique = new Map<string, string>(
+    [...markdownByBaseName.entries()].map(([baseName, files]) => [baseName, files[0]])
+  )
 
-    // Validate test case ID
-    if (
-      (markdownTestCase.id && !typeScriptTestCase.id) ||
-      (!markdownTestCase.id && typeScriptTestCase.id)
-    ) {
-      const markdownLabel = formatTestCaseLabel(markdownTestCase, i);
-      const typeScriptLabel = formatTestCaseLabel(typeScriptTestCase, i);
-      const fix = markdownTestCase.id
-        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
-        : `Remove [${typeScriptTestCase.id}] from test or add to MD: ## [${typeScriptTestCase.id}] ${markdownTestCase.title}`;
-      errors.push(
-        `${formatHeader("Test case ID inconsistency")}\n  Where: test case #${i + 1}\n${formatDifference(markdownLabel, typeScriptLabel)}\n\n  Problem: only one side has an ID.\n  Fix: ${fix}`,
-      );
-    }
+  // Step 2: Validate MD structure and parse files
+  const mdStructureErrors: Array<{ file: string; errors: string[] }> = []
+  const parsedMDFiles: Array<{
+    file: string
+    data: ReturnType<typeof parseMDFile>
+  }> = []
 
-    if (
-      markdownTestCase.id &&
-      typeScriptTestCase.id &&
-      !testIDsMatch(markdownTestCase.id, typeScriptTestCase.id)
-    ) {
-      errors.push(
-        `${formatHeader("Test case ID mismatch")}\n  Where: test case #${i + 1}\n  - expected (MD):   ${jsonStringify(markdownTestCase.id)}\n  + actual (Test):   ${jsonStringify(typeScriptTestCase.id)}\n\n  Rule: test ID must be ${jsonStringify(markdownTestCase.id)} or ${jsonStringify(`${markdownTestCase.id}-SUFFIX`)}\n  Fix: test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`,
-      );
-    }
+  for (const markdownFile of markdownFiles) {
+    try {
+      const structureErrors = validateMDStructure(markdownFile)
 
-    // Validate test case title
-    if (markdownTestCase.title !== typeScriptTestCase.title) {
-      const label = markdownTestCase.id || `#${i + 1}`;
-      const fixExample = markdownTestCase.id
-        ? `test(${jsonStringify(`[${markdownTestCase.id}] ${markdownTestCase.title}`)}, ...)`
-        : `test(${jsonStringify(markdownTestCase.title)}, ...)`;
-      errors.push(
-        `${formatHeader("Test case title mismatch")}\n  Where: test case ${label}\n${formatDifference(markdownTestCase.title, typeScriptTestCase.title)}\n\n  Fix: ${fixExample}`,
-      );
-    }
-
-    // Validate step count
-    if (
-      markdownTestCase.stepTitles.length !==
-      typeScriptTestCase.stepTitles.length
-    ) {
-      const label = markdownTestCase.id || markdownTestCase.title;
-      const diff =
-        typeScriptTestCase.stepTitles.length -
-        markdownTestCase.stepTitles.length;
-      const action =
-        diff > 0
-          ? `Remove ${diff} extra step(s)`
-          : `Add ${Math.abs(diff)} missing step(s)`;
-      errors.push(
-        `${formatHeader("Step count mismatch")}\n  Where: test case ${label}\n  - expected (MD):   ${markdownTestCase.stepTitles.length} step(s)\n  + actual (Test):   ${typeScriptTestCase.stepTitles.length} step(s)\n\n  Fix: ${action}`,
-      );
-    }
-
-    // Validate step titles
-    const maxSteps = Math.max(
-      markdownTestCase.stepTitles.length,
-      typeScriptTestCase.stepTitles.length,
-    );
-    const stepMismatches: string[] = [];
-
-    for (let j = 0; j < maxSteps; j++) {
-      const markdownStepText = markdownTestCase.stepTitles[j];
-      const typeScriptStepText = typeScriptTestCase.stepTitles[j];
-
-      if (!markdownStepText || !typeScriptStepText) {
-        const fix = !markdownStepText
-          ? `Remove extra step from test`
-          : `Add missing step: ${generateStepFixCode(inferStepCallKindFromFilename(testFile), markdownStepText)}`;
-        stepMismatches.push(
-          `  Step #${j + 1}:\n  - expected (MD):   ${markdownStepText ? jsonStringify(markdownStepText) : "(missing)"}\n  + actual (Test):   ${typeScriptStepText ? jsonStringify(typeScriptStepText) : "(missing)"}\n  Fix: ${fix}`,
-        );
-        continue;
+      if (structureErrors.length > 0) {
+        mdStructureErrors.push({
+          file: markdownFile,
+          errors: structureErrors.map((e) => {
+            let result = `${getIcon(e.type)}   ${e.message}`
+            if (e.context) {
+              const contextLines = e.context
+                .split('\n')
+                .map((line) => `    ${line}`)
+                .join('\n')
+              result += `\n${contextLines}`
+            }
+            if (e.line) {
+              result += `\n    Line: ${e.line}`
+            }
+            return result
+          })
+        })
+        continue
       }
 
-      const markdownStep = parseStepText(markdownStepText);
-      const typeScriptStep = parseStepText(typeScriptStepText);
+      const mdData = parseMDFile(markdownFile)
+      parsedMDFiles.push({ file: markdownFile, data: mdData })
+    } catch (error: unknown) {
+      mdStructureErrors.push({
+        file: markdownFile,
+        errors: [`${getIcon('error')}  Failed to parse MD: ${getErrorMessage(error)}`]
+      })
+      continue
+    }
+  }
 
-      if (
-        (markdownStep.id && !typeScriptStep.id) ||
-        (!markdownStep.id && typeScriptStep.id)
-      ) {
-        const callKind =
-          typeScriptTestCase.stepCallKinds[j] ??
-          inferStepCallKindFromFilename(testFile);
-        const fix = markdownStep.id
-          ? generateStepFixCode(callKind, markdownStepText)
-          : `Remove [${typeScriptStep.id}] from step or add to MD: ### ${typeScriptStepText}`;
-        stepMismatches.push(
-          `  Step #${j + 1} ID inconsistency:\n${formatDifference(markdownStepText, typeScriptStepText)}\n\n  Problem: only one side has an ID.\n  Fix: ${fix}`,
-        );
-        continue;
-      }
+  // Step 3: Check for duplicate IDs and titles across all MD files
+  // IDs and titles must be globally unique across all MD files
+  const globalIDErrors: string[] = []
+  const suiteIDs = new Map<string, string>()
+  const testCaseIDs = new Map<string, string>()
+  const stepIDs = new Map<string, string>()
+  const suiteTitles = new Map<string, string>()
 
-      const idsValid =
-        !markdownStep.id ||
-        !typeScriptStep.id ||
-        testIDsMatch(markdownStep.id, typeScriptStep.id);
-      const titlesValid = markdownStep.title === typeScriptStep.title;
-
-      if (!idsValid || !titlesValid) {
-        const problems: string[] = [];
-        if (!idsValid)
-          problems.push(
-            `ID must be ${jsonStringify(markdownStep.id)} or ${jsonStringify(`${markdownStep.id}-SUFFIX`)}`,
-          );
-        if (!titlesValid) problems.push("Title must match exactly");
-        const callKind =
-          typeScriptTestCase.stepCallKinds[j] ??
-          inferStepCallKindFromFilename(testFile);
-        stepMismatches.push(
-          `  Step #${j + 1} mismatch:\n${formatDifference(markdownStepText, typeScriptStepText)}\n\n  Problem: ${problems.join("; ")}\n  Fix: ${generateStepFixCode(callKind, markdownStepText)}`,
-        );
+  for (const { file, data } of parsedMDFiles) {
+    if (data.suiteID) {
+      const existingFile = suiteIDs.get(data.suiteID)
+      if (existingFile) {
+        globalIDErrors.push(
+          `${getIcon('suite')}  Duplicate Test Suite ID "${data.suiteID}":\n  - ${existingFile}\n  - ${file}`
+        )
+      } else {
+        suiteIDs.set(data.suiteID, file)
       }
     }
 
-    if (stepMismatches.length > 0) {
-      const label = markdownTestCase.id || markdownTestCase.title;
-      errors.push(
-        `${formatHeader("Step mismatch")}\n  Where: test case ${label}\n\n${stepMismatches.join("\n\n")}`,
-      );
+    const existingFileWithTitle = suiteTitles.get(data.suiteTtl)
+    if (existingFileWithTitle) {
+      globalIDErrors.push(
+        `${getIcon('suite')}  Duplicate Test Suite title "${data.suiteTtl}":\n  - ${existingFileWithTitle}\n  - ${file}`
+      )
+    } else {
+      suiteTitles.set(data.suiteTtl, file)
+    }
+
+    for (const testCase of data.testCases) {
+      // Only check non-empty, non-suffix-only IDs
+      // Empty ID [] is allowed, and suffix-only IDs (MANUAL, AUTO, etc.) come from TS files not MD
+      if (testCase.id !== null && testCase.id !== '') {
+        const existingFile = testCaseIDs.get(testCase.id)
+        if (existingFile) {
+          globalIDErrors.push(
+            `${getIcon('testCase')}  Duplicate Test Case ID "${testCase.id}":\n  - ${existingFile}\n  - ${file}`
+          )
+        } else {
+          testCaseIDs.set(testCase.id, file)
+        }
+      }
+
+      for (const stepTtl of testCase.stepTtls) {
+        const stepIdMatch = stepTtl.match(/^\[([^\]]+)\]/)
+        if (stepIdMatch) {
+          const stepId = stepIdMatch[1]
+          const existingFile = stepIDs.get(stepId)
+          if (existingFile) {
+            globalIDErrors.push(
+              `${getIcon('step')}  Duplicate Step ID "${stepId}":\n  - ${existingFile}\n  - ${file}`
+            )
+          } else {
+            stepIDs.set(stepId, file)
+          }
+        }
+      }
+    }
+
+    // Check for duplicate test case titles within same MD file
+    const testCaseTitles = new Map<string, number>()
+    for (let i = 0; i < data.testCases.length; i++) {
+      const testCase = data.testCases[i]
+      const existingIndex = testCaseTitles.get(testCase.ttl)
+      if (existingIndex !== undefined) {
+        globalIDErrors.push(
+          `${getIcon('testCase')}  Duplicate Test Case title in ${file}:\n  "${testCase.ttl}"\n  Test Case #${existingIndex + 1} and #${i + 1}`
+        )
+      } else {
+        testCaseTitles.set(testCase.ttl, i)
+      }
     }
   }
 
+  // Return early if critical errors found (structure or duplicate IDs)
+  if (globalIDErrors.length > 0 || mdStructureErrors.length > 0) {
+    return {
+      success: false,
+      markdownFiles,
+      parsedMDMap: new Map(),
+      markdownByBaseName: markdownByBaseNameUnique,
+      validationResults: [],
+      errors: {
+        globalIDs: globalIDErrors.length > 0 ? globalIDErrors : undefined,
+        mdStructure: mdStructureErrors.length > 0 ? mdStructureErrors : undefined
+      }
+    }
+  }
+
+  // Build map of parsed MD files for quick lookup
+  const parsedMDMap = new Map(parsedMDFiles.map(({ file, data }) => [file, data]))
+
+  // Step 4: Match each TS test file against its MD file
+  const testFiles = glob.sync('tests/**/*.ts', { nodir: true })
+  const results: FileMatchResult[] = []
+
+  for (const testFile of testFiles) {
+    const fileName = path.basename(testFile)
+    const baseName = getTestFileBaseName(fileName)
+
+    // Skip if no corresponding MD file exists
+    const markdownFile = markdownByBaseNameUnique.get(baseName)
+    if (!markdownFile) continue
+
+    const markdownData = parsedMDMap.get(markdownFile)
+    if (!markdownData) continue
+
+    try {
+      const typeScriptData = parseTestFile(testFile)
+      const result = matchFiles(testFile, markdownData, typeScriptData)
+      results.push(result)
+    } catch (error: unknown) {
+      results.push({
+        file: testFile,
+        valid: false,
+        errors: [getErrorMessage(error)]
+      })
+    }
+  }
+
+  // Collect failed validations (MD-TS sync issues)
+  const failedResults = results.filter((result) => !result.valid)
+
+  if (failedResults.length > 0) {
+    return {
+      success: false,
+      markdownFiles,
+      parsedMDMap,
+      markdownByBaseName: markdownByBaseNameUnique,
+      validationResults: results,
+      errors: {
+        validationFailures: failedResults
+      }
+    }
+  }
+
+  // All validations passed - return success
   return {
-    file: testFile,
-    valid: errors.length === 0,
-    errors,
-  };
+    success: true,
+    markdownFiles,
+    parsedMDMap,
+    markdownByBaseName: markdownByBaseNameUnique,
+    validationResults: results,
+    errors: {}
+  }
 }

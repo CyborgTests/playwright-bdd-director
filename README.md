@@ -1,34 +1,38 @@
-# 📋 No-Code Test Specs: Always in Sync
+# 📜 Markdown Play: Write the Script, We'll Play the Show
 
-**Playwright Testing Framework where Markdown is the spec and your manual/auto/hybrid tests stay synchronized via automatic validation and scaffolding.**
-
-> **⚠️ Important note about manual & hybrid tests**
->
-> This repository makes full sense only when used together with **Cyborgtests** (`@cyborgtests/test`).
-> Without Cyborgtests you can still run **automated** Playwright tests and the **MD ↔ code validator**,
-> but you **cannot** create/run real **manual** or **hybrid** tests (because `manualStep()` and the manual runner come from Cyborgtests).
->
-> **🎯 Main Idea**
->
-> Write test documentation **once** in Markdown. Validator ensures MD and test code never drift apart.
->
-> Same MD file → multiple implementations (manual, automated, hybrid) → always synchronized.
+**You write the script in Markdown. The Director stages it - validates structure, generates test skeletons and keeps manual, automated, and hybrid tests performing the same script. One source of truth. No improvisation. Pure theater.**
 
 ## 🚀 Quick Start
 
-### 1. Install Node.JS
+### 1. Install Node.js
+
+1. Open [Node.js Downloads](https://nodejs.org/en/download) in browser
+2. Select your operating system and CPU architecture
+3. Download the suggested version
+4. Run the downloaded installer and follow the installation steps
+5. Open a terminal and verify that Node.js was installed successfully
 
 ```bash
 node --version
 ```
 
-Use Node.js 18+ (Node.js 20+ recommended).
+### 2. Download Markdown Play
 
-### 2. Clone repository
+Download ZIP:
+
+1. Open the repository page on GitHub
+2. Click **Code**
+3. Click **Download ZIP**
+4. Extract the archive to any folder
+
+Or clone with Git:
+
+1. Open a terminal
+2. Run the commands below:
 
 ```bash
 git clone <YOUR_REPO_URL>
-cd md-test-framework
+cd markdown-play
 ```
 
 ### 3. Install dependencies
@@ -43,344 +47,469 @@ npm install
 npx playwright install
 ```
 
-### 5. Create MD file
+### 5. Create your first Markdown test suite
 
-`test-cases/login.md`:
+1. Open the `test-suites` folder inside the project
+2. Create a file named `login.md`
+3. Paste the following content into the file:
 
 ```markdown
 # [TS01] Login Tests
 
 ## [TC01-01] User can login
 
-### [01-01-01] Navigate to login page
-### [01-01-02] Enter credentials
-### [01-01-03] Click login button
-### [01-01-04] Verify dashboard visible
+### Navigate to login page
+
+### Enter credentials
+
+### Click login button
+
+### Verify dashboard visible
 ```
 
-### 6. Optional: Create test file
+### 6. Prepare your test suite for execution
 
-You can create tests manually, but the recommended path is auto-generation from MD.
-
-`tests/manual/login.manual.test.ts`:
-
-```typescript
-import test from '@cyborgtests/test'
-
-test.describe('[TS01] Login Tests', () => {
-  test('[TC01-01] User can login', async ({ page, manualStep }) => {
-    await manualStep('[01-01-01] Navigate to login page')
-    await manualStep('[01-01-02] Enter credentials')
-    await manualStep('[01-01-03] Click login button')
-    await manualStep('[01-01-04] Verify dashboard visible')
-  })
-})
-```
-
-`tests/automated/login.auto.test.ts`:
-
-```typescript
-import { test } from '@playwright/test'
-
-test.describe('[TS01] Login Tests', () => {
-  test('[TC01-01-AUTO] User can login', async ({ page }) => {
-    await test.step('[01-01-01] Navigate to login page', async () => {
-      // TODO: Implement step logic
-    })
-    await test.step('[01-01-02] Enter credentials', async () => {
-      // TODO: Implement step logic
-    })
-    await test.step('[01-01-03] Click login button', async () => {
-      // TODO: Implement step logic
-    })
-    await test.step('[01-01-04] Verify dashboard visible', async () => {
-      // TODO: Implement step logic
-    })
-  })
-})
-```
-
-### 7. Generate missing files and validate
-
-Run validation once. If tests are missing, it will auto-generate `*.manual.test.ts` and `*.auto.test.ts` from MD, then validate sync.
+This command validates structure, generates test files, and creates npm scripts:
 
 ```bash
-npm run validate
+npm run stage
 ```
 
-### 8. Run tests
+### 7. Run suite
+
+Run specific suite with auto-generated command (created by `npm run stage`):
 
 ```bash
-npm run test:auto        # Run automated tests (headless, parallel)
-npm run test:manual      # Run manual tests (headed, workers=1)
-npm run test:hybrid      # Run hybrid tests (headed, workers=1)
+npm run play:manual-login
 ```
 
-## 💡 Why MD-first Tests (and what you get)
+Or run all manual tests:
 
-### ✅ Readable for non-tech teams
+```bash
+npm run play:manual
+```
 
-- Manual QA and management can read/review/update specs without touching TypeScript
+### 8. View test results
 
-### ✅ Easy to share
+```bash
+npm run review
+```
 
-- MD specs fit naturally into existing documentation workflows (for example, Notion)
+## ⚡ Markdown-Driven Testing Platform
 
-### ✅ One source of truth
+Markdown Play powered by Playwright and Cyborgtests
 
-- Write once in MD, keep manual/auto/hybrid tests synchronized, and catch drift early with validation
+It combines:
 
-### ✅ Manual-first friendly
+- Playwright for automated E2E and API testing
+- Cyborgtests for manual and hybrid testing
+- Markdown as the single source of truth
 
-- If you only need manual testing, MD specs can be enough without writing automation code
+The same Markdown script can drive manual, automated, and hybrid test flows.
 
-### ✅ Automation-ready
+## 💡 Why Markdown-First Testing?
 
-- The same MD scales to pure Playwright (`test.describe`, `test`, `test.step`) with full TypeScript support
+### Readable beyond engineering
 
-## 🎯 Core Concept
+Manual QA, managers, and non-technical stakeholders can review and update test specifications without touching TypeScript.
 
-**1 MD file = 1 Test Suite**  
-**Multiple implementations = always in sync**
+### One script, multiple implementations
 
-Before validation:
+The same Markdown test suite can drive:
 
-- Parses MD structure (suite, test cases, steps) into a canonical model
-- Parses test files the same way and aligns them to the MD spec
-- Auto-generates missing `*.manual.test.ts` and `*.auto.test.ts` skeletons
+- manual tests
+- automated tests
+- hybrid tests
 
-Validation:
+All implementations stay synchronized from a single source of truth.
 
-- Detects mismatches (counts, titles, ids, step structure) with fix suggestions
-- Keeps manual, automated, and hybrid implementations consistent from one source
-- Validator checks all three against todo.md
+### Works without automation
+
+Markdown Play already provides value for manual testing - automation can be added later if needed.
+
+### Built for Playwright
+
+When automation is needed, the same Markdown structure scales naturally to Playwright E2E and API testing with full TypeScript support.
+
+## 👨‍💻 Commercial Automation Support
+
+Need a full Playwright E2E/API automation ecosystem on top of Markdown Play?
+
+Commercial integration and automation services are available from the author:
+
+[LinkedIn - Andrii Pohanovskyi](https://linkedin.com/in/andrii-pohanovskyi)
+[Email - pognovsky@gmail.com](mailto:poganovsky@gmail.com)
+
+## 🎯 Core Idea
+
+**1 Markdown file = 1 test suite**  
+**Multiple implementations = always synchronized**
+
+The Director (`npm run stage`):
+
+1. Validates Markdown structure
+2. Generates missing test skeletons (manual + auto)
+3. Auto-fixes manual tests to match Markdown
+4. Archives orphaned manual tests
+5. Validates final synchronization
+6. Formats and lints test files
+
+The Dress Rehearsal (`npm run dress`):
+
+- Validates existing tests without modification
+- Checks MD ↔ TS synchronization
+- Reports all mismatches
 
 ```text
 ┌──────────────────────────┐
 │  todo.md                 │  ← Single Source of Truth
-│  # TodoMVC Tests         │
+│  # [TS01] TodoMVC Tests  │
 │  ## [TC01-01] Add todo   │
-│  ### [01-01-01] Navigate │
-│  ### [01-01-02] Add      │
-│  ### [01-01-03] Verify   │
+│  ### Navigate            │
+│  ### Add new todo        │
+│  ### Verify created      │
 └────────────┬─────────────┘
              │
-             ├──→ todo.manual.test.ts
-             ├──→ todo.auto.test.ts
-             └──→ todo.hybrid.test.ts
-             
+    ┌────────┴────────┐
+    ▼                 ▼
+Manual Tests      Auto Tests
+(auto-fixed)      (TODO stubs)
+    │                 │
+    └─────────┬───────┘
+              ▼
+        Validation
+     (tags, IDs, sync)
 ```
 
 ## 📝 MD Format
 
 ### Structure
 
-```markdown
-# [TS01] Test Suite Title
+```text
+# Test Suite Title
 
-## [TC01-01] Test Case title
+## Test Case title
 
-### [01-01-01] Step Title
+### Step Title
 
 - Optional details
   - Test data
   - Expected results
 
-### [01-01-02] Another Step
+### Another Step
 ```
 
-**Hierarchy:**
+### Hierarchy
 
-- `#` → Test Suite
-- `##` → Test Case
-- `###` → Test Step
-- Lists (`-`) → Comments (ignored by validator)
+```text
+# → Test Suite
+## → Test Case
+### → Test Step
+Lists (-) → Comments (ignored by validator)
+```
 
-### IDs Are Optional
+### IDs - Optional but Powerful
 
-**With IDs (recommended):**
+IDs are optional. Tests work without them (validator matches by full titles).
 
-Only **brackets format** `[ID]` is recognized as id:
+**Why use IDs:**
 
-- `## [TC01-01] Test Case title` → ID: `TC01-01`, Title: `Test Case title`
-- Enables suffix support in tests: `[TC01-01-MANUAL]`, `[TC01-01-AUTO]` match `[TC01-01]`
-- Avoids MD linter duplicate heading errors
+- **Multiple implementations** - generate multiple tests from a single MD case
+- **Stable matching** - titles can change, IDs remain constant
+- **Avoid duplicates** - Markdown linters allow duplicate titles when IDs differ
 
-**Without IDs (simpler):**
+**Suffix Support - Multiple Implementations:**
 
-Everything else is treated as plain text title:
+With IDs, you can create multiple test types for one MD test case. Suffix after ID is ignored during validation, allowing manual, auto, and hybrid implementations to match the same MD test case.
 
-- `## Add todo` → Title: `Add todo`
-- `## TC01-01: Test Case title` → Title: `TC01-01: Test Case title` (no ID, full text)
-- `## TC01-01 - Test Case title` → Title: `TC01-01 - Test Case title` (no ID, full text)
+**ID Format (brackets only):**
 
-Only brackets `[]` enable ID extraction and suffix support!
+✅ `## [TC01-01] Test Case title` - ID extracted, suffix support enabled  
+✅ `## [] Test Case title` - empty ID, suffix-only support  
+❌ `## TC01-01: Test Case title` - no ID, validates by full title  
+❌ `## TC01-01 - Test Case title` - no ID, validates by full title
+
+**Empty ID - Suffix Only:**
+
+Use empty brackets `[]` when you only need suffixes to distinguish implementations:
+
+```typescript
+// One MD test case: ## [] Add todo
+
+test('[MANUAL] Add todo', ...)  // Manual implementation (no dash)
+test('[AUTO] Add todo', ...)    // Automated implementation (no dash)
+test('[HYBRID] Add todo', ...)  // Hybrid implementation (no dash)
+```
+
+All three match `[]` from MD. Useful when you don't need numbered IDs, just implementation types.
+
+**Without IDs:**
+
+```markdown
+## Add todo
+```
+
+Must match exactly in test file - no suffix support, no multiple implementations.
 
 ## ✅ Validation
 
 ### What Validator Checks
 
 ```bash
-npm run validate
+npm run stage    # validate → generate → auto-fix → archive → format → lint
 ```
+
+**Note:** Dress rehearsal (`npm run dress`) runs automatically before test execution to ensure synchronization.
 
 Validator verifies:
 
-1. Suite title matches
-2. Test case count and titles match
-3. Step count and titles match per test case
-4. IDs match (if using ids)
+1. **No duplicate MD base names** (e.g., two files named `todo.md`)
+2. **Valid MD structure** (proper headings hierarchy, required sections)
+3. **No duplicate IDs/titles** across all MD files (globally unique)
+4. **MD ↔ TS synchronization** for each test file:
+   - Suite title matches
+   - Test case count and titles match
+   - Step count and titles match per test case
+   - IDs match (strict: MD is source of truth)
+   - Tags match file type and basename
 
-### ID Validation Rules
+### ID Validation Rules (Strict)
 
-**Brackets format `[TC01-01]`:**
+**MD is the source of truth:**
+
+- If MD has ID → TS **must** have matching ID (error if missing)
+- If MD has no ID → TS **must not** have ID (error if present)
+
+**Brackets format with suffix support:**
+
+Non-empty ID with dash before suffix:
 
 - MD: `[TC01-01]` → Test: `[TC01-01]` ✅
-- MD: `[TC01-01]` → Test: `[TC01-01-MANUAL]` ✅ (suffix allowed)
-- MD: `[TC01-01]` → Test: `[TC01-01-AUTO-UI]` ✅
+- MD: `[TC01-01]` → Test: `[TC01-01-MANUAL]` ✅ (suffix with dash)
+- MD: `[TC01-01]` → Test: `[TC01-01-AUTO]` ✅ (suffix with dash)
 - MD: `[TC01-01]` → Test: `[TC01-02]` ❌ (different ID)
+- MD: `[TC01-01]` → Test: no ID ❌ (missing ID)
+
+Empty ID with suffix only (no dash):
+
+- MD: `[]` → Test: `[MANUAL]` ✅ (suffix only, no dash)
+- MD: `[]` → Test: `[AUTO]` ✅ (suffix only, no dash)
+- MD: `[]` → Test: `[HYBRID]` ✅ (suffix only, no dash)
+- MD: `[]` → Test: `[-MANUAL]` ❌ (dash not allowed with empty ID)
+- MD: `[]` → Test: no ID ❌ (missing ID)
+
+No ID validation:
+
+- MD: no ID → Test: `[TC01-01]` ❌ (unexpected ID)
 
 **Other formats** (`TC-001:`):
 
-- Cannot extract ID
+- Not recognized as IDs
 - Validates full title only
 - No suffix support
 
+### What Stage Auto-Fixes
+
+**Automatically fixed:**
+
+- MD formatting issues (trailing spaces, blank lines)
+- Manual test structure (suite/test case/step titles and counts)
+- Missing test files (generates skeletons for manual + auto)
+- Missing npm scripts (creates `play:manual-<basename>` commands for manual tests only)
+
+**Must fix manually:**
+
+- Tags (file type, suite tags from basename)
+- IDs (add/remove to match MD)
+- Duplicate IDs/titles across MD files
+
+### Orphaned Test Archiving
+
+When MD file is deleted:
+
+- **Manual tests** → archived to `tests/archived/` (preserves valuable manual work)
+- **Auto/hybrid tests** → left in place (not archived)
+  - Can continue running without corresponding MD file
+  - Useful for tests that need single implementation only
+
+Archive location: `tests/archived/<filename>`.
+
 ### Multiple Implementations
 
-You can create multiple test types for same MD test case:
+**With non-empty ID (dash before suffix):**
 
 ```typescript
-// Same file or different files - both valid
+// MD: ## [TC01-01] Add todo
 test('[TC01-01-MANUAL] Add todo', ...)  // ✅ Matches [TC01-01]
 test('[TC01-01-AUTO] Add todo', ...)    // ✅ Matches [TC01-01]
 test('[TC01-01-HYBRID] Add todo', ...)  // ✅ Matches [TC01-01]
 ```
 
-Validator checks each `test()` separately against MD.
+**With empty ID (suffix only, no dash):**
+
+```typescript
+// MD: ## [] Add todo
+test('[MANUAL] Add todo', ...)  // ✅ Matches []
+test('[AUTO] Add todo', ...)    // ✅ Matches []
+test('[HYBRID] Add todo', ...)  // ✅ Matches []
+```
+
+Validator checks each `test()` separately against MD. Same file or different files - both are valid.
 
 ## 📚 Working Example
 
 Repository includes complete TodoMVC example demonstrating:
 
-- **`test-cases/todo.md`** — 5 test cases with IDs and comments
-- **`tests/manual/todo.manual.test.ts`** — manual steps (with one automated `goto()` step)
-- **`tests/automated/todo.auto.test.ts`** — fully automated
-- **`tests/hybrid/todo.hybrid.test.ts`** — automated actions + manual verification
+- `**test-suites/todo.md**` - 5 test cases with IDs and comments
+- `**tests/manual/todo.manual.test.ts**` - manual steps + automated `goto()` step
+- `**tests/automated/todo.auto.test.ts**` - fully automated
+- `**tests/hybrid/todo.hybrid.test.ts**` - automated actions + manual verification
 
-All three validate against **same** `todo.md` — this demonstrates the framework.
+All three validate against **same** `todo.md` - this demonstrates the framework.
 
 **Run example:**
 
 ```bash
-npm run validate         # Validate all tests
-npm run test:manual      # Run manual tests (headed, workers=1)
-npm run test:auto        # Run automated tests (headless, parallel)
-npm run test:hybrid      # Run hybrid tests (headed, workers=1)
+npm run stage                 # Stage: validate → generate → auto-fix → archive → format → lint
+
+# All tests
+npm run play:manual           # Play all manual tests (headed, workers=1)
+npm run play:auto             # Play all automated tests (headless, parallel)
+npm run play:hybrid           # Play all hybrid tests (headed, workers=1)
+
+# Suite-specific (auto-generated for manual tests only)
+npm run play:manual-todo      # Play only todo manual tests
 ```
+
+**Notes:**
+
+- Base command `npm run play:manual` runs all manual tests from all suites
+- Suite-specific commands (`play:manual-<basename>`) are automatically created by `npm run stage` to run individual suites only
+
+**Note:** Dress rehearsal validates synchronization automatically before each test run.
 
 ## ⚙️ Configuration
 
-### Playwright Config
-
-```typescript
-// playwright.config.ts
-export default defineConfig({
-  use: {
-    baseURL: 'https://demo.playwright.dev/todomvc'
-  },
-  projects: [
-    {
-      name: 'manual',
-      testMatch: /.*\.manual\.test\.ts$/,
-      timeout: 0,
-      fullyParallel: false,
-      use: { headless: false }
-    },
-    {
-      name: 'hybrid',
-      testMatch: /.*\.hybrid\.test\.ts$/,
-      timeout: 0,
-      fullyParallel: false,
-      use: { headless: false }
-    },
-    {
-      name: 'automated',
-      testMatch: /.*\.auto\.test\.ts$/,
-      use: { headless: true }
-    }
-  ]
-})
-```
-
 ### File Naming
 
-- MD: `<name>.md` (e.g., `todo.md`)
-- Test: `<name>.<anything>.ts` (framework extracts base name before first dot)
-- Examples:
+- **MD:** `<name>.md` (e.g., `todo.md`) in `test-suites/`
+- **Test:** `<name>.<anything>.ts` (framework extracts base name before first dot)
+- **Examples:**
   - `todo.manual.test.ts` → `todo.md` ✅
   - `todo.auto.test.ts` → `todo.md` ✅
+  - `todo.hybrid.test.ts` → `todo.md` ✅
 
-**Important:** `tests/` should contain only test files (no helpers/utils).
+**Base name extraction:** Uses `getTestFileBaseName()` helper (`fileName.split('.')[0]`).
+
+**Important:**
+
+- `test-suites/` - only Markdown files
+- `tests/` - only test files (no helpers/utils)
+- `tests/archived/` - orphaned manual tests (auto-created by Director)
 
 ## 🔧 Framework Core
 
-### Validator (`scripts/validate-md-sync.ts`)
+### Director (`scripts/md-ts-director.ts`)
 
-Parses MD files and test files, compares structure:
+Full staging pipeline (6 steps):
 
-- Extracts test suites, test cases, steps
-- Supports ids in brackets `[TC01-01]` with suffix detection
-- Validates each `test()` separately
-- Reports mismatches with actionable fixes
+1. **Fix MD formatting** - auto-corrects trailing spaces, blank lines
+2. **Validate (critical errors)** - checks duplicates, MD structure, global IDs
+3. **Generate missing tests** - creates skeletons for manual + auto, generates npm scripts for manual tests
+4. **Archive orphaned manual tests** - moves to `tests/archived/`
+5. **Auto-fix manual tests** - syncs structure with MD
+6. **Format and lint** - runs Prettier + ESLint before final validation
 
-### Parser (`src/framework/`)
+Invoked via `npm run stage` - like a theatrical director preparing the stage and ensuring every actor (test) follows the script (MD).
 
-Extracts test structure from:
+### Core Components
 
-- **MD files:** Headings (`#`, `##`, `###`) and ids in brackets
-- **Test files:** `test.describe()`, `test()`, `manualStep()`, `test.step()`
+**Parsers (`src/framework/`):**
+
+- `md-parser.ts` - extracts structure from Markdown (headings, IDs)
+- `ts-parser.ts` - extracts structure from TypeScript (test blocks)
+
+**Validators:**
+
+- `sync-validator.ts` - orchestrates 4-step validation (duplicates → structure → global IDs → MD-TS sync)
+- `file-matcher.ts` - compares individual MD ↔ TS files
+- `md-validator.ts` - validates MD structure and formatting
+
+**Auto-Fixers:**
+
+- `auto-fixer.ts` - fixes manual test structure to match MD
+- `md-validator.ts` - fixes MD formatting issues
+
+**Generators:**
+
+- `test-generator.ts` - generates missing manual/auto test skeletons
+
+**Support:**
+
+- `test-archiver.ts` - archives orphaned manual tests
+- `tags-updater.ts` - updates tags in `src/constants/tags.ts`
+- `validation-reporter.ts` - formats and displays validation errors
+- `console-formatter.ts` - unified error output formatting
+- `helpers.ts` - shared utilities (`getTestFileBaseName`, `testIDsMatch`, etc.)
+- `icons.ts` - emoji icons for console output
+
+### Supported Patterns
 
 Handles:
 
 - Escape sequences in titles
 - Multiple test patterns (`test.skip()`, `test.only()`, `test.fixme()`)
-- ID suffix extraction
+- ID suffix extraction (`[TC01-01-MANUAL]` matches `[TC01-01]`)
+- Duplicate test implementations (manual + auto + hybrid for same MD test case)
 
 ## 🎓 Philosophy
+
+### MD is the source of truth
+
+- **MD defines:** structure, titles, IDs, test case count
+- **TS implements:** how to execute (manual/auto/hybrid)
+- **Director ensures:** TS always follows MD (auto-fix for manual tests)
+- **Validation is strict:** if MD has ID → TS must have it; if MD has no ID → TS must not have it
 
 ### MD = what to test, code = how to test
 
 - MD shows test structure (high-level)
 - Code shows implementation (details)
 - Validator keeps them synchronized
+- Auto-fixer updates manual tests automatically
+- Manual work preserved via archiving
 
 ### 1 MD file = 1 Test Suite
 
 - Multiple test cases per file
-- Multiple implementations per test case
-- Logical grouping
+- Multiple implementations per test case (manual, auto, hybrid)
+- Logical grouping by feature/functionality
 
-## 🔧 Optional: Hooks & Linters
+## 📊 Reports
 
-**Git Hooks:**
+View test results:
 
 ```bash
-npm install --save-dev husky
-npx husky init
-echo "npm run validate" > .husky/pre-commit
+npm run review    # Open Monocart HTML report
 ```
 
-**MD Linter:**
+Report includes:
 
-If not using ids, disable MD024 (duplicate headings):
+- Test execution summary
+- Screenshots and traces on failure
+- Detailed step-by-step logs
 
-```json
-{ "MD024": false }
-```
+### Optional: Centralized Report Storage
+
+For teams needing centralized report storage, you can add:
+
+- **[@cyborgtests/reporter-playwright-reports-server](https://www.npmjs.com/package/@cyborgtests/reporter-playwright-reports-server)** - Cyborgtests reporter integration
+- **[Playwright Reports Server](https://github.com/CyborgTests/playwright-reports-server)** - Docker-based reports storage
+
+**Note:** You can add this integration yourself right now if needed. If there's demand from users, we'll include it in the project by default. Either way, you'll need to deploy and run the Docker container yourself.
 
 ## 📄 License
 
 MIT
 
-See also: `THIRD_PARTY_NOTICES.md` (licenses for dependencies like Playwright and Cyborgtests).
+See also: `THIRD_PARTY_NOTICES.md` (licenses for dependencies like Cyborgtests and Monocart Reporter).
