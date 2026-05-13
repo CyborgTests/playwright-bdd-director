@@ -1,6 +1,9 @@
 import { CallExpression, Project, SourceFile, SyntaxKind } from 'ts-morph'
 
-import { AST_IDENTIFIERS } from '../constants/paths'
+import { AST_IDENTIFIERS } from '@/framework/constants/paths'
+
+// Regex constants (compiled once, reused many times)
+const TEST_CALL_PATTERN = /^test(\.(only|skip|fixme))?$/
 
 // Singleton Project instance for performance
 let _sharedProject: Project | null = null
@@ -10,6 +13,14 @@ export function getSharedProject(): Project {
     _sharedProject = new Project()
   }
   return _sharedProject
+}
+
+/**
+ * Reset shared Project instance to free memory
+ * Call this after processing all files to prevent memory leaks
+ */
+export function resetSharedProject(): void {
+  _sharedProject = null
 }
 
 /**
@@ -60,7 +71,7 @@ export function findTestCalls(describeCall: CallExpression): CallExpression[] {
 
     // Match: test, test.only, test.skip, test.fixme
     // Exclude: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, test.describe
-    const isTestCall = /^test(\.(only|skip|fixme))?$/.test(expression)
+    const isTestCall = TEST_CALL_PATTERN.test(expression)
 
     if (isTestCall) {
       testCalls.push(callExpression)

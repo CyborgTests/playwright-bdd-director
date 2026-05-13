@@ -1,12 +1,12 @@
 import fs from 'fs'
 
-import { PATHS } from '../constants/paths'
+import { CONFIG } from '@/framework/config'
 
 /**
  * Add new tag to src/constants/tags.ts if not exists
  */
 export function addSuiteTag(suiteName: string): void {
-  const tagsPath = PATHS.TAGS_FILE
+  const tagsPath = CONFIG.paths.tagsFile
   const content = fs.readFileSync(tagsPath, 'utf-8')
 
   const tagConstant = getTagConstant(suiteName)
@@ -53,7 +53,7 @@ export function addSuiteTag(suiteName: string): void {
  * Add npm script to package.json for running manual tests with specific tag
  */
 export function addManualScript(suiteName: string): void {
-  const packagePath = PATHS.PACKAGE_JSON
+  const packagePath = CONFIG.paths.packageJson
   const packageContent = fs.readFileSync(packagePath, 'utf-8')
   const pkg = JSON.parse(packageContent)
 

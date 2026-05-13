@@ -1,14 +1,15 @@
-import { CallExpression } from 'ts-morph'
+import { CallExpression, Node, SyntaxKind } from 'ts-morph'
 
-import { getIcon } from './icons'
-import { ParsedMD } from './md-parser'
+import { ParsedMD } from '../core/md-parser'
+import { matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
+import { getIcon } from '../utils/icons'
 import {
   findDescribeCall,
   findStepCalls,
   findTestCalls,
   getSharedProject,
   getStringLiteralValue
-} from './ts-morph-helpers'
+} from '../utils/ts-morph-helpers'
 
 export interface AutoFixResult {
   filePath: string
@@ -28,12 +29,10 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
   // 1. Fix suite ttl
   const describeCall = findDescribeCall(sourceFile)
   if (describeCall) {
-    const fixedSuite = fixSuiteTtl(describeCall, mdData, changes)
+    fixSuiteTtl(describeCall, mdData, changes)
 
     // 2. Fix test cases
-    if (fixedSuite) {
-      fixTestCases(describeCall, mdData, changes)
-    }
+    fixTestCases(describeCall, mdData, changes)
   }
 
   // 3. Save changes if any were made
@@ -53,12 +52,29 @@ function fixSuiteTtl(describeCall: CallExpression, mdData: ParsedMD, changes: st
   const currentTtl = getStringLiteralValue(describeCall, 0)
   const expectedTtl = mdData.suiteID ? `[${mdData.suiteID}] ${mdData.suiteTtl}` : mdData.suiteTtl
 
-  if (currentTtl !== expectedTtl) {
-    const ttlArg = describeCall.getArguments()[0]
-    if (ttlArg) {
-      ttlArg.replaceWithText(`'${escapeString(expectedTtl)}'`)
-      changes.push(`Test suite title: "${currentTtl}" → "${expectedTtl}"`)
-      return true
+  if (currentTtl) {
+    // Check if titles match (considering ID suffixes like -AUTO, -MANUAL)
+    let titlesMatch = currentTtl === expectedTtl
+
+    if (!titlesMatch) {
+      const currentParsed = parseIDAndTitle(currentTtl)
+      const expectedParsed = parseIDAndTitle(expectedTtl)
+
+      if (currentParsed.id !== null && expectedParsed.id !== null) {
+        const idsMatch = matchIDWithSuffix(expectedParsed.id, currentParsed.id)
+        const ttlsMatchParsed = currentParsed.ttl === expectedParsed.ttl
+        titlesMatch = idsMatch && ttlsMatchParsed
+      }
+    }
+
+    if (!titlesMatch) {
+      const ttlArg = describeCall.getArguments()[0]
+      if (ttlArg) {
+        const newTtl = preserveSuffix(currentTtl, expectedTtl)
+        ttlArg.replaceWithText(`'${escapeString(newTtl)}'`)
+        changes.push(`Test suite title: "${currentTtl}" → "${newTtl}"`)
+        return true
+      }
     }
   }
 
@@ -91,13 +107,31 @@ function fixTestCases(describeCall: CallExpression, mdData: ParsedMD, changes: s
 
     // Fix test case ttl
     const currentTtl = getStringLiteralValue(testCall, 0) ?? ''
-    const expectedTtl = mdTestCase.id !== null ? `[${mdTestCase.id}] ${mdTestCase.ttl}` : mdTestCase.ttl
+    const expectedTtl =
+      mdTestCase.id !== null ? `[${mdTestCase.id}] ${mdTestCase.ttl}` : mdTestCase.ttl
 
-    if (currentTtl && !ttlsMatch(currentTtl, expectedTtl)) {
-      const ttlArg = testCall.getArguments()[0]
-      if (ttlArg) {
-        ttlArg.replaceWithText(`'${escapeString(expectedTtl)}'`)
-        changes.push(`Test case #${i + 1} title: "${currentTtl}" → "${expectedTtl}"`)
+    if (currentTtl) {
+      // Check if titles match (considering ID suffixes like -AUTO, -MANUAL)
+      let titlesMatch = currentTtl === expectedTtl
+
+      if (!titlesMatch) {
+        const currentParsed = parseIDAndTitle(currentTtl)
+        const expectedParsed = parseIDAndTitle(expectedTtl)
+
+        if (currentParsed.id !== null && expectedParsed.id !== null) {
+          const idsMatch = matchIDWithSuffix(expectedParsed.id, currentParsed.id)
+          const ttlsMatchParsed = currentParsed.ttl === expectedParsed.ttl
+          titlesMatch = idsMatch && ttlsMatchParsed
+        }
+      }
+
+      if (!titlesMatch) {
+        const ttlArg = testCall.getArguments()[0]
+        if (ttlArg) {
+          const newTtl = preserveSuffix(currentTtl, expectedTtl)
+          ttlArg.replaceWithText(`'${escapeString(newTtl)}'`)
+          changes.push(`Test case #${i + 1} title: "${currentTtl}" → "${newTtl}"`)
+        }
       }
     }
 
@@ -151,34 +185,102 @@ function fixTestSteps(
 }
 
 /**
- * Check if ttls match (considering ID suffixes like -AUTO, -MANUAL)
- */
-function ttlsMatch(current: string, expected: string): boolean {
-  if (current === expected) return true
-
-  // Extract IDs and compare
-  const currentMatch = current.match(/^\[([^\]]+)\]\s*(.*)$/)
-  const expectedMatch = expected.match(/^\[([^\]]+)\]\s*(.*)$/)
-
-  if (currentMatch && expectedMatch) {
-    const currentId = currentMatch[1]
-    const expectedId = expectedMatch[1]
-    const currentTtl = currentMatch[2]
-    const expectedTtl = expectedMatch[2]
-
-    // Allow suffix in current ID (TC01-01-AUTO matches TC01-01)
-    const idsMatch = currentId === expectedId || currentId.startsWith(expectedId + '-')
-    const ttlsMatch = currentTtl === expectedTtl
-
-    return idsMatch && ttlsMatch
-  }
-
-  return false
-}
-
-/**
  * Escape string for safe insertion into code
  */
 function escapeString(str: string): string {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')
+}
+
+/**
+ * Preserve suffix from current title when applying expected title
+ * Examples:
+ *   - current="[TS01-AUTO] Old", expected="[TS01] New" → "[TS01-AUTO] New" (non-empty ID)
+ *   - current="[AUTO] Old", expected="[] New" → "[AUTO] New" (empty ID)
+ */
+function preserveSuffix(currentTtl: string, expectedTtl: string): string {
+  // Match both non-empty IDs [TC01] and empty IDs []
+  const currentMatch = currentTtl.match(/^\[([^\]]*)\]\s*(.*)$/)
+  const expectedMatch = expectedTtl.match(/^\[([^\]]*)\]\s*(.*)$/)
+
+  if (currentMatch && expectedMatch) {
+    const currentId = currentMatch[1]
+    const expectedId = expectedMatch[1]
+    const expectedText = expectedMatch[2]
+
+    // Special case: Empty ID [] with suffix-only (MANUAL, AUTO, HYBRID)
+    // Example: current="[MANUAL] Old", expected="[] New" → "[MANUAL] New"
+    if (expectedId === '' && currentId !== '' && !currentId.includes('-')) {
+      return `[${currentId}] ${expectedText}`
+    }
+
+    // Regular case: Non-empty ID with dash-based suffix
+    // Example: current="[TC01-AUTO] Old", expected="[TC01] New" → "[TC01-AUTO] New"
+    if (currentId !== expectedId && currentId.startsWith(expectedId + '-')) {
+      return `[${currentId}] ${expectedText}`
+    }
+  }
+
+  // No suffix or no IDs - return expected as-is
+  return expectedTtl
+}
+
+/**
+ * Check if automated test file contains only empty/TODO steps (no real implementation)
+ * Empty-code autotests can be safely auto-updated when MD spec changes
+ * @returns true if all steps are empty or contain only comments
+ */
+export function isEmptyAutoTest(testFilePath: string): boolean {
+  const project = getSharedProject()
+  const sourceFile = project.addSourceFileAtPath(testFilePath)
+
+  const describeCall = findDescribeCall(sourceFile)
+  if (!describeCall) return false
+
+  const testCalls = findTestCalls(describeCall)
+  if (testCalls.length === 0) return false
+
+  // Check all test cases
+  for (const testCall of testCalls) {
+    const stepCalls = findStepCalls(testCall)
+
+    // If no steps, consider as empty
+    if (stepCalls.length === 0) continue
+
+    // Check each step
+    for (const stepCall of stepCalls) {
+      const arrowFunction = stepCall.getArguments()[1]
+      if (!arrowFunction || !Node.isArrowFunction(arrowFunction)) continue
+
+      const body = arrowFunction.getBody()
+      if (!body) continue
+
+      // Get block statements
+      const block = Node.isBlock(body) ? body : null
+      if (!block) {
+        // No block = inline expression (not empty)
+        return false
+      }
+
+      const statements = block.getStatements()
+
+      // Check if all statements are comments or empty
+      for (const stmt of statements) {
+        // Skip empty statements
+        if (stmt.getKind() === SyntaxKind.EmptyStatement) continue
+
+        // Check if it's just a comment
+        const text = stmt.getText().trim()
+
+        // Allow only comments: /* ... */ or // ...
+        const isComment = text.startsWith('/*') || text.startsWith('//') || text.length === 0
+
+        if (!isComment) {
+          // Found real code - not an empty test
+          return false
+        }
+      }
+    }
+  }
+
+  return true
 }

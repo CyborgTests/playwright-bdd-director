@@ -22,6 +22,15 @@ Review the licenses of the dependencies listed below before distribution.
 - **`monocart-reporter`** — MIT License  
   Source: `https://www.npmjs.com/package/monocart-reporter`
 
+- **`vitest`** — MIT License  
+  Source: `https://www.npmjs.com/package/vitest`
+
+- **`@vitest/ui`** — MIT License  
+  Source: `https://www.npmjs.com/package/@vitest/ui`
+
+- **`@vitest/coverage-v8`** — MIT License  
+  Source: `https://www.npmjs.com/package/@vitest/coverage-v8`
+
 ### TypeScript & Tools
 
 - **`typescript`** — Apache License 2.0  

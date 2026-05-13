@@ -1,12 +1,14 @@
 import { CallExpression, SyntaxKind } from 'ts-morph'
 
+import { PATTERNS } from '../constants/paths'
+import { parseIDAndTitle } from '../utils/helpers'
 import {
   findDescribeCall,
   findStepCalls,
   findTestCalls,
   getSharedProject,
   getStringLiteralValue
-} from './ts-morph-helpers'
+} from '../utils/ts-morph-helpers'
 
 export interface ParsedTestCase {
   id: string | null // TC-001, "" for empty brackets [], or null for no brackets
@@ -44,7 +46,7 @@ export function parseTestFile(filePath: string): ParsedTest {
     throw new Error(`Cannot extract suite ttl from test.describe() in ${filePath}`)
   }
 
-  const { id: suiteID, ttl: suiteTtl } = parseIDAndTtl(suiteText)
+  const { id: suiteID, ttl: suiteTtl } = parseIDAndTitle(suiteText)
 
   // 2.5. Extract tags from test.describe()
   const tags = extractTagsFromDescribe(describeCall)
@@ -57,7 +59,7 @@ export function parseTestFile(filePath: string): ParsedTest {
     const testText = getStringLiteralValue(testCall, 0)
     if (!testText) continue
 
-    const { id: testCaseID, ttl: testCaseTtl } = parseIDAndTtl(testText)
+    const { id: testCaseID, ttl: testCaseTtl } = parseIDAndTitle(testText)
 
     // 4. Find step calls within test
     const stepCalls = findStepCalls(testCall)
@@ -88,25 +90,6 @@ export function parseTestFile(filePath: string): ParsedTest {
   validateNoDuplicateIDs(testCases, filePath)
 
   return { suiteID, suiteTtl, testCases, tags }
-}
-
-/**
- * Parse ID and ttl from text like "[TC01-01] Test ttl"
- * Returns null for id when no brackets present
- * Supports empty ID: "[] Test ttl" extracts id="" (allows suffix-only: [MANUAL])
- */
-function parseIDAndTtl(text: string): { id: string | null; ttl: string } {
-  const match = text.match(/^\[([^\]]*)\]\s*(.*)$/)
-  if (match) {
-    return {
-      id: match[1].trim(),
-      ttl: match[2].trim()
-    }
-  }
-  return {
-    id: null,
-    ttl: text.trim()
-  }
 }
 
 /**
@@ -158,7 +141,7 @@ function validateNoDuplicateIDs(testCases: ParsedTestCase[], filePath: string): 
     .filter((tc) => tc.id !== null && tc.id !== '')
     .map((tc) => tc.id as string)
     // Exclude suffix-only IDs (all caps, no dashes/numbers) - these come from empty MD IDs []
-    .filter((id) => !/^[A-Z]+$/.test(id))
+    .filter((id) => !PATTERNS.SUFFIX_ONLY.test(id))
   const duplicateIDs = idsWithBrackets.filter((id, index) => idsWithBrackets.indexOf(id) !== index)
 
   if (duplicateIDs.length > 0) {

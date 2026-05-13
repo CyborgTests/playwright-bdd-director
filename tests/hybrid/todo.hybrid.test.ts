@@ -1,8 +1,8 @@
 import test from '@cyborgtests/test'
 import { faker } from '@faker-js/faker'
 
-import { TAG } from '../../src/constants/tags'
-import { TodoPage } from '../../src/pages/TodoPage'
+import { TAG } from '@/constants/tags'
+import { TodoPage } from '@/pages/TodoPage'
 
 test.describe('[TS01] TodoMVC Tests', { tag: [TAG.TEST.HYBRID, TAG.SUITE.TODO] }, () => {
   let todoPage: TodoPage

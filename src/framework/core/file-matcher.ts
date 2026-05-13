@@ -1,8 +1,8 @@
 import path from 'path'
 
-import { getTestFileBaseName } from './helpers'
+import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
+import { getTestFileBaseName, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
 import { ParsedMD } from './md-parser'
-import { extractSuiteName, getTagConstant } from './tags-updater'
 import { ParsedTest } from './ts-parser'
 
 export interface FileMatchResult {
@@ -46,50 +46,14 @@ function getFileType(fileName: string): 'manual' | 'auto' | 'hybrid' {
 }
 
 /**
- * Check if test IDs match
- *
- * Matching rules:
- * - Exact match: [TC01-01] matches [TC01-01]
- * - Non-empty ID with suffix: [TC01-01] matches [TC01-01-MANUAL], [TC01-01-AUTO], etc.
- * - Empty ID with suffix only: [] matches [MANUAL], [AUTO], [HYBRID] (no dash)
- */
-function testIDsMatch(markdownID: string, testID: string): boolean {
-  if (markdownID === testID) return true
-
-  // Empty ID in MD [] - TS can use suffix without dash: [MANUAL], [AUTO], [HYBRID]
-  if (markdownID === '') {
-    return /^[A-Z]+$/.test(testID)
-  }
-
-  // Non-empty ID - TS can use suffix with dash: [TC01-01-MANUAL], [TC01-01-AUTO]
-  if (testID.startsWith(markdownID + '-')) return true
-
-  return false
-}
-
-/**
- * Parse step text to extract ID and title
- * Example: "[01-01-01] Navigate to page" -> { id: "01-01-01", ttl: "Navigate to page" }
- */
-function parseStepText(stepText: string): { id: string; ttl: string } {
-  const match = stepText.match(/^\[([^\]]+)\]\s*(.*)/)
-  if (match) return { id: match[1].trim(), ttl: match[2].trim() }
-  return { id: '', ttl: stepText.trim() }
-}
-
-/**
  * Validate ID field presence and match between MD and TS
  * MD is the source of truth - TS must match MD
  * @returns Error message or null if valid
  */
-function validateIdField(
-  mdId: string | null,
-  tsId: string | null,
-  context: string
-): string | null {
+function validateIdField(mdId: string | null, tsId: string | null, context: string): string | null {
   if (mdId !== null && tsId === null) return `• Missing ${context} in TS (MD has: ${mdId})`
   if (mdId === null && tsId !== null) return `• Unexpected ${context} in TS (MD has no ${context})`
-  if (mdId !== null && tsId !== null && !testIDsMatch(mdId, tsId))
+  if (mdId !== null && tsId !== null && !matchIDWithSuffix(mdId, tsId))
     return `• ${context}: ${tsId} → ${mdId}`
   return null
 }
@@ -133,65 +97,51 @@ function validateTags(testFile: string, tags: string[]): string[] {
 }
 
 /**
- * Match test file against markdown file to validate sync
- * MD is the source of truth - TS must match MD structure
- * Returns validation result with all found errors
+ * Validate suite ID and title match between MD and TS
  */
-export function matchFiles(
-  testFile: string,
-  markdownData: ParsedMD,
-  typeScriptData: ParsedTest
-): FileMatchResult {
-  const errors: string[] = []
-
-  // 1. Validate tags
-  const tagErrors = validateTags(testFile, typeScriptData.tags)
-  if (tagErrors.length > 0) {
-    errors.push(`Tag Problems:\n  ${tagErrors.join('\n  ')}`)
-  }
-
-  // 2. Validate suite
-  const suiteProblems: string[] = []
+function validateSuite(markdownData: ParsedMD, typeScriptData: ParsedTest): string | null {
+  const problems: string[] = []
 
   const suiteIdError = validateIdField(markdownData.suiteID, typeScriptData.suiteID, 'Suite ID')
   if (suiteIdError) {
-    suiteProblems.push(suiteIdError)
+    problems.push(suiteIdError)
   }
 
   if (markdownData.suiteTtl !== typeScriptData.suiteTtl) {
-    suiteProblems.push(`• Suite Title: "${typeScriptData.suiteTtl}" → "${markdownData.suiteTtl}"`)
+    problems.push(`• Suite Title: "${typeScriptData.suiteTtl}" → "${markdownData.suiteTtl}"`)
   }
 
-  if (suiteProblems.length > 0) {
-    errors.push(`Test Suite Problems:\n  ${suiteProblems.join('\n  ')}`)
+  return problems.length > 0 ? `Test Suite Problems:\n  ${problems.join('\n  ')}` : null
+}
+
+/**
+ * Validate test case count matches between MD and TS
+ * Returns error message if counts don't match, null otherwise
+ */
+function validateTestCaseCount(markdownData: ParsedMD, typeScriptData: ParsedTest): string | null {
+  if (markdownData.testCases.length === typeScriptData.testCases.length) {
+    return null
   }
 
-  // 3. Validate test case count - if different, stop here
-  if (markdownData.testCases.length !== typeScriptData.testCases.length) {
-    const diff = typeScriptData.testCases.length - markdownData.testCases.length
-    const status =
-      diff > 0 ? `${diff} extra in test file` : `${Math.abs(diff)} missing in test file`
+  const diff = typeScriptData.testCases.length - markdownData.testCases.length
+  const status = diff > 0 ? `${diff} extra in test file` : `${Math.abs(diff)} missing in test file`
 
-    const mdList = markdownData.testCases
-      .map((tc, i) => `  ${i + 1}. [${formatIdForDisplay(tc.id)}] ${tc.ttl}`)
-      .join('\n')
-    const tsList = typeScriptData.testCases
-      .map((tc, i) => `  ${i + 1}. [${formatIdForDisplay(tc.id)}] ${tc.ttl}`)
-      .join('\n')
+  const mdList = markdownData.testCases
+    .map((tc, i) => `  ${i + 1}. [${formatIdForDisplay(tc.id)}] ${tc.ttl}`)
+    .join('\n')
+  const tsList = typeScriptData.testCases
+    .map((tc, i) => `  ${i + 1}. [${formatIdForDisplay(tc.id)}] ${tc.ttl}`)
+    .join('\n')
 
-    errors.push(
-      `❌ Test Case Count Mismatch: ${typeScriptData.testCases.length} in test file → ${markdownData.testCases.length} in MD (${status})\n\nMD has:\n${mdList}\n\nTest file has:\n${tsList}\n\nFix: Update test file to match MD exactly`
-    )
+  return `❌ Test Case Count Mismatch: ${typeScriptData.testCases.length} in test file → ${markdownData.testCases.length} in MD (${status})\n\nMD has:\n${mdList}\n\nTest file has:\n${tsList}\n\nFix: Update test file to match MD exactly`
+}
 
-    // Don't compare test cases when counts don't match - results are misleading
-    return {
-      file: testFile,
-      valid: false,
-      errors
-    }
-  }
-
-  // 4. Validate each test case
+/**
+ * Validate each test case - IDs, titles, and steps
+ * Returns array of error messages for all test cases with problems
+ */
+function validateTestCases(markdownData: ParsedMD, typeScriptData: ParsedTest): string[] {
+  const errors: string[] = []
   const maxCount = Math.max(markdownData.testCases.length, typeScriptData.testCases.length)
 
   for (let i = 0; i < maxCount; i++) {
@@ -256,17 +206,18 @@ export function matchFiles(
         continue
       }
 
-      const markdownStep = parseStepText(markdownStepText)
-      const typeScriptStep = parseStepText(typeScriptStepText)
+      const { id: markdownStepId = '', ttl: markdownStepTtl } = parseIDAndTitle(markdownStepText)
+      const { id: typeScriptStepId = '', ttl: typeScriptStepTtl } =
+        parseIDAndTitle(typeScriptStepText)
 
       // Check ID presence and match (MD is source of truth)
-      const stepIdError = validateIdField(markdownStep.id, typeScriptStep.id, `Step #${j + 1} ID`)
+      const stepIdError = validateIdField(markdownStepId, typeScriptStepId, `Step #${j + 1} ID`)
       if (stepIdError) {
         problems.push(stepIdError)
       }
 
       // Check title
-      if (markdownStep.ttl !== typeScriptStep.ttl) {
+      if (markdownStepTtl !== typeScriptStepTtl) {
         problems.push(`• Step #${j + 1}: Title mismatch`)
       }
     }
@@ -277,6 +228,49 @@ export function matchFiles(
       errors.push(`Test Case #${i + 1}: ${tsLabel}\n  Problems:\n  ${problems.join('\n  ')}`)
     }
   }
+
+  return errors
+}
+
+/**
+ * Match test file against markdown file to validate sync
+ * MD is the source of truth - TS must match MD structure
+ * Returns validation result with all found errors
+ */
+export function matchFiles(
+  testFile: string,
+  markdownData: ParsedMD,
+  typeScriptData: ParsedTest
+): FileMatchResult {
+  const errors: string[] = []
+
+  // 1. Validate tags
+  const tagErrors = validateTags(testFile, typeScriptData.tags)
+  if (tagErrors.length > 0) {
+    errors.push(`Tag Problems:\n  ${tagErrors.join('\n  ')}`)
+  }
+
+  // 2. Validate suite
+  const suiteError = validateSuite(markdownData, typeScriptData)
+  if (suiteError) {
+    errors.push(suiteError)
+  }
+
+  // 3. Validate test case count - if different, stop here
+  const countError = validateTestCaseCount(markdownData, typeScriptData)
+  if (countError) {
+    errors.push(countError)
+    // Don't compare test cases when counts don't match - results are misleading
+    return {
+      file: testFile,
+      valid: false,
+      errors
+    }
+  }
+
+  // 4. Validate each test case
+  const testCaseErrors = validateTestCases(markdownData, typeScriptData)
+  errors.push(...testCaseErrors)
 
   return {
     file: testFile,

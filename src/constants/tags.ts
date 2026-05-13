@@ -31,8 +31,6 @@ export const TAG = {
    * Test suite / functional area
    */
   SUITE: {
-    TODO: '@todo',
-    EDGE_CASES: '@edge-cases',
-    TODO_COPY: '@todo-copy'
+    TODO: '@todo'
   }
 } as const

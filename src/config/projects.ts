@@ -35,7 +35,9 @@ export const automatedProject: Project = {
   name: 'automated',
   testMatch: /.*\.auto\.test\.ts$/,
   use: {
-    ...defaultDevice
+    ...defaultDevice,
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure'
   }
 }
 

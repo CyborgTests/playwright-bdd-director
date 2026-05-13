@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-import { getErrorMessage } from '../src/framework/helpers'
-import { getIcon } from '../src/framework/icons'
-import { validate } from '../src/framework/sync-validator'
-import { reportValidationErrors } from '../src/framework/validation-reporter'
+import { getErrorMessage } from '@/framework/utils/helpers'
+import { getIcon } from '@/framework/utils/icons'
+import { reportValidationErrors } from '@/framework/validation/reporter'
+import { validate } from '@/framework/validation/sync-validator'
 
 try {
   main()

@@ -1,62 +1,62 @@
-# [TS01] TodoMVC Tests
+## [TS01] TodoMVC Tests
 
-## [TC01-01] Add todo
+### [TC01-01] Add todo
 
-### Navigate to TodoMVC
+#### Navigate to TodoMVC
 
 - Open browser
 - Navigate to `https://demo.playwright.dev/todomvc/`
 - Ensure todo input is visible
 
-### Add new todo
+#### Add new todo
 
 - **Test data:**
 - Todo text: `Buy groceries`
 - Enter text in `.new-todo` input field
 - Press Enter key
 
-### Verify todo created
+#### Verify todo created
 
-## [TC01-02] Complete todo
+### [TC01-02] Complete todo
 
-### Navigate to TodoMVC
+#### Navigate to TodoMVC
 
-### Add new todo
+#### Add new todo
 
-### Mark todo as completed
+#### Mark todo as completed
 
-### Verify todo is completed
+#### Verify todo is completed
 
-## [TC01-03] Delete todo
+### [TC01-03] Delete todo
 
-### Navigate to TodoMVC
+#### Navigate to TodoMVC
 
-### Add new todo
+#### Add new todo
 
-### Hover over todo and click delete button
+#### Hover over todo and click delete button
 
-### Verify todo deleted
+#### Verify todo deleted
 
-## [TC01-04] Clear completed todos
+### [TC01-04] Clear completed todos
 
-### Navigate to TodoMVC
+#### Navigate to TodoMVC
 
-### Add new todo
+#### Add new todo
 
-### Mark todo as completed
+#### Mark todo as completed
 
-### Click "Clear completed"
+#### Click "Clear completed"
 
-### Verify todo deleted
+#### Verify todo deleted
 
-## [TC01-05] Verify item counter
+### [TC01-05] Verify item counter
 
-### Navigate to TodoMVC
+#### Navigate to TodoMVC
 
-### Add first todo
+#### Add first todo
 
-### Add second todo
+#### Add second todo
 
-### Mark second todo as completed
+#### Mark second todo as completed
 
-### Verify counter shows "1 item left"
+#### Verify counter shows "1 item left"

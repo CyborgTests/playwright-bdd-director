@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker'
 import { test } from '@playwright/test'
 
-import { TAG } from '../../src/constants/tags'
-import { TodoPage } from '../../src/pages/TodoPage'
+import { TAG } from '@/constants/tags'
+import { TodoPage } from '@/pages/TodoPage'
 
 test.describe('[TS01] TodoMVC Tests', { tag: [TAG.TEST.AUTO, TAG.SUITE.TODO] }, () => {
   let todoPage: TodoPage

@@ -5,12 +5,12 @@
   "scripts": {
     "stage": "tsx scripts/md-ts-director.ts",
     "dress": "tsx scripts/dress-rehearsal.ts",
-    "play:manual": "npm run dress && playwright test --grep \"@manual\" --workers=1",
-    "play:manual-todo": "npm run dress && playwright test --grep \"@manual.*@todo\" --workers=1",
-    "play:manual-todo-copy": "npm run dress && playwright test --grep \"@manual.*@todo-copy\" --workers=1",
-    "play:hybrid": "npm run dress && playwright test --grep \"@hybrid\" --workers=1",
-    "play:auto": "npm run dress && playwright test --grep \"@auto\"",
-    "review": "npx open-cli test-results/monocart-report/index.html",
+    "play": "tsx scripts/play.ts",
+    "review": "npx monocart show-report test-results/monocart-report/index.html",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "format:write": "prettier --write . --log-level silent",
     "lint:fix": "eslint --fix ."
   },
@@ -41,6 +41,8 @@
     "@types/node": "^25.6.2",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
+    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/ui": "^4.1.6",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.10.2",
@@ -53,7 +55,8 @@
     "ts-morph": "^28.0.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.59.2",
+    "vitest": "^4.1.6"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,48 +1,19 @@
 import fs from 'fs'
 import path from 'path'
 
-import { PATHS, SUFFIXES } from '../constants/paths'
-import { getIcon } from './icons'
-import { parseMDFile } from './md-parser'
+import { CONFIG } from '@/framework/config'
+import { SUFFIXES } from '@/framework/constants/paths'
+
+import { parseMDFile } from '../core/md-parser'
+import { getIcon } from '../utils/icons'
 import { addManualScript, addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
 type TestType = 'auto' | 'manual'
 
-interface GeneratorConfig {
-  type: TestType
-  outputDir: string
-  suffix: string
-  importStatement: string
-  testParams: string
-  stepTemplate: (stepLiteral: string) => string
-  tagConstant: string
-  updateScripts: boolean
-}
-
-const GENERATOR_CONFIGS: Record<TestType, Omit<GeneratorConfig, 'tagConstant' | 'outputDir'>> = {
-  auto: {
-    type: 'auto',
-    suffix: SUFFIXES.AUTO,
-    importStatement: "import { test } from '@playwright/test'",
-    testParams: '',
-    stepTemplate: (stepLiteral) =>
-      `await test.step(${stepLiteral}, async () => { /* TODO: Implement step logic */ });`,
-    updateScripts: false
-  },
-  manual: {
-    type: 'manual',
-    suffix: SUFFIXES.MANUAL,
-    importStatement: "import test from '@cyborgtests/test'",
-    testParams: '{ manualStep }',
-    stepTemplate: (stepLiteral) => `await manualStep(${stepLiteral});`,
-    updateScripts: true
-  }
-}
-
 export function generateTestFile(baseName: string, type: TestType): void {
   const mdData = parseMDFile(baseName)
 
-  const outputDir = type === 'auto' ? PATHS.TESTS_AUTOMATED : PATHS.TESTS_MANUAL
+  const outputDir = type === 'auto' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsManual
 
   // Create output directory if needed
   if (!fs.existsSync(outputDir)) {
@@ -56,7 +27,27 @@ export function generateTestFile(baseName: string, type: TestType): void {
     return
   }
 
-  const config = GENERATOR_CONFIGS[type]
+  // Determine configuration based on test type
+  let suffix: string
+  let importStatement: string
+  let testParams: string
+  let stepTemplate: (stepLiteral: string) => string
+  let updateScripts: boolean
+
+  if (type === 'auto') {
+    suffix = SUFFIXES.AUTO
+    importStatement = "import { test } from '@playwright/test'"
+    testParams = ''
+    stepTemplate = (stepLiteral) =>
+      `await test.step(${stepLiteral}, async () => { /* TODO: Implement step logic */ });`
+    updateScripts = false
+  } else {
+    suffix = SUFFIXES.MANUAL
+    importStatement = "import test from '@cyborgtests/test'"
+    testParams = '{ manualStep }'
+    stepTemplate = (stepLiteral) => `await manualStep(${stepLiteral});`
+    updateScripts = false
+  }
 
   // Generate test cases
   const testCases = mdData.testCases
@@ -67,19 +58,19 @@ export function generateTestFile(baseName: string, type: TestType): void {
         testTtl = tc.ttl
       } else if (tc.id === '') {
         // Empty ID [] - use suffix without dash (MANUAL, AUTO, HYBRID)
-        testTtl = `[${config.suffix.slice(1)}] ${tc.ttl}`
+        testTtl = `[${suffix.slice(1)}] ${tc.ttl}`
       } else {
         // Non-empty ID - use suffix with dash (TC01-01-MANUAL)
-        testTtl = `[${tc.id}${config.suffix}] ${tc.ttl}`
+        testTtl = `[${tc.id}${suffix}] ${tc.ttl}`
       }
       const testTtlLiteral = JSON.stringify(testTtl)
       const steps = tc.stepTtls
         .map((step) => {
           const stepLiteral = JSON.stringify(step)
-          return config.stepTemplate(stepLiteral)
+          return stepTemplate(stepLiteral)
         })
         .join('\n')
-      return `test(${testTtlLiteral}, async (${config.testParams}) => {\n${steps}\n});`
+      return `test(${testTtlLiteral}, async (${testParams}) => {\n${steps}\n});`
     })
     .join('\n\n')
 
@@ -87,10 +78,10 @@ export function generateTestFile(baseName: string, type: TestType): void {
   let suiteDescribeTtl: string
   if (mdData.suiteID === '') {
     // Empty ID [] - use suffix without dash (MANUAL, AUTO, HYBRID)
-    suiteDescribeTtl = `[${config.suffix.slice(1)}] ${mdData.suiteTtl}`
+    suiteDescribeTtl = `[${suffix.slice(1)}] ${mdData.suiteTtl}`
   } else if (mdData.suiteID) {
     // Non-empty ID - use suffix with dash (TS01-MANUAL)
-    suiteDescribeTtl = `[${mdData.suiteID}${config.suffix}] ${mdData.suiteTtl}`
+    suiteDescribeTtl = `[${mdData.suiteID}${suffix}] ${mdData.suiteTtl}`
   } else {
     // No ID - use title only
     suiteDescribeTtl = mdData.suiteTtl
@@ -103,8 +94,8 @@ export function generateTestFile(baseName: string, type: TestType): void {
   const tags = [`TAG.TEST.${type.toUpperCase()}`, `TAG.SUITE.${tagConstant}`]
 
   // Generate file content
-  const content = `${config.importStatement}
-import { TAG } from '../../src/constants/tags'
+  const content = `${importStatement}
+import { TAG } from '@/constants/tags'
 
 test.describe(${suiteTtlLiteral}, { tag: [${tags.join(', ')}] }, () => {
 ${testCases}
@@ -118,7 +109,7 @@ ${testCases}
   // Update tags.ts and optionally package.json
   try {
     addSuiteTag(suiteName)
-    if (config.updateScripts) {
+    if (updateScripts) {
       addManualScript(suiteName)
     }
   } catch (error: unknown) {

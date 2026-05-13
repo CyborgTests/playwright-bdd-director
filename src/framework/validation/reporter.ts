@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import { printErrorGroups } from './console-formatter'
-import { getIcon } from './icons'
+import { printErrorGroups } from '../reporting/console-formatter'
+import { getIcon } from '../utils/icons'
 import type { ValidatorResult } from './sync-validator'
 
 /**

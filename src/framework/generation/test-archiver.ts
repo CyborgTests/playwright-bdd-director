@@ -2,22 +2,32 @@
 import fs from 'fs'
 import path from 'path'
 
-import { PATHS } from '../constants/paths'
-import { getTestFileBaseName } from './helpers'
-import { getIcon } from './icons'
+import { CONFIG } from '@/framework/config'
+
+import { getTestFileBaseName } from '../utils/helpers'
+import { getIcon } from '../utils/icons'
+import { isEmptyAutoTest } from './auto-fixer'
+
+export interface ArchiveStats {
+  manual: number
+  auto: number
+}
 
 /**
- * Archive orphaned manual tests (tests without corresponding MD files)
- * Manual tests are archived (not deleted) to preserve manual work
- * Auto/hybrid tests are not archived as they can be regenerated
+ * Archive orphaned tests (tests without corresponding MD files)
+ * - Manual tests are always archived (preserve manual work)
+ * - Empty automated tests are archived (no implementation to lose)
+ * - Implemented automated tests are NOT archived (can continue running)
+ * @returns Statistics about archived files
  */
-export function archiveOrphanedManualTests(
-  manualTestFiles: string[],
+export function archiveOrphanedTests(
+  testFiles: string[],
   markdownByBaseName: Map<string, string>
-): void {
-  const archivedDir = PATHS.TESTS_ARCHIVED
+): ArchiveStats {
+  const archivedDir = CONFIG.paths.testsArchived
+  const stats: ArchiveStats = { manual: 0, auto: 0 }
 
-  for (const testFile of manualTestFiles) {
+  for (const testFile of testFiles) {
     if (!testFile) continue
 
     const fileName = path.basename(testFile)
@@ -27,16 +37,37 @@ export function archiveOrphanedManualTests(
 
     // Check if corresponding MD exists
     if (!markdownByBaseName.has(baseName)) {
-      // Create archived directory if needed
-      if (!fs.existsSync(archivedDir)) {
-        fs.mkdirSync(archivedDir, { recursive: true })
+      const isManual = fileName.includes('manual')
+      const isAuto = fileName.includes('auto')
+
+      let shouldArchive = false
+
+      if (isManual) {
+        // Always archive manual tests
+        shouldArchive = true
+      } else if (isAuto) {
+        // Archive only empty auto tests (no implementation to lose)
+        shouldArchive = isEmptyAutoTest(testFile)
       }
 
-      // Move file to archived
-      const archivedPath = path.join(archivedDir, fileName)
-      fs.renameSync(testFile, archivedPath)
+      if (shouldArchive) {
+        // Create archived directory if needed
+        if (!fs.existsSync(archivedDir)) {
+          fs.mkdirSync(archivedDir, { recursive: true })
+        }
 
-      console.log(`${getIcon('warning')}   Archived: ${testFile} → ${archivedPath}`)
+        // Move file to archived
+        const archivedPath = path.join(archivedDir, fileName)
+        fs.renameSync(testFile, archivedPath)
+
+        console.log(`${getIcon('warning')}  Archived: ${testFile} → ${archivedPath}`)
+
+        // Update stats
+        if (isManual) stats.manual++
+        if (isAuto) stats.auto++
+      }
     }
   }
+
+  return stats
 }

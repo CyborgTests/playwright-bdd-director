@@ -12,6 +12,7 @@ dist/
 test-results/
 playwright-report/
 playwright/.cache/
+coverage/
 
 # Screenshots
 screenshots/
@@ -36,3 +37,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.metrics.json
+
+# Local documentation (not for GitHub)
+.local-docs/

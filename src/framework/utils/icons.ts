@@ -2,6 +2,9 @@
  * Get emoji icon for different message types
  * Used for console output formatting
  */
+
+const SEPARATOR_WIDTH = 64
+
 export function getIcon(type: string): string {
   switch (type) {
     case 'suite':
@@ -25,7 +28,7 @@ export function getIcon(type: string): string {
     case 'fix':
       return '🔧'
     case 'separator':
-      return '━'.repeat(64)
+      return '━'.repeat(SEPARATOR_WIDTH)
     default:
       return '⚠️'
   }

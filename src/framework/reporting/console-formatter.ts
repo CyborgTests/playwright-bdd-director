@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { getIcon } from './icons'
+import { getIcon } from '../utils/icons'
 
 export interface ErrorGroup {
   title: string

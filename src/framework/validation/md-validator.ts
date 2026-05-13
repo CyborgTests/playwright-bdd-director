@@ -1,5 +1,18 @@
 import fs from 'fs'
 
+import { getHeadingLevel, isHeading, MD_HEADINGS } from '@/framework/constants/markdown'
+
+import {
+  buildCannotReadError,
+  buildH2NotFirstError,
+  buildInvalidHeadingOrderError,
+  buildInvalidLineFormatError,
+  buildMissingH2Error,
+  buildMissingH3Error,
+  buildMissingH4Error,
+  buildMultipleH2Error
+} from '../errors/error-builders'
+
 export interface MDValidationError {
   type: 'structure'
   message: string
@@ -19,9 +32,10 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
   try {
     content = fs.readFileSync(filePath, 'utf-8')
   } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
     errors.push({
       type: 'structure',
-      message: `Cannot read file: ${error instanceof Error ? error.message : String(error)}`
+      message: buildCannotReadError(filePath, reason)
     })
     return errors
   }
@@ -37,14 +51,14 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     // 1. Empty line
     if (trimmed === '') continue
 
-    // 2. H1 (# ...)
-    if (trimmed.startsWith('# ') && !trimmed.startsWith('##')) continue
+    // 2. H2 (##...)
+    if (isHeading(trimmed, 2)) continue
 
-    // 3. H2 (## ...)
-    if (trimmed.startsWith('## ') && !trimmed.startsWith('###')) continue
+    // 3. H3 (### ...)
+    if (isHeading(trimmed, 3)) continue
 
-    // 4. H3 (### ...)
-    if (trimmed.startsWith('### ')) continue
+    // 4. H4 (#### ...)
+    if (isHeading(trimmed, 4)) continue
 
     // 5. List/comment (- ...)
     if (trimmed.startsWith('- ')) continue
@@ -52,9 +66,8 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     // Everything else is invalid
     errors.push({
       type: 'structure',
-      message: `Invalid line format`,
-      line: i + 1,
-      context: trimmed
+      message: buildInvalidLineFormatError(trimmed),
+      line: i + 1
     })
   }
 
@@ -67,65 +80,62 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
   const headings: Array<{ level: number; line: number; text: string }> = []
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim()
-    if (trimmed.startsWith('### ')) {
-      headings.push({ level: 3, line: i + 1, text: trimmed })
-    } else if (trimmed.startsWith('## ') && !trimmed.startsWith('###')) {
-      headings.push({ level: 2, line: i + 1, text: trimmed })
-    } else if (trimmed.startsWith('# ') && !trimmed.startsWith('##')) {
-      headings.push({ level: 1, line: i + 1, text: trimmed })
+    const level = getHeadingLevel(trimmed)
+    if (level !== null) {
+      headings.push({ level, line: i + 1, text: trimmed })
     }
   }
 
-  // Check: exactly one H1
-  const h1Count = headings.filter((h) => h.level === 1).length
-  if (h1Count === 0) {
-    errors.push({
-      type: 'structure',
-      message: `Missing test suite (H1) heading`
-    })
-  } else if (h1Count > 1) {
-    errors.push({
-      type: 'structure',
-      message: `Multiple test suite (H1) headings found (expected exactly one)`,
-      context: headings
-        .filter((h) => h.level === 1)
-        .map((h) => `Line ${h.line}: ${h.text}`)
-        .join('\n')
-    })
-  }
-
-  // Check: H1 is first heading
-  if (headings.length > 0 && headings[0].level !== 1) {
-    errors.push({
-      type: 'structure',
-      message: `First heading must be test suite (H1)`,
-      line: headings[0].line,
-      context: headings[0].text
-    })
-  }
-
-  // Check: at least one H2 after H1
+  // Check: exactly one H2
   const h2Count = headings.filter((h) => h.level === 2).length
-  if (h1Count === 1 && h2Count === 0) {
+  if (h2Count === 0) {
     errors.push({
       type: 'structure',
-      message: `Missing test case (H2) headings`
+      message: buildMissingH2Error()
+    })
+  } else if (h2Count > 1) {
+    const locations = headings
+      .filter((h) => h.level === 2)
+      .map((h) => `    Line ${h.line}: ${h.text}`)
+      .join('\n')
+    errors.push({
+      type: 'structure',
+      message: buildMultipleH2Error(h2Count, locations)
     })
   }
 
-  // Check: at least one H3 after each H2
-  for (let i = 0; i < headings.length; i++) {
-    if (headings[i].level === 2) {
-      const nextH2Index = headings.findIndex((h, idx) => idx > i && h.level === 2)
-      const endIndex = nextH2Index === -1 ? headings.length : nextH2Index
-      const h3BetweenCount = headings.slice(i + 1, endIndex).filter((h) => h.level === 3).length
+  // Check: H2 is first heading
+  if (headings.length > 0 && headings[0].level !== 2) {
+    errors.push({
+      type: 'structure',
+      message: buildH2NotFirstError(headings[0].text),
+      line: headings[0].line
+    })
+  }
 
-      if (h3BetweenCount === 0) {
+  // Check: at least one H3 after H2
+  const h3Count = headings.filter((h) => h.level === 3).length
+  if (h2Count === 1 && h3Count === 0) {
+    const h2 = headings[0]
+    errors.push({
+      type: 'structure',
+      message: buildMissingH3Error(h2.text),
+      line: h2.line
+    })
+  }
+
+  // Check: at least one H4 after each H3
+  for (let i = 0; i < headings.length; i++) {
+    if (headings[i].level === 3) {
+      const nextH3Index = headings.findIndex((h, idx) => idx > i && h.level === 3)
+      const endIndex = nextH3Index === -1 ? headings.length : nextH3Index
+      const h4BetweenCount = headings.slice(i + 1, endIndex).filter((h) => h.level === 4).length
+
+      if (h4BetweenCount === 0) {
         errors.push({
           type: 'structure',
-          message: `Test case (H2) must have at least one step (H3)`,
-          line: headings[i].line,
-          context: headings[i].text
+          message: buildMissingH4Error(headings[i].text),
+          line: headings[i].line
         })
       }
     }
@@ -138,9 +148,9 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     const levelDiff = curr.level - prev.level
 
     const levelNames: Record<number, string> = {
-      1: 'test suite (H1)',
-      2: 'test case (H2)',
-      3: 'step (H3)'
+      2: `test suite (${MD_HEADINGS.SUITE.LABEL})`,
+      3: `test case (${MD_HEADINGS.TEST_CASE.LABEL})`,
+      4: `step (${MD_HEADINGS.STEP.LABEL})`
     }
 
     // Can go: same level (0), down one level (+1), or up any levels (negative)
@@ -148,9 +158,13 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     if (levelDiff > 1) {
       errors.push({
         type: 'structure',
-        message: `Invalid heading order: cannot skip from ${levelNames[prev.level]} to ${levelNames[curr.level]}`,
-        line: curr.line,
-        context: curr.text
+        message: buildInvalidHeadingOrderError(
+          levelNames[prev.level],
+          prev.line,
+          levelNames[curr.level],
+          curr.line
+        ),
+        line: curr.line
       })
     }
   }
@@ -160,7 +174,7 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
 
 /**
  * Auto-fix MD formatting issues:
- * - Exactly one space after #/##/###/-
+ * - Exactly one space after ##/###/####/-
  * - Correct blank lines between headers and comments
  * - Remove multiple blank lines
  * Returns true if file was modified
@@ -169,18 +183,9 @@ export function autoFixMDFormatting(filePath: string): boolean {
   const content = fs.readFileSync(filePath, 'utf-8')
   const lines = content.split('\n')
 
-  const isHeader = (line: string): boolean => {
-    const trimmed = line.trim()
-    return (
-      trimmed.startsWith('# ') ||
-      (trimmed.startsWith('## ') && !trimmed.startsWith('### ')) ||
-      trimmed.startsWith('### ')
-    )
-  }
-
   const isComment = (line: string): boolean => {
     const trimmed = line.trim()
-    return trimmed.length > 0 && !isHeader(line)
+    return trimmed.length > 0 && getHeadingLevel(trimmed) === null
   }
 
   const isBlank = (line: string): boolean => {
@@ -191,19 +196,19 @@ export function autoFixMDFormatting(filePath: string): boolean {
   const spacingFixed = lines.map((line) => {
     const trimmed = line.trim()
 
-    // Fix H1 spacing
-    if (trimmed.startsWith('#') && !trimmed.startsWith('##')) {
-      return trimmed.replace(/^#+\s*/, '# ')
-    }
-
     // Fix H2 spacing
-    if (trimmed.startsWith('##') && !trimmed.startsWith('###')) {
-      return trimmed.replace(/^##\s*/, '## ')
+    if (trimmed.match(MD_HEADINGS.SUITE.REGEX_FIX)) {
+      return trimmed.replace(MD_HEADINGS.SUITE.REGEX_FIX, MD_HEADINGS.SUITE.PREFIX)
     }
 
     // Fix H3 spacing
-    if (trimmed.startsWith('###')) {
-      return trimmed.replace(/^###\s*/, '### ')
+    if (trimmed.match(MD_HEADINGS.TEST_CASE.REGEX_FIX)) {
+      return trimmed.replace(MD_HEADINGS.TEST_CASE.REGEX_FIX, MD_HEADINGS.TEST_CASE.PREFIX)
+    }
+
+    // Fix H4 spacing
+    if (trimmed.match(MD_HEADINGS.STEP.REGEX_FIX)) {
+      return trimmed.replace(MD_HEADINGS.STEP.REGEX_FIX, MD_HEADINGS.STEP.PREFIX)
     }
 
     // Fix list marker spacing
@@ -241,6 +246,7 @@ export function autoFixMDFormatting(filePath: string): boolean {
     const line = noMultipleBlanks[i]
     const nextLine = i + 1 < noMultipleBlanks.length ? noMultipleBlanks[i + 1] : null
     const lastAdded = finalLines.length > 0 ? finalLines[finalLines.length - 1] : null
+    const isHeader = getHeadingLevel(line.trim()) !== null
 
     // Skip blank line between comments
     if (
@@ -256,12 +262,13 @@ export function autoFixMDFormatting(filePath: string): boolean {
     finalLines.push(line)
 
     // Add blank line after header if next line is not blank and not end
-    if (isHeader(line) && nextLine !== null && !isBlank(nextLine)) {
+    if (isHeader && nextLine !== null && !isBlank(nextLine)) {
       finalLines.push('')
     }
 
     // Add blank line before header if previous was comment
-    if (isComment(line) && nextLine !== null && isHeader(nextLine)) {
+    const nextIsHeader = nextLine !== null && getHeadingLevel(nextLine.trim()) !== null
+    if (isComment(line) && nextIsHeader) {
       finalLines.push('')
     }
   }
