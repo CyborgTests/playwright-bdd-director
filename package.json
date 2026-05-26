@@ -1,6 +1,6 @@
 {
   "name": "script-stage",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Write the Script, We'll Play the Show",
   "scripts": {
     "stage": "tsx scripts/md-ts-director.ts",
