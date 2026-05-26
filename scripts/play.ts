@@ -15,8 +15,8 @@ import { getIcon } from '@/framework/utils/icons'
  */
 
 interface PlayConfig {
-  testType: 'auto' | 'manual' | 'hybrid'
-  suiteName?: string
+  testTypes?: ('auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')[]
+  suiteNames?: string[]
   workers?: number
 }
 
@@ -24,14 +24,23 @@ interface PlayConfig {
  * Build grep pattern from test type and optional suite name
  */
 function buildGrepPattern(config: PlayConfig): string {
-  const typeTag = `@${config.testType}`
-
-  if (config.suiteName) {
-    const suiteTag = `@${config.suiteName}`
-    return `"${typeTag}.*${suiteTag}"`
+  if (!config.testTypes || config.testTypes.length === 0) {
+    if (config.suiteNames && config.suiteNames.length > 0) {
+      const suiteTags = config.suiteNames.map((s) => `@${s}`).join('|')
+      return `"${suiteTags}"`
+    }
+    // Run all tests - no grep filter
+    return ''
   }
 
-  return `"${typeTag}"`
+  const typeTags = config.testTypes.map((t) => `@${t}`).join('|')
+
+  if (config.suiteNames && config.suiteNames.length > 0) {
+    const suiteTags = config.suiteNames.map((s) => `@${s}`).join('|')
+    return `"(${typeTags}).*(${suiteTags})"`
+  }
+
+  return `"${typeTags}"`
 }
 
 /**
@@ -39,12 +48,15 @@ function buildGrepPattern(config: PlayConfig): string {
  */
 function buildPlaywrightCommand(config: PlayConfig): string {
   const grepPattern = buildGrepPattern(config)
-  const workers = config.workers ?? (config.testType === 'manual' ? 1 : undefined)
 
-  let cmd = `playwright test --grep ${grepPattern}`
+  let cmd = 'playwright test'
 
-  if (workers) {
-    cmd += ` --workers=${workers}`
+  if (grepPattern) {
+    cmd += ` --grep ${grepPattern}`
+  }
+
+  if (config.workers) {
+    cmd += ` --workers=${config.workers}`
   }
 
   return cmd
@@ -72,9 +84,9 @@ function runPlaywrightTests(config: PlayConfig): void {
 
   try {
     execSync(command, { stdio: 'inherit' })
-    console.log(`\n${getIcon('success')}  Tests completed!`)
+    console.log(`\n${getIcon('success')}  Curtain call!`)
   } catch (_error) {
-    console.error(`\n${getIcon('error')}  Tests failed.`)
+    console.error(`\n${getIcon('error')}  Show failed`)
     process.exit(1)
   }
 }
@@ -87,22 +99,37 @@ function showUsage(): void {
 ${getIcon('info')}  Play CLI - Run Playwright tests with tag-based filtering
 
 Usage:
-  npx tsx scripts/play.ts <testType> [suiteName]
+  npm run play <types> <suites>
+
+  Arguments must be in order: test types first, then suite names
+  Example: npm run play api ui auth todo
+  Example: npm run play hybrid auth
 
 Test Types:
   auto      Run all automated tests (@auto)
-  manual    Run all manual tests (@manual) [workers=1]
-  hybrid    Run all hybrid tests (@hybrid) [workers=1]
+  manual    Run all manual tests (@manual)
+  hybrid    Run all hybrid tests (@hybrid)
+  api       Run API tests (@api)
+  ui        Run UI tests (@ui)
+  e2e       Run E2E tests (@e2e)
 
 Examples:
-  npx tsx scripts/play.ts auto                 # All automated tests
-  npx tsx scripts/play.ts manual               # All manual tests
-  npx tsx scripts/play.ts manual todo          # Manual tests for todo suite
-  npx tsx scripts/play.ts hybrid               # All hybrid tests
+  npm run play auto                 # All automated tests
+  npm run play manual               # All manual tests
+  npm run play manual todo          # Manual tests for todo suite
+  npm run play hybrid               # All hybrid tests
+  npm run play api auth             # API auth tests
+  npm run play ui auth              # UI auth tests
+  npm run play api ui auth todo     # API + UI tests for auth + todo suites
+  npm run play hybrid auto          # Hybrid + auto tests
+  npm run play hybrid auto auth     # Hybrid + auto auth tests
+  npm run play hybrid auth todo     # Hybrid tests for auth + todo suites
+  npm run play auth                # All auth tests (auto + manual + hybrid)
+  npm run play auth todo           # All auth + todo tests
 
 Note:
   - Dress rehearsal (validation) runs automatically before tests
-  - Manual tests always use --workers=1 (sequential execution)
+  - Manual and hybrid tests use fullyParallel: false (sequential execution)
   - Auto tests use default worker count from playwright.config.ts
 `)
 }
@@ -113,23 +140,70 @@ Note:
 function parseArgs(): PlayConfig | null {
   const args = process.argv.slice(2)
 
-  if (args.length === 0 || args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
+  if (args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
     showUsage()
     return null
   }
 
-  const testType = args[0]
-
-  if (!['auto', 'manual', 'hybrid'].includes(testType)) {
-    console.error(`${getIcon('error')}  Invalid test type: ${testType}`)
-    console.error(`${getIcon('info')}  Valid types: auto, manual, hybrid`)
-    showUsage()
-    process.exit(1)
+  // If no args, run all tests
+  if (args.length === 0) {
+    return {}
   }
 
+  const validTypes: readonly ('auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')[] = [
+    'auto',
+    'manual',
+    'hybrid',
+    'api',
+    'ui',
+    'e2e'
+  ]
+  const providedTypes = args.filter(
+    (arg): arg is 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e' =>
+      validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')
+  )
+
+  // Validate argument order: all test types must come before suite names
+  if (providedTypes.length > 0) {
+    let lastTypeIndex = -1
+    let firstSuiteIndex = -1
+
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i]
+      if (validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')) {
+        lastTypeIndex = i
+      } else if (firstSuiteIndex === -1) {
+        firstSuiteIndex = i
+      }
+    }
+
+    // If we have both types and suites, check that types come first
+    if (lastTypeIndex !== -1 && firstSuiteIndex !== -1 && lastTypeIndex > firstSuiteIndex) {
+      console.error(
+        `${getIcon('error')}  Invalid argument order: test types must come before suite names`
+      )
+      console.error('')
+      console.error('  Correct usage: npm run play <types> <suites>')
+      console.error('  Example: npm run play api ui auth todo')
+      console.error('  Example: npm run play hybrid auth')
+      process.exit(1)
+    }
+  }
+
+  // If we have valid test types, use them
+  if (providedTypes.length > 0) {
+    const suiteNames = args.filter(
+      (arg) => !validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')
+    )
+    return {
+      testTypes: providedTypes,
+      suiteNames: suiteNames.length > 0 ? suiteNames : undefined
+    }
+  }
+
+  // Otherwise, treat args as suite names (no testTypes = run all)
   return {
-    testType: testType as 'auto' | 'manual' | 'hybrid',
-    suiteName: args[1]
+    suiteNames: args
   }
 }
 

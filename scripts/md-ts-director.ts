@@ -20,6 +20,7 @@ import {
   getErrorMessage,
   getMarkdownBaseName,
   getTestFileBaseName,
+  hasAutomatedTestFile,
   isMatchingTestFile
 } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
@@ -163,19 +164,16 @@ function generateMissingTestFiles(validation: ValidatorResult): {
 
   for (const markdownFile of validation.markdownFiles) {
     const baseName = getMarkdownBaseName(markdownFile)
-    const candidates = glob.sync(`tests/**/${baseName}*.ts`)
+    const candidates = glob.sync(`${CONFIG.paths.testsDir}/**/${baseName}*.ts`)
 
-    const manualTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'manual'))
-    const autoTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'auto'))
+    const manualTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'MANUAL'))
 
     if (manualTestFiles.length === 0) {
-      generateManualTestFile(baseName)
-      generatedManual++
+      if (generateManualTestFile(baseName)) generatedManual++
     }
 
-    if (autoTestFiles.length === 0) {
-      generateAutoTestFile(baseName)
-      generatedAuto++
+    if (!hasAutomatedTestFile(candidates, baseName)) {
+      if (generateAutoTestFile(baseName)) generatedAuto++
     }
   }
 
@@ -195,7 +193,7 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
   auto: number
 } {
   const startTime = Date.now()
-  const allTestFiles = glob.sync('tests/**/*.test.ts', { nodir: true })
+  const allTestFiles = glob.sync(`${CONFIG.paths.testsDir}/**/*.test.ts`, { nodir: true })
   const stats = archiveOrphanedTests(allTestFiles, validation.markdownByBaseName)
 
   return {
@@ -209,29 +207,29 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
  * Phase 5: Auto-fix manual test files
  */
 function autoFixManualTestFiles(validation: ValidatorResult): { timeMs: number; manual: number } {
-  return processTestFiles(validation, 'manual', false) as { timeMs: number; manual: number }
+  return processTestFiles(validation, 'MANUAL', false) as { timeMs: number; manual: number }
 }
 
 /**
  * Phase 6: Auto-fix empty automated test files
  */
 function autoFixEmptyAutoTestFiles(validation: ValidatorResult): { timeMs: number; auto: number } {
-  return processTestFiles(validation, 'auto', true) as { timeMs: number; auto: number }
+  return processTestFiles(validation, 'AUTO', true) as { timeMs: number; auto: number }
 }
 
 /**
  * Process and auto-fix test files (manual or auto)
  * @param validation - Validation result with parsed MD data
- * @param fileType - Type of test files to process ('manual' or 'auto')
+ * @param fileType - Type of test files to process ('MANUAL' or 'AUTO')
  * @param onlyEmpty - For auto tests, only fix if empty (no implementation)
  */
 function processTestFiles(
   validation: ValidatorResult,
-  fileType: 'manual' | 'auto',
+  fileType: 'MANUAL' | 'AUTO',
   onlyEmpty: boolean
 ): { timeMs: number; [key: string]: number } {
   const startTime = Date.now()
-  const testFiles = glob.sync('tests/**/*.ts', { nodir: true })
+  const testFiles = glob.sync(`${CONFIG.paths.testsDir}/**/*.ts`, { nodir: true })
   let fixed = 0
 
   for (const testFile of testFiles) {
@@ -244,8 +242,8 @@ function processTestFiles(
     const markdownData = validation.parsedMDMap.get(markdownFile)
     if (!markdownData) continue
 
-    // Filter by file type
-    const isTargetType = fileName.includes(fileType)
+    // Filter by file type (case-insensitive for file names)
+    const isTargetType = fileName.toLowerCase().includes(fileType.toLowerCase())
     if (!isTargetType) continue
 
     // For auto tests, only fix if empty
@@ -260,6 +258,10 @@ function processTestFiles(
         if (fixResult.fixed) {
           fixed++
           console.log(`${getIcon('fix')}  Auto-fixed: ${testFile}`)
+          fixResult.changes.forEach((change) => console.log(`    ${change}`))
+          console.log()
+        } else if (fixResult.changes.length > 0 && fixResult.changes[0].includes('Skipped')) {
+          console.log(`${getIcon('info')}  Skipped: ${testFile}`)
           fixResult.changes.forEach((change) => console.log(`    ${change}`))
           console.log()
         }

@@ -85,24 +85,24 @@ export function saveMetrics(metrics: ValidationMetrics | DirectorMetrics): void 
 export function formatMetrics(metrics: ValidationMetrics): string {
   const lines: string[] = []
 
-  lines.push('📊 Metrics:')
-  lines.push(`   Total files: ${metrics.totalFiles}`)
-  lines.push(`   Valid: ${metrics.validFiles}, Invalid: ${metrics.invalidFiles}`)
+  lines.push('📊  Metrics:')
+  lines.push(`    Total files: ${metrics.totalFiles}`)
+  lines.push(`    Valid: ${metrics.validFiles}, Invalid: ${metrics.invalidFiles}`)
 
   if (metrics.errors.duplicateBaseNames > 0) {
-    lines.push(`   Errors: ${metrics.errors.duplicateBaseNames} duplicate basenames`)
+    lines.push(`    Errors: ${metrics.errors.duplicateBaseNames} duplicate basenames`)
   }
   if (metrics.errors.mdStructure > 0) {
-    lines.push(`   Errors: ${metrics.errors.mdStructure} MD structure issues`)
+    lines.push(`    Errors: ${metrics.errors.mdStructure} MD structure issues`)
   }
   if (metrics.errors.globalIDs > 0) {
-    lines.push(`   Errors: ${metrics.errors.globalIDs} global ID conflicts`)
+    lines.push(`    Errors: ${metrics.errors.globalIDs} global ID conflicts`)
   }
   if (metrics.errors.syncFailures > 0) {
-    lines.push(`   Errors: ${metrics.errors.syncFailures} sync failures`)
+    lines.push(`    Errors: ${metrics.errors.syncFailures} sync failures`)
   }
 
-  lines.push(`   Execution time: ${metrics.executionTimeMs}ms`)
+  lines.push(`    Execution time: ${metrics.executionTimeMs}ms`)
 
   return lines.join('\n')
 }
@@ -113,27 +113,27 @@ export function formatMetrics(metrics: ValidationMetrics): string {
 export function formatDirectorMetrics(metrics: DirectorMetrics): string {
   const lines: string[] = []
 
-  lines.push('📊 Director Metrics:')
-  lines.push(`   Total files: ${metrics.totalFiles}`)
-  lines.push(`   Valid: ${metrics.validFiles}, Invalid: ${metrics.invalidFiles}`)
+  lines.push('📊  Director Metrics:')
+  lines.push(`    Total files: ${metrics.totalFiles}`)
+  lines.push(`    Valid: ${metrics.validFiles}, Invalid: ${metrics.invalidFiles}`)
   lines.push('')
-  lines.push('   Phases:')
+  lines.push('    Phases:')
   lines.push(
-    `   • MD Formatting: ${metrics.phases.mdFormatting.fixed}/${metrics.phases.mdFormatting.files} fixed (${metrics.phases.mdFormatting.timeMs}ms)`
+    `    • MD Formatting: ${metrics.phases.mdFormatting.fixed}/${metrics.phases.mdFormatting.files} fixed (${metrics.phases.mdFormatting.timeMs}ms)`
   )
-  lines.push(`   • Validation: ${metrics.phases.validation.timeMs}ms`)
+  lines.push(`    • Validation: ${metrics.phases.validation.timeMs}ms`)
   lines.push(
-    `   • Generation: ${metrics.phases.generation.manual} manual, ${metrics.phases.generation.auto} auto (${metrics.phases.generation.timeMs}ms)`
-  )
-  lines.push(
-    `   • Archiving: ${metrics.phases.archiving.manual} manual, ${metrics.phases.archiving.auto} auto (${metrics.phases.archiving.timeMs}ms)`
+    `    • Generation: ${metrics.phases.generation.manual} manual, ${metrics.phases.generation.auto} auto (${metrics.phases.generation.timeMs}ms)`
   )
   lines.push(
-    `   • Auto-fix: ${metrics.phases.autoFix.manual} manual, ${metrics.phases.autoFix.auto} auto (${metrics.phases.autoFix.timeMs}ms)`
+    `    • Archiving: ${metrics.phases.archiving.manual} manual, ${metrics.phases.archiving.auto} auto (${metrics.phases.archiving.timeMs}ms)`
   )
-  lines.push(`   • Format & Lint: ${metrics.phases.formatLint.timeMs}ms`)
+  lines.push(
+    `    • Auto-fix: ${metrics.phases.autoFix.manual} manual, ${metrics.phases.autoFix.auto} auto (${metrics.phases.autoFix.timeMs}ms)`
+  )
+  lines.push(`    • Format & Lint: ${metrics.phases.formatLint.timeMs}ms`)
   lines.push('')
-  lines.push(`   Total execution: ${metrics.executionTimeMs}ms`)
+  lines.push(`    Total execution: ${metrics.executionTimeMs}ms`)
 
   return lines.join('\n')
 }

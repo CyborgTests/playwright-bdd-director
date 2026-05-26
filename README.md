@@ -1,4 +1,4 @@
-# 📜 Markdown Play: Write the Script, We'll Play the Show
+# 📜 Script Stage: Write the Script, We'll Play the Show
 
 You write the script in Markdown. The Director stages it - validates structure, generates test skeletons and keeps manual, automated, and hybrid tests performing the same script.
 
@@ -18,7 +18,7 @@ You write the script in Markdown. The Director stages it - validates structure, 
 node --version
 ```
 
-### 2. Download Markdown Play
+### 2. Download Script Stage
 
 Clone with Git:
 
@@ -26,8 +26,8 @@ Clone with Git:
 2. Run the commands below:
 
 ```bash
-git clone https://github.com/AnPo73/markdown-play
-cd markdown-play
+git clone https://github.com/AnPo73/script-stage
+cd script-stage
 ```
 
 or download ZIP:
@@ -57,9 +57,9 @@ npx playwright install
 3. Paste the following content into the file:
 
 ```markdown
-## [TS02] Login Tests
+## [] Login Tests
 
-### [TC02-01] User can login
+### User can login
 
 #### Navigate to login page
 
@@ -72,15 +72,25 @@ npx playwright install
 
 ### 6. Prepare your test suite for execution
 
-This command validates structure, generates test files, and creates npm scripts:
+This command validates structure, generates test files, and keeps everything in sync:
 
 ```bash
 npm run stage
 ```
 
-### 7. Run tests
+### 7. Open Playwright UI mode
 
-The Play CLI provides a unified interface for running tests with automatic validation:
+The easiest way to run tests - one terminal command opens a full visual GUI:
+
+```bash
+npm run show
+```
+
+This opens the Playwright UI where you can browse, filter, and run tests visually, see step timelines, and inspect screenshots - no further terminal interaction needed. Great for non-technical users and exploratory test runs.
+
+### 8. Run tests from terminal
+
+For CI pipelines or when you prefer faster, direct runs without the UI overhead:
 
 Run all manual tests:
 
@@ -88,16 +98,22 @@ Run all manual tests:
 npm run play manual
 ```
 
-Run specific suite (e.g., login):
+Run specific suite (e.g., auth):
 
 ```bash
-npm run play manual login
+npm run play manual auth
 ```
 
 Run automated tests:
 
 ```bash
 npm run play auto
+```
+
+Run API tests only:
+
+```bash
+npm run play api
 ```
 
 Run hybrid tests:
@@ -108,11 +124,11 @@ npm run play hybrid
 
 The Play CLI automatically runs validation (dress rehearsal) before executing tests.
 
-### 8. Complete the test suite
+### 9. Complete the test suite
 
 After the Cyborgtests UI panel opens, complete the test suite by clicking step statuses (pass/fail/skip).
 
-### 9. View test results
+### 10. View test results
 
 ```bash
 npm run review
@@ -120,11 +136,11 @@ npm run review
 
 ## ⚡ Markdown-Driven Testing Platform
 
-Markdown Play powered by Playwright and Cyborgtests
+Script Stage is powered by Playwright and Cyborgtests.
 
 It combines:
 
-- Playwright for automated E2E and API testing
+- Playwright for automated E2E, UI, and API testing
 - Cyborgtests for manual and hybrid testing
 - Markdown as the single source of truth
 
@@ -141,27 +157,73 @@ Manual QA, managers, and non-technical stakeholders can review and update test s
 The same Markdown test suite can drive:
 
 - manual tests
-- automated tests
+- automated tests (API, UI, E2E)
 - hybrid tests
 
 All implementations stay synchronized from a single source of truth.
 
 ### 3. Works without automation
 
-Markdown Play already provides value for manual testing - automation can be added later if needed.
+Script Stage already provides value for manual testing - automation can be added later if needed.
 
 ### 4. Built for Playwright
 
-When automation is needed, the same Markdown structure scales naturally to Playwright E2E and API testing with full TypeScript support.
+When automation is needed, the same Markdown structure scales naturally to Playwright E2E, UI, and API testing with full TypeScript support.
+
+## 🤖 Built for AI-Assisted Automation
+
+Markdown is the language AI understands best - and Script Stage is built around it.
+
+Because test cases live in plain `.md` files:
+
+- **AI can read and write test specs** without understanding TypeScript or framework internals
+- **AI can generate test scenarios** that the Director immediately validates and turns into runnable tests
+- **AI can review coverage** - just point it at `test-suites/` and ask what's missing
+- **AI can auto-fix specs** - if requirements change, update the MD file and let `npm run stage` propagate changes to all implementations automatically
+
+The Markdown format is simple enough for AI to produce correctly on the first try, yet structured enough for the framework to parse and validate.
+
+**Practical AI workflow:**
+
+```text
+1. Ask AI to write test cases → paste into test-suites/auth.md
+2. npm run stage → framework generates test skeletons + validates structure
+3. Ask AI to implement test steps → fill in the generated skeletons
+4. npm run play auto → run tests
+```
+
+## 📐 Script Stage vs Cucumber vs Pure Playwright
+
+| Feature            | Cucumber + PW | Pure Playwright | **Script Stage** |
+| ------------------ | ------------- | --------------- | ---------------- |
+| Main Runner        | Cucumber      | Playwright      | **Playwright**   |
+| Native PW Features | Partial       | Full            | **Full**         |
+| TypeScript Support | Medium        | Excellent       | **Excellent**    |
+| Debugging          | Harder        | Excellent       | **Excellent**    |
+| Readability        | High          | Medium          | **High**         |
+| AI Friendliness    | Medium        | High            | **Very High**    |
+| Runtime Complexity | High          | Low             | **Low**          |
+| Performance        | Medium        | High            | **High**         |
+| Maintenance Cost   | High          | Low             | Medium           |
+| Flexibility        | Medium        | High            | **Very High**    |
+
+**Script Stage** is a modern middle-ground:
+
+- Keeps **readable human-friendly scenarios** like Cucumber
+- Keeps **native Playwright runner** with full TypeScript support
+- Removes Cucumber pain points: regex step matching, runtime complexity, shared context chaos, heavy abstraction layers
+- Adds **AI-native workflow** on top
+
+Best for: modern Playwright projects, AI-assisted automation, teams that want readable scenarios without Cucumber complexity.
 
 ## 👨‍💻 Commercial Automation Support
 
-Need a full Playwright E2E/API automation ecosystem on top of Markdown Play?
+Need a full Playwright E2E/API automation ecosystem on top of Script Stage?
 
 Commercial integration and automation services are available from the author:
 
 - **[LinkedIn - Andrii Pohanovskyi](https://linkedin.com/in/andrii-pohanovskyi)**
-- **[Email - pognovsky@gmail.com](mailto:poganovsky@gmail.com)**
+- **[Email - poganovsky@gmail.com](mailto:poganovsky@gmail.com)**
 
 ## 🎯 Core Idea
 
@@ -170,12 +232,12 @@ Commercial integration and automation services are available from the author:
 
 The Director (`npm run stage`):
 
-1. Validates Markdown structure
-2. Generates missing test skeletons (manual + auto)
-3. Auto-fixes manual tests to match Markdown
-4. Auto-fixes empty automated tests (no implementation yet)
-5. Archives orphaned tests (manual + empty auto)
-6. Validates final synchronization
+1. Auto-fixes MD formatting issues
+2. Validates structure (duplicates, MD hierarchy, global IDs)
+3. Generates missing test skeletons (manual + auto)
+4. Archives orphaned tests (manual + empty auto)
+5. Auto-fixes manual tests to match Markdown
+6. Auto-fixes empty automated tests (no implementation yet)
 7. Formats and lints test files
 
 The Dress Rehearsal (`npm run dress`):
@@ -186,12 +248,12 @@ The Dress Rehearsal (`npm run dress`):
 
 ```text
 ┌──────────────────────────┐
-│  todo.md                 │  ← Single Source of Truth
-│  # [TS01] TodoMVC Tests  │
-│  ## [TC01-01] Add todo   │
-│  ### Navigate            │
-│  ### Add new todo        │
-│  ### Verify created      │
+│  auth.md                 │  ← Single Source of Truth
+│  ## [TS01] Auth Tests    │
+│  ### [TC01-01] Register  │
+│  #### Navigate           │
+│  #### Fill form          │
+│  #### Verify success     │
 └────────────┬─────────────┘
              │
     ┌────────┴────────┐
@@ -258,11 +320,11 @@ With IDs, you can create multiple test types for one MD test case. Suffix after 
 Use empty brackets `[]` when you only need suffixes to distinguish implementations:
 
 ```typescript
-// One MD test case: ### [] Add todo
+// One MD test case: ### [] User Registration
 
-test('[MANUAL] Add todo', ...)  // Manual implementation (no dash)
-test('[AUTO] Add todo', ...)    // Automated implementation (no dash)
-test('[HYBRID] Add todo', ...)  // Hybrid implementation (no dash)
+test('[MANUAL] User Registration', ...)  // Manual implementation (no dash)
+test('[AUTO] User Registration', ...)    // Automated implementation (no dash)
+test('[HYBRID] User Registration', ...)  // Hybrid implementation (no dash)
 ```
 
 All three match `[]` from MD. Useful when you don't need numbered IDs, just implementation types.
@@ -270,7 +332,7 @@ All three match `[]` from MD. Useful when you don't need numbered IDs, just impl
 **Without IDs:**
 
 ```markdown
-### Add todo
+### User Registration
 ```
 
 Must match exactly in test file - no suffix support, no multiple implementations.
@@ -287,7 +349,7 @@ npm run stage    # validate → generate → auto-fix → archive → format →
 
 Validator verifies:
 
-1. **No duplicate MD base names** (e.g., two files named `todo.md`)
+1. **No duplicate MD base names** (e.g., two files named `auth.md`)
 2. **Valid MD structure** (proper headings hierarchy, required sections)
 3. **No duplicate IDs/titles** across all MD files (globally unique)
 4. **MD ↔ TS synchronization** for each test file:
@@ -322,7 +384,7 @@ Empty ID with suffix only (no dash):
 - MD: `[]` → Test: `[-MANUAL]` ❌ (dash not allowed with empty ID)
 - MD: `[]` → Test: no ID ❌ (missing ID)
 
-No ID validation:
+No ID:
 
 - MD: no ID → Test: `[TC01-01]` ❌ (unexpected ID)
 
@@ -336,10 +398,9 @@ No ID validation:
 
 **Automatically fixed:**
 
-- MD formatting issues (trailing spaces, blank lines)
-- Manual test structure (suite/test case/step titles and counts)
+- MD formatting issues (trailing spaces, extra blank lines)
+- Manual test structure (suite/test case/step titles)
 - Missing test files (generates skeletons for manual + auto)
-- Missing npm scripts (creates `play:manual-<basename>` commands for manual tests only)
 
 **Must fix manually:**
 
@@ -352,9 +413,8 @@ No ID validation:
 When MD file is deleted:
 
 - **Manual tests** → archived to `tests/archived/` (preserves valuable manual work)
-- **Auto/hybrid tests** → left in place (not archived)
-  - Can continue running without corresponding MD file
-  - Useful for tests that need single implementation only
+- **Empty automated tests** (API, UI, E2E, AUTO) → archived (no implementation to lose)
+- **Implemented automated tests** → left in place (can continue running)
 
 Archive location: `tests/archived/<filename>`.
 
@@ -363,19 +423,19 @@ Archive location: `tests/archived/<filename>`.
 **With non-empty ID (dash before suffix):**
 
 ```typescript
-// MD: ### [TC01-01] Add todo
-test('[TC01-01-MANUAL] Add todo', ...)  // ✅ Matches [TC01-01]
-test('[TC01-01-AUTO] Add todo', ...)    // ✅ Matches [TC01-01]
-test('[TC01-01-HYBRID] Add todo', ...)  // ✅ Matches [TC01-01]
+// MD: ### [TC01-01] User Registration
+test('[TC01-01-MANUAL] User Registration', ...)  // ✅ Matches [TC01-01]
+test('[TC01-01-AUTO] User Registration', ...)    // ✅ Matches [TC01-01]
+test('[TC01-01-HYBRID] User Registration', ...)  // ✅ Matches [TC01-01]
 ```
 
 **With empty ID (suffix only, no dash):**
 
 ```typescript
-// MD: ### [] Add todo
-test('[MANUAL] Add todo', ...)  // ✅ Matches []
-test('[AUTO] Add todo', ...)    // ✅ Matches []
-test('[HYBRID] Add todo', ...)  // ✅ Matches []
+// MD: ### [] User Registration
+test('[MANUAL] User Registration', ...)  // ✅ Matches []
+test('[AUTO] User Registration', ...)    // ✅ Matches []
+test('[HYBRID] User Registration', ...)  // ✅ Matches []
 ```
 
 Validator checks each `test()` separately against MD. Same file or different files - both are valid.
@@ -383,40 +443,51 @@ Validator checks each `test()` separately against MD. Same file or different fil
 ## 📁 Project Structure
 
 ```text
-markdown-play/
+script-stage/
 ├── test-suites/           # Markdown test suites (source of truth)
 │   └── *.md               # Test specifications
 ├── tests/                 # Test implementations
-│   ├── automated/         # Fully automated tests
-│   ├── manual/            # Manual and hybrid tests
+│   ├── automated/         # Fully automated tests (API, UI, E2E)
+│   │   ├── api/           # API tests
+│   │   ├── ui/            # UI tests
+│   │   └── e2e/           # E2E tests
+│   ├── hybrid/            # Hybrid tests
 │   └── archived/          # Orphaned tests (auto-created)
 ├── src/
 │   ├── framework/         # Core framework code
-│   │   ├── core/          # Parsers (MD, TS)
-│   │   ├── validation/    # Validators and matchers
-│   │   ├── generation/    # Generators and fixers
-│   │   ├── reporting/     # Metrics and formatters
-│   │   └── utils/         # Helpers and utilities
-│   ├── constants/         # Tags and paths
-│   └── config/            # Playwright configuration
+│   │   ├── core/          # Parsers (md-parser, ts-parser, file-matcher)
+│   │   ├── validation/    # Validators (sync-validator, md-validator, reporter)
+│   │   ├── generation/    # Generators (test-generator, auto-fixer, test-archiver, tags-updater)
+│   │   ├── reporting/     # Metrics and formatters (metrics, console-formatter)
+│   │   ├── constants/     # Framework constants (markdown, test-files)
+│   │   ├── errors/        # Error builders
+│   │   ├── utils/         # Helpers (helpers, icons, ts-morph-helpers)
+│   │   └── config.ts      # Framework configuration (env-overridable paths)
+│   ├── clients/           # API clients (BaseClient, AuthClient)
+│   ├── fixtures/          # Playwright fixtures (base, auth)
+│   ├── pages/             # Page objects (BasePage, LoginPage, HomePage, SignupPage)
+│   ├── schemas/           # API response schemas and types
+│   ├── test-constants/    # Test tags
+│   ├── test-helpers/      # Test-specific helpers (sanitize, playwright helpers)
+│   └── test-utils/        # General test utilities (APIExpect, logger, schema-validator)
 ├── scripts/               # CLI tools
 │   ├── play.ts            # Play CLI
 │   ├── dress-rehearsal.ts # Validation script
 │   └── md-ts-director.ts  # Staging pipeline
-├── .local-docs/           # Local documentation (gitignored)
-└── coverage/              # Test coverage reports (gitignored)
+└── tests/
+    └── unit/              # Framework unit tests (290+ tests)
 ```
 
 ## 📚 Working Example
 
-Repository includes complete TodoMVC example demonstrating:
+Repository includes a complete authentication example demonstrating:
 
-- `**test-suites/todo.md**` - 5 test cases with IDs and comments
-- `**tests/manual/todo.manual.test.ts**` - manual steps + automated `goto()` step
-- `**tests/automated/todo.auto.test.ts**` - fully automated
-- `**tests/hybrid/todo.hybrid.test.ts**` - automated actions + manual verification
+- `test-suites/auth.md` - test cases with IDs for API and UI flows
+- `tests/automated/api/auth.api.test.ts` - automated API tests
+- `tests/automated/ui/auth.ui.test.ts` - automated UI tests
+- `tests/hybrid/auth.hybrid.test.ts` - automated actions + manual verification
 
-All three validate against **same** `todo.md` - this demonstrates the framework.
+All validate against the **same** `auth.md` - this demonstrates the framework.
 
 **Run example:**
 
@@ -426,10 +497,10 @@ npm run stage             # Stage: validate → generate → auto-fix → archiv
 # All tests (via Play CLI)
 npm run play manual       # Play all manual tests (headed, workers=1)
 npm run play auto         # Play all automated tests (headless, parallel)
+npm run play api auth     # Play API auth tests only
+npm run play ui auth      # Play UI auth tests only
 npm run play hybrid       # Play all hybrid tests (headed, workers=1)
-
-# Suite-specific
-npm run play manual todo  # Play only todo manual tests
+npm run show              # Open Playwright UI mode (visual runner)
 ```
 
 **Note:** Play CLI automatically runs dress rehearsal (validation) before executing tests.
@@ -438,12 +509,13 @@ npm run play manual todo  # Play only todo manual tests
 
 ### 1. File Naming
 
-- **MD:** `<name>.md` (e.g., `todo.md`) in `test-suites/`
-- **Test:** `<name>.<anything>.ts` (framework extracts base name before first dot)
+- **MD:** `<name>.md` (e.g., `auth.md`) in `test-suites/`
+- **Test:** `<name>.<TYPE>.test.ts` (framework extracts base name before first dot)
 - **Examples:**
-  - `todo.manual.test.ts` → `todo.md` ✅
-  - `todo.auto.test.ts` → `todo.md` ✅
-  - `todo.hybrid.test.ts` → `todo.md` ✅
+  - `auth.manual.test.ts` → `auth.md` ✅
+  - `auth.api.test.ts` → `auth.md` ✅
+  - `auth.ui.test.ts` → `auth.md` ✅
+  - `auth.hybrid.test.ts` → `auth.md` ✅
 
 **Base name extraction:** Uses `getTestFileBaseName()` helper (`fileName.split('.')[0]`).
 
@@ -451,25 +523,39 @@ npm run play manual todo  # Play only todo manual tests
 
 - `test-suites/` - only Markdown files
 - `tests/` - only test files (no helpers/utils)
-- `tests/archived/` - orphaned manual tests (auto-created by Director)
+- `tests/archived/` - orphaned tests (auto-created by Director)
 
-### 2. Playwright Config
+### 2. Environment Variables
 
-**Projects** (`src/config/projects.ts`):
+All paths support environment variable overrides via `src/framework/config.ts`:
 
-- `manual` - headless: false, timeout: unlimited, workers: 1
-- `hybrid` - headless: false, timeout: unlimited, workers: 1
-- `automated` - headless: true (default), parallel, trace + video on failure
+| Variable             | Default          | Description                     |
+| -------------------- | ---------------- | ------------------------------- |
+| `TEST_SUITES_DIR`    | `test-suites`    | Markdown test suites directory  |
+| `TESTS_DIR`          | `tests`          | Root tests directory            |
+| `TESTS_AUTO_DIR`     | `tests/todo`     | Generated auto test skeletons   |
+| `TESTS_MANUAL_DIR`   | `tests/manual`   | Generated manual test skeletons |
+| `TESTS_ARCHIVED_DIR` | `tests/archived` | Archived orphaned tests         |
+| `METRICS_ENABLED`    | `false`          | Enable metrics JSON output      |
+| `METRICS_FILE`       | `.metrics.json`  | Metrics output file path        |
 
-**Test URL:** Set `baseURL` in `playwright.config.ts` (default: TodoMVC demo)
+### 3. Playwright Config
 
-### 3. Path Aliases
+**Projects** (`playwright.config.ts`):
+
+- `automated` - headless, parallel, trace + screenshot on failure
+- `hybrid` - headless: false, workers: 1
+- `manual` - headless: false, workers: 1
+
+Projects are selected dynamically based on the `--grep` tag argument.
+
+### 4. Path Aliases
 
 TypeScript path mapping configured in `tsconfig.json`:
 
 ```typescript
-import { TAG } from '@/constants/tags'
-import { TodoPage } from '@/pages/TodoPage'
+import { TAG } from '@/test-constants/tags'
+import { AuthClient } from '@/clients/AuthClient'
 ```
 
 `@/*` → `src/*` (use in tests, scripts, and framework code)
@@ -493,12 +579,15 @@ npm run test:coverage # Generate coverage report
 - `ts-parser.ts` - TypeScript AST parsing
 - `file-matcher.ts` - MD ↔ TS validation
 - `auto-fixer.ts` - Auto-fix logic
+- `error-builders.ts` - Error message builders
+- `icons.ts` - Console icons
+- `sync-validator.ts` - Validation orchestration
+- `tags-updater.ts` - Tag management
 
 **Coverage Stats:**
 
-- Overall: ~48% lines
+- 290+ unit tests across 11 test files
 - Critical modules: 90%+ coverage
-- 210+ unit tests
 
 ### Play CLI
 
@@ -508,17 +597,23 @@ Unified command interface with built-in validation:
 npm run play <type> [suite]
 
 # Examples:
-npm run play auto           # All automated tests
-npm run play manual         # All manual tests
-npm run play manual todo    # Specific suite
-npm run play hybrid         # All hybrid tests
+npm run play auto              # All automated tests
+npm run play manual            # All manual tests
+npm run play manual auth       # Manual auth tests only
+npm run play api               # All API tests
+npm run play ui auth           # UI auth tests
+npm run play api ui auth       # API + UI auth tests
+npm run play hybrid            # All hybrid tests
+npm run play auth              # All auth tests (any type)
 ```
+
+**Supported test types:** `auto`, `manual`, `hybrid`, `api`, `ui`, `e2e`
 
 **Features:**
 
 - Automatic dress rehearsal before tests
-- Clean console output (no debug noise)
-- Error handling and validation
+- Argument order validation (types before suites)
+- Clean console output
 - Sequential execution for manual/hybrid tests
 - Help command: `npm run play -- --help`
 
@@ -530,7 +625,7 @@ npm run play hybrid         # All hybrid tests
 
 [Playwright test output]
 
-✅  Tests completed!
+✅  Curtain call!
 ```
 
 ### Staging Pipeline
@@ -546,26 +641,26 @@ npm run stage
 ```bash
 ✨  Director staging the play...
 
-🔧  Fixed formatting: test-suites/todo.md
+🔧  Fixed formatting: test-suites/auth.md
 ✅  Generated: tests/manual/login.manual.test.ts
-🔧  Auto-fixed: tests/manual/todo.manual.test.ts
-    Test suite title: "[TS01] Old Title" → "[TS01] TodoMVC Tests"
+🔧  Auto-fixed: tests/manual/auth.manual.test.ts
+    Test suite title: "[TS01] Old Title" → "[TS01] Authentication Tests"
 
-📊 Director Metrics:
-   Total files: 2
-   Valid: 5, Invalid: 0
+📊  Director Metrics:
+    Total files: 1
+    Valid: 4, Invalid: 0
 
-   Phases:
-   • MD Formatting: 1/2 fixed (45ms)
-   • Validation: 120ms
-   • Generation: 1 manual, 0 auto (95ms)
-   • Archiving: 0 manual, 0 auto (12ms)
-   • Auto-fix: 1 manual, 0 auto (185ms)
-   • Format & Lint: 2864ms
+    Phases:
+    • MD Formatting: 0/1 fixed (20ms)
+    • Validation: 130ms
+    • Generation: 1 manual, 0 auto (5ms)
+    • Archiving: 0 manual, 0 auto (32ms)
+    • Auto-fix: 0 manual, 0 auto (11ms)
+    • Format & Lint: 4773ms
 
-   Total execution: 3321ms
+    Total execution: 4983ms
 
-✅  Stage is set! 5 file(s) ready.
+✅  Stage is set! 4 file(s) ready.
 ```
 
 ### Development Commands
@@ -573,73 +668,79 @@ npm run stage
 ```bash
 npm run stage        # Full staging pipeline
 npm run dress        # Validation only (no changes)
+npm run show         # Open Playwright UI mode (visual, interactive runner)
 npm run lint:fix     # ESLint fix
-npm run format:write # Prettier format
+npm run format       # Prettier format
 ```
 
 ## 🔧 Framework Core
 
 ### 1. Director (`scripts/md-ts-director.ts`)
 
-Full staging pipeline (7 steps):
+Full staging pipeline (7 phases):
 
-1. **Fix MD formatting** - auto-corrects trailing spaces, blank lines
+1. **Fix MD formatting** - auto-corrects spacing, blank lines
 2. **Validate (critical errors)** - checks duplicates, MD structure, global IDs
-3. **Generate missing tests** - creates skeletons for manual + auto, generates npm scripts for manual tests
-4. **Archive orphaned tests** - moves manual + empty auto tests to `tests/archived/` when MD is deleted
+3. **Generate missing tests** - creates skeletons for manual + auto
+4. **Archive orphaned tests** - moves manual + empty auto/api/ui/e2e tests to `tests/archived/` when MD is deleted
 5. **Auto-fix manual tests** - syncs structure with MD
 6. **Auto-fix empty automated tests** - updates auto tests without implementation (all steps are TODO/empty)
 7. **Format and lint** - runs Prettier + ESLint before final validation
 
-Invoked via `npm run stage` - like a theatrical director preparing the stage and ensuring every actor (test) follows the script (MD).
-
 ### 2. Core Components
 
-**Parsers (`src/framework/`):**
+**Parsers (`src/framework/core/`):**
 
-- `md-parser.ts` - extracts structure from Markdown (headings, IDs)
-- `ts-parser.ts` - extracts structure from TypeScript (test blocks)
+- `md-parser.ts` - extracts structure from Markdown (headings, IDs); includes file cache and path traversal protection
+- `ts-parser.ts` - extracts structure from TypeScript via AST (ts-morph)
+- `file-matcher.ts` - compares individual MD ↔ TS files; validates tags, IDs, titles, steps
 
-**Validators:**
+**Validators (`src/framework/validation/`):**
 
 - `sync-validator.ts` - orchestrates 4-step validation (duplicates → structure → global IDs → MD-TS sync)
-- `file-matcher.ts` - compares individual MD ↔ TS files
-- `md-validator.ts` - validates MD structure and formatting
+- `md-validator.ts` - validates MD structure hierarchy; auto-fixes formatting
+- `reporter.ts` - formats and displays validation errors with actionable fix hints
 
-**Auto-Fixers:**
-
-- `auto-fixer.ts` - fixes manual test structure to match MD
-- `md-validator.ts` - fixes MD formatting issues
-
-**Generators:**
+**Generators (`src/framework/generation/`):**
 
 - `test-generator.ts` - generates missing manual/auto test skeletons
+- `auto-fixer.ts` - AST-based auto-fix of test structure to match MD; preserves `-AUTO`/`-MANUAL` suffixes
+- `test-archiver.ts` - archives orphaned tests; detects all automated kinds (AUTO, API, UI, E2E)
+- `tags-updater.ts` - adds new suite tags to `src/test-constants/tags.ts`
 
-**Support:**
+**Reporting (`src/framework/reporting/`):**
 
-- `test-archiver.ts` - archives orphaned manual tests
-- `tags-updater.ts` - updates tags in `src/constants/tags.ts`
-- `validation-reporter.ts` - formats and displays validation errors
-- `console-formatter.ts` - unified error output formatting
-- `metrics.ts` - collects and formats staging metrics
-- `helpers.ts` - shared utilities (`getTestFileBaseName`, `testIDsMatch`, etc.)
+- `metrics.ts` - collects and formats staging metrics per phase
+- `console-formatter.ts` - unified error group output with separators
+
+**Utils (`src/framework/utils/`):**
+
+- `helpers.ts` - `getTestFileBaseName`, `matchIDWithSuffix`, `hasAutomatedTestFile`, etc.
 - `icons.ts` - emoji icons for console output
-- `ts-morph-helpers.ts` - TypeScript AST manipulation utilities
+- `ts-morph-helpers.ts` - shared AST utilities (singleton Project, findDescribeCall, findTestCalls, findStepCalls)
 
-**Scripts:**
+**Test Utilities (`src/test-utils/`):**
 
-- `play.ts` - Play CLI for running tests with validation
-- `dress-rehearsal.ts` - Validation-only script
-- `md-ts-director.ts` - Full staging pipeline orchestrator
+- `APIExpect` - Playwright `APIResponse` wrapper with status, schema, and field assertions; lazy response parsing with caching
+- `logger.ts` - attaches logs and files to Playwright test reports
+- `schema-validator.ts` - lightweight Joi-like schema validator for API response validation; validates only required fields, zero runtime dependencies
+
+**Test Helpers (`src/test-helpers/`):**
+
+- `test.helpers.ts` - `sanitizeObject` for masking sensitive data (emails, passwords, tokens) in logs and reports; partial email masking preserves debuggability
+- `playwright.helpers.ts` - `getProjectsFromGrep` for dynamic project selection based on `--grep` tags
+- `object.helpers.ts` - `getNestedField` for safe deep property access
 
 ### 3. Supported Patterns
 
 Handles:
 
-- Escape sequences in titles
-- Multiple test patterns (`test.skip()`, `test.only()`, `test.fixme()`)
+- `test.describe()`, `test.describe.skip()`, custom fixture describes (`authTest.describe()`)
+- `test()`, `test.only()`, `test.skip()`, `test.fixme()`
+- `test.step()` and `manualStep()` (hybrid tests)
 - ID suffix extraction (`[TC01-01-MANUAL]` matches `[TC01-01]`)
-- Duplicate test implementations (manual + auto + hybrid for same MD test case)
+- Multiple implementations per MD test case (manual + auto + hybrid)
+- Escape sequences in titles
 
 ## 🎓 Philosophy
 
@@ -652,7 +753,7 @@ Handles:
 
 ### 2. MD = what to test, code = how to test
 
-- MD shows test structure (high-level)
+- MD shows test structure (high-level, readable by anyone)
 - Code shows implementation (details)
 - Validator keeps them synchronized
 - Auto-fixer updates manual tests automatically
@@ -661,7 +762,7 @@ Handles:
 ### 3. One MD file = One Test Suite
 
 - Multiple test cases per file
-- Multiple implementations per test case (manual, auto, hybrid)
+- Multiple implementations per test case (manual, api, ui, e2e, hybrid)
 - Logical grouping by feature/functionality
 
 ## 📊 Reports
@@ -669,23 +770,22 @@ Handles:
 ### 1. View test results
 
 ```bash
-npm run review    # Open Monocart HTML report
+npm run review    # Open Monocart HTML report (after test run)
+npm run show      # Open Playwright UI mode (before/during test run)
 ```
 
 ### 2. Report includes
 
 - Test execution summary
-- Screenshots and traces on failure
+- Screenshots on failure
 - Detailed step-by-step logs
 
-### 3.Centralized Report Storage (Optional)
+### 3. Centralized Report Storage (Optional)
 
 For teams needing centralized report storage, you can add:
 
 - **[@cyborgtests/reporter-playwright-reports-server](https://www.npmjs.com/package/@cyborgtests/reporter-playwright-reports-server)** - Cyborgtests reporter integration
 - **[Playwright Reports Server](https://github.com/CyborgTests/playwright-reports-server)** - Docker-based reports storage
-
-**Note:** You can add this integration yourself right now if needed. If there's demand from users, we'll include it in the project by default. Either way, you'll need to deploy and run the Docker container yourself.
 
 ## 📄 License
 

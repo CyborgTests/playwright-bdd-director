@@ -44,7 +44,7 @@ export function clearMDCache(): void {
  * Format with IDs (in brackets):
  * ## [TS01] Suite Title
  * ### [TC01-01] Test case ttl
- * #### [01-01-01] Step ttl
+ * #### Step ttl
  * Optional comment text (ignored by validator)
  *
  * Format without IDs:
@@ -53,6 +53,7 @@ export function clearMDCache(): void {
  * #### Step ttl
  *
  * Note: IDs are only extracted if in brackets format [TC01-01]
+ * Steps do not support IDs - they are just titles
  * Other formats (TC01-01:, TC01-01 -, etc.) are treated as part of ttl
  */
 export function parseMDFile(fileName: string): ParsedMD {
@@ -133,16 +134,12 @@ export function parseMDFile(fileName: string): ParsedMD {
       continue
     }
 
-    // Step: #### [01-01-01] Title -> extract full text WITH brackets (brackets format)
-    // Step: #### Title -> extract "Title" as is (no brackets format)
+    // Step: #### Step title (no ID support for steps)
     // Comments after steps are ignored (any text that's not a heading)
-    const stepMatchWithID = trimmed.match(MD_HEADINGS.STEP.REGEX_WITH_ID)
-    const stepMatchNoID = trimmed.match(MD_HEADINGS.STEP.REGEX_NO_ID)
+    const stepMatch = trimmed.match(MD_HEADINGS.STEP.REGEX_NO_ID)
 
-    if (stepMatchWithID && currentTestCase) {
-      currentTestCase.stepTtls.push(stepMatchWithID[1].trim())
-    } else if (stepMatchNoID && currentTestCase && trimmed.startsWith(MD_HEADINGS.STEP.PREFIX)) {
-      currentTestCase.stepTtls.push(stepMatchNoID[1].trim())
+    if (stepMatch && currentTestCase && trimmed.startsWith(MD_HEADINGS.STEP.PREFIX)) {
+      currentTestCase.stepTtls.push(stepMatch[1].trim())
     }
   }
 

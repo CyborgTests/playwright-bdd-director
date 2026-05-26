@@ -180,7 +180,12 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
  * Returns true if file was modified
  */
 export function autoFixMDFormatting(filePath: string): boolean {
-  const content = fs.readFileSync(filePath, 'utf-8')
+  let content: string
+  try {
+    content = fs.readFileSync(filePath, 'utf-8')
+  } catch {
+    return false
+  }
   const lines = content.split('\n')
 
   const isComment = (line: string): boolean => {

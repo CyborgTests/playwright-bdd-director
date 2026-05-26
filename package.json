@@ -1,17 +1,19 @@
 {
-  "name": "markdown-play",
+  "name": "script-stage",
   "version": "0.3.2",
   "description": "Write the Script, We'll Play the Show",
   "scripts": {
     "stage": "tsx scripts/md-ts-director.ts",
     "dress": "tsx scripts/dress-rehearsal.ts",
-    "play": "tsx scripts/play.ts",
+    "play": "npm run dress && tsx scripts/play.ts",
+    "show": "npm run dress && playwright test --ui",
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "format:write": "prettier --write . --log-level silent",
+    "format": "prettier --write . --log-level silent",
+    "lint": "eslint .",
     "lint:fix": "eslint --fix ."
   },
   "keywords": [
@@ -27,11 +29,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AnPo73/markdown-play"
+    "url": "https://github.com/AnPo73/script-stage"
   },
-  "homepage": "https://github.com/AnPo73/markdown-play#readme",
+  "homepage": "https://github.com/AnPo73/script-stage#readme",
   "bugs": {
-    "url": "https://github.com/AnPo73/markdown-play/issues"
+    "url": "https://github.com/AnPo73/script-stage/issues"
   },
   "devDependencies": {
     "@cyborgtests/test": "^0.3.0",

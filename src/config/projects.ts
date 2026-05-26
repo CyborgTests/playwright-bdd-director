@@ -33,7 +33,8 @@ export const hybridProject: Project = {
  */
 export const automatedProject: Project = {
   name: 'automated',
-  testMatch: /.*\.auto\.test\.ts$/,
+  testMatch: /.*\.(auto|api|ui|e2e)\.test\.ts$/,
+  timeout: 45000,
   use: {
     ...defaultDevice,
     trace: 'retain-on-failure',
@@ -47,17 +48,25 @@ export const automatedProject: Project = {
 export const allProjects: Project[] = [manualProject, hybridProject, automatedProject]
 
 /**
- * Get project by name
+ * Get multiple projects by names
+ * Supports mixing different project types (e.g., automated + hybrid)
  */
-export function getProjectByName(projectName: string): Project[] {
-  switch (projectName) {
-    case 'automated':
-      return [automatedProject]
-    case 'manual':
-      return [manualProject]
-    case 'hybrid':
-      return [hybridProject]
-    default:
-      return allProjects
+export function getProjectsByName(projectNames: string[]): Project[] {
+  const uniqueProjects = new Set<Project>()
+
+  for (const name of projectNames) {
+    switch (name) {
+      case 'automated':
+        uniqueProjects.add(automatedProject)
+        break
+      case 'manual':
+        uniqueProjects.add(manualProject)
+        break
+      case 'hybrid':
+        uniqueProjects.add(hybridProject)
+        break
+    }
   }
+
+  return Array.from(uniqueProjects)
 }

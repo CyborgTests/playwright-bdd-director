@@ -49,6 +49,11 @@ export function reportValidationErrors(result: ValidatorResult): void {
         `${getIcon('error')}  Failed: ${result.errors.validationFailures.length} file(s)\n`
       )
 
+      // Check for manual tests with test.step (these are not auto-fixed)
+      const hasManualWithTestStep = result.errors.validationFailures.some(
+        (f) => f.isManualWithTestStep
+      )
+
       // Categorize errors by what can fix them
       const hasTagErrors = result.errors.validationFailures.some((f) =>
         f.errors.some((err) => err.includes('Tag Problems:'))
@@ -56,13 +61,15 @@ export function reportValidationErrors(result: ValidatorResult): void {
       const hasUnexpectedIdErrors = result.errors.validationFailures.some((f) =>
         f.errors.some((err) => err.includes('Unexpected ID') || err.includes('Unexpected Suite ID'))
       )
-      const hasStageFixableErrors = result.errors.validationFailures.some((f) =>
-        f.errors.some(
-          (err) =>
-            !err.includes('Tag Problems:') &&
-            !err.includes('Unexpected ID') &&
-            !err.includes('Unexpected Suite ID')
-        )
+      const hasStageFixableErrors = result.errors.validationFailures.some(
+        (f) =>
+          !f.isManualWithTestStep &&
+          f.errors.some(
+            (err) =>
+              !err.includes('Tag Problems:') &&
+              !err.includes('Unexpected ID') &&
+              !err.includes('Unexpected Suite ID')
+          )
       )
 
       // Determine fix message based on error types
@@ -70,12 +77,19 @@ export function reportValidationErrors(result: ValidatorResult): void {
       if (hasTagErrors) manualFixes.push('tags')
       if (hasUnexpectedIdErrors) manualFixes.push('IDs')
 
-      const fixMessage =
-        manualFixes.length > 0 && hasStageFixableErrors
-          ? `Fix: npm run stage (structure), ${manualFixes.join(' and ')} manually`
-          : manualFixes.length > 0
-            ? `Fix ${manualFixes.join(' and ')} manually (stage does not fix these)`
-            : 'Fix: npm run stage'
+      let fixMessage: string
+      if (hasManualWithTestStep && !hasStageFixableErrors && manualFixes.length === 0) {
+        fixMessage =
+          'Fix: Manual review required (manual tests with test.step are not auto-updated)'
+      } else if (manualFixes.length > 0 && hasStageFixableErrors) {
+        fixMessage = `Fix: npm run stage (structure), ${manualFixes.join(' and ')} manually`
+      } else if (manualFixes.length > 0) {
+        fixMessage = `Fix ${manualFixes.join(' and ')} manually (stage does not fix these)`
+      } else if (hasStageFixableErrors) {
+        fixMessage = 'Fix: npm run stage'
+      } else {
+        fixMessage = 'Manual review required'
+      }
 
       printErrorGroups(
         result.errors.validationFailures.map((validationError) => ({

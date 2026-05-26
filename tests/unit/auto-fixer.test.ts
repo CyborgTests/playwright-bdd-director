@@ -1,46 +1,53 @@
+import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { ParsedMD } from '../core/md-parser'
-import { parseTestFile } from '../core/ts-parser'
-import { resetSharedProject } from '../utils/ts-morph-helpers'
-import { autoFixTestFile, isEmptyAutoTest } from './auto-fixer'
+import type { ParsedMD } from '@/framework/core/md-parser'
+import { parseTestFile } from '@/framework/core/ts-parser'
+import { autoFixTestFile, isEmptyAutoTest } from '@/framework/generation/auto-fixer'
+import { resetSharedProject } from '@/framework/utils/ts-morph-helpers'
 
-// Temporary test directory
-const TEST_DIR = path.join(process.cwd(), '.test-tmp-fixer')
+// Generate unique test directory for each test
+let testDir: string
 
 beforeEach(() => {
   // Reset ts-morph project to release file locks
   resetSharedProject()
 
-  if (!fs.existsSync(TEST_DIR)) {
-    fs.mkdirSync(TEST_DIR, { recursive: true })
-  }
+  // Create unique directory with random suffix
+  const randomSuffix = crypto.randomBytes(4).toString('hex')
+  testDir = path.join(process.cwd(), `.test-tmp-fixer-${randomSuffix}`)
+  fs.mkdirSync(testDir, { recursive: true })
 })
 
 afterEach(() => {
   // Reset ts-morph project to release file locks before cleanup
   resetSharedProject()
 
-  if (fs.existsSync(TEST_DIR)) {
-    fs.rmSync(TEST_DIR, { recursive: true, force: true })
+  // Cleanup unique test directory
+  if (fs.existsSync(testDir)) {
+    try {
+      fs.rmSync(testDir, { recursive: true, force: true })
+    } catch {
+      // Ignore cleanup errors - directory is unique, won't conflict with other tests
+    }
   }
 })
 
 function createTSFile(fileName: string, content: string): string {
-  const filePath = path.join(TEST_DIR, fileName)
+  const filePath = path.join(testDir, fileName)
   fs.writeFileSync(filePath, content, 'utf-8')
   return filePath
 }
 
 function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
   return {
-    suiteID: 'TS01',
+    suiteID: 'ts01',
     suiteTtl: 'Correct Suite Title',
     testCases: [
       {
-        id: 'TC-01',
+        id: 'tc-01',
         ttl: 'Correct test case',
         stepTtls: ['Correct step 1', 'Correct step 2']
       }
@@ -55,8 +62,8 @@ describe('autoFixTestFile', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Wrong Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Test case', async () => {})
+test.describe('[ts01] Wrong Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Test case', async () => {})
 })`
       const filePath = createTSFile('wrong-suite.ts', content)
       const md = createMD()
@@ -65,7 +72,7 @@ test.describe('[TS01] Wrong Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST]
 
       expect(result.fixed).toBe(true)
       expect(result.changes).toContain(
-        'Test suite title: "[TS01] Wrong Suite Title" → "[TS01] Correct Suite Title"'
+        'Test suite title: "[ts01] Wrong Suite Title" → "[ts01] Correct Suite Title"'
       )
 
       // Verify file was actually changed
@@ -77,8 +84,8 @@ test.describe('[TS01] Wrong Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST]
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01-AUTO] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Test', async () => {})
+test.describe('[ts01-auto] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Test', async () => {})
 })`
       const filePath = createTSFile('suite-with-suffix.ts', content)
       const md = createMD()
@@ -88,7 +95,7 @@ test.describe('[TS01-AUTO] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] 
       expect(result.fixed).toBe(true)
 
       const parsed = parseTestFile(filePath)
-      expect(parsed.suiteID).toBe('TS01-AUTO')
+      expect(parsed.suiteID).toBe('ts01-auto')
       expect(parsed.suiteTtl).toBe('Correct Suite Title')
     })
 
@@ -96,8 +103,8 @@ test.describe('[TS01-AUTO] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] 
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {
     await test.step('Correct step 1', async () => {})
     await test.step('Correct step 2', async () => {})
   })
@@ -119,14 +126,14 @@ test.describe('Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, (
   test('Test', async () => {})
 })`
       const filePath = createTSFile('suite-no-id.ts', content)
-      const md = createMD({ suiteID: 'TS01', suiteTtl: 'Correct Suite Title' })
+      const md = createMD({ suiteID: 'ts01', suiteTtl: 'Correct Suite Title' })
 
       const result = autoFixTestFile(filePath, md)
 
       expect(result.fixed).toBe(true)
 
       const parsed = parseTestFile(filePath)
-      expect(parsed.suiteID).toBe('TS01')
+      expect(parsed.suiteID).toBe('ts01')
     })
   })
 
@@ -135,8 +142,8 @@ test.describe('Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, (
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Wrong test case', async () => {})
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Wrong test case', async () => {})
 })`
       const filePath = createTSFile('wrong-test.ts', content)
       const md = createMD()
@@ -145,7 +152,7 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       expect(result.fixed).toBe(true)
       expect(result.changes).toContain(
-        'Test case #1 title: "[TC-01] Wrong test case" → "[TC-01] Correct test case"'
+        'Test case #1 title: "[tc-01] Wrong test case" → "[tc-01] Correct test case"'
       )
 
       const parsed = parseTestFile(filePath)
@@ -156,8 +163,8 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01-AUTO] Wrong test', async () => {})
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01-auto] Wrong test', async () => {})
 })`
       const filePath = createTSFile('test-with-suffix.ts', content)
       const md = createMD()
@@ -167,7 +174,7 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       expect(result.fixed).toBe(true)
 
       const parsed = parseTestFile(filePath)
-      expect(parsed.testCases[0].id).toBe('TC-01-AUTO')
+      expect(parsed.testCases[0].id).toBe('tc-01-auto')
       expect(parsed.testCases[0].ttl).toBe('Correct test case')
     })
 
@@ -175,9 +182,9 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {})
-  test('[TC-02] Extra test', async () => {})
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {})
+  test('[tc-02] Extra test', async () => {})
 })`
       const filePath = createTSFile('extra-test.ts', content)
       const md = createMD()
@@ -191,14 +198,14 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {})
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {})
 })`
       const filePath = createTSFile('missing-test.ts', content)
       const md = createMD({
         testCases: [
-          { id: 'TC-01', ttl: 'Correct test case', stepTtls: [] },
-          { id: 'TC-02', ttl: 'Missing test', stepTtls: [] }
+          { id: 'tc-01', ttl: 'Correct test case', stepTtls: [] },
+          { id: 'tc-02', ttl: 'Missing test', stepTtls: [] }
         ]
       })
 
@@ -214,8 +221,8 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {
     await test.step('Wrong step 1', async () => {})
     await test.step('Wrong step 2', async () => {})
   })
@@ -237,8 +244,8 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {
     await test.step('Correct step 1', async () => {})
     await test.step('Correct step 2', async () => {})
     await test.step('Extra step', async () => {})
@@ -253,12 +260,12 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       expect(result.changes.some((c) => c.includes('extra'))).toBe(true)
     })
 
-    it('should handle missing steps', () => {
+    it('should add placeholder for missing steps', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {
     await test.step('Correct step 1', async () => {})
   })
 })`
@@ -267,8 +274,14 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
+      expect(result.fixed).toBe(true)
       expect(result.changes.some((c) => c.includes('TC#1 Step#2'))).toBe(true)
-      expect(result.changes.some((c) => c.includes('missing'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('Added'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('placeholder'))).toBe(true)
+
+      // Verify placeholder was actually added to file
+      const parsed = parseTestFile(filePath)
+      expect(parsed.testCases[0].stepTtls).toEqual(['Correct step 1', 'Correct step 2'])
     })
   })
 
@@ -277,8 +290,8 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Wrong test', async () => {
+test.describe('[ts01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Wrong test', async () => {
     await test.step('Wrong step 1', async () => {})
     await test.step('Wrong step 2', async () => {})
   })
@@ -301,8 +314,8 @@ test.describe('[TS01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, ()
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Wrong test', async () => {
+test.describe('[ts01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Wrong test', async () => {
     await test.step("Step with 'quotes'", async () => {})
     await test.step('Step with \\n newline', async () => {})
   })
@@ -311,7 +324,7 @@ test.describe('[TS01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, ()
       const md = createMD({
         testCases: [
           {
-            id: 'TC-01',
+            id: 'tc-01',
             ttl: 'Correct test case',
             stepTtls: ["Step with 'quotes'", 'Step with \\n newline']
           }
@@ -334,8 +347,8 @@ test.describe('[TS01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, ()
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Correct test case', async () => {
+test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Correct test case', async () => {
     await test.step('Correct step 1', async () => {})
     await test.step('Correct step 2', async () => {})
   })
@@ -348,6 +361,70 @@ test.describe('[TS01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       expect(result.fixed).toBe(false)
       expect(result.changes).toHaveLength(0)
       expect(result.filePath).toBe(filePath)
+    })
+  })
+
+  describe('manual tests with test.step', () => {
+    it('should skip auto-fixing manual tests with test.step', () => {
+      const content = `import { test } from '@playwright/test'
+import { TAG } from '@/test-constants/tags'
+
+test.describe('[MANUAL] Suite Title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }, () => {
+  test('[MANUAL] Test case', async () => {
+    await test.step('Step 1', async () => {}) // First step
+    await test.step('Step 2', async () => {}) // Second step with test.step
+  })
+})`
+      const filePath = createTSFile('test-suite.manual.test.ts', content)
+      const md = createMD({
+        suiteID: '',
+        suiteTtl: 'Suite Title',
+        testCases: [
+          {
+            id: '',
+            ttl: 'Test case',
+            stepTtls: ['Step 1', 'Step 2', 'New Step 3']
+          }
+        ]
+      })
+
+      const result = autoFixTestFile(filePath, md)
+
+      // Should not auto-fix manual tests with test.step
+      expect(result.fixed).toBe(false)
+      expect(result.changes.some((c) => c.includes('Skipped'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('test.step'))).toBe(true)
+    })
+
+    it('should auto-fix manual tests without test.step', () => {
+      const content = `import { test } from '@playwright/test'
+import { TAG } from '@/test-constants/tags'
+
+test.describe('[MANUAL] Suite Title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }, () => {
+  test('[MANUAL] Test case', async () => {
+    // Only comments, no test.step calls
+    console.log('Step 1')
+    console.log('Step 2')
+  })
+})`
+      const filePath = createTSFile('test-suite2.manual.test.ts', content)
+      const md = createMD({
+        suiteID: '',
+        suiteTtl: 'Suite Title',
+        testCases: [
+          {
+            id: '',
+            ttl: 'Test case',
+            stepTtls: ['Step 1', 'Step 2', 'New Step 3']
+          }
+        ]
+      })
+
+      const result = autoFixTestFile(filePath, md)
+
+      // Should auto-fix manual tests without test.step
+      expect(result.fixed).toBe(true)
+      expect(result.changes.some((c) => c.includes('Added'))).toBe(true)
     })
   })
 })

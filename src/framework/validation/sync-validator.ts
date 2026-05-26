@@ -211,7 +211,10 @@ function validateMDTSSync(
   parsedMDMap: Map<string, ReturnType<typeof parseMDFile>>,
   markdownByBaseName: Map<string, string>
 ): FileMatchResult[] {
-  const testFiles = glob.sync('tests/**/*.ts', { nodir: true })
+  const testFiles = glob.sync(`${CONFIG.paths.testsDir}/**/*.ts`, {
+    nodir: true,
+    ignore: [`${CONFIG.paths.testsDir}/fixtures/**/*.ts`] // Exclude fixture files
+  })
   const results: FileMatchResult[] = []
 
   for (const testFile of testFiles) {

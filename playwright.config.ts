@@ -1,10 +1,10 @@
 import { defineConfig } from '@playwright/test'
 
-import { allProjects, getProjectByName } from '@/config/projects'
+import { allProjects, getProjectsByName } from '@/config/projects'
 import { tagToProject } from '@/config/tagToProject'
-import { getProjectFromGrep } from '@/helpers/playwright-helpers'
+import { getProjectsFromGrep } from '@/test-helpers/playwright.helpers'
 
-const selectedProject = getProjectFromGrep(tagToProject)
+const selectedProjects = getProjectsFromGrep(tagToProject)
 
 export default defineConfig({
   testDir: './tests',
@@ -15,9 +15,9 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: 'https://demo.playwright.dev/todomvc',
+    baseURL: 'https://www.automationexercise.com',
     screenshot: 'only-on-failure'
   },
 
-  projects: selectedProject ? getProjectByName(selectedProject) : allProjects
+  projects: selectedProjects.length > 0 ? getProjectsByName(selectedProjects) : allProjects
 })

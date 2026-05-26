@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
+import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 
 import { getTestFileBaseName } from '../utils/helpers'
 import { getIcon } from '../utils/icons'
@@ -37,8 +38,11 @@ export function archiveOrphanedTests(
 
     // Check if corresponding MD exists
     if (!markdownByBaseName.has(baseName)) {
-      const isManual = fileName.includes('manual')
-      const isAuto = fileName.includes('auto')
+      const fileNameLower = fileName.toLowerCase()
+      const isManual = fileNameLower.includes('.manual.')
+      const isAuto = AUTOMATED_KINDS.some((kind) =>
+        fileNameLower.includes(`.${kind.toLowerCase()}.`)
+      )
 
       let shouldArchive = false
 

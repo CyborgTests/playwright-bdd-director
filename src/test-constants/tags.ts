@@ -24,6 +24,7 @@ export const TAG = {
    */
   TYPE: {
     API: '@api',
+    UI: '@ui',
     E2E: '@e2e'
   },
 
@@ -31,6 +32,10 @@ export const TAG = {
    * Test suite / functional area
    */
   SUITE: {
-    TODO: '@todo'
+    AUTH: '@auth',
+    TODO: '@todo',
+    EXAMPLE: '@example',
+    SIMPLE: '@simple',
+    CHECKLIST_TEST: '@checklist-test'
   }
 } as const

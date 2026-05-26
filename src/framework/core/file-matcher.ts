@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { AUTOMATED_KINDS } from '../constants/test-files'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
 import { getTestFileBaseName, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
 import { ParsedMD } from './md-parser'
@@ -9,6 +10,7 @@ export interface FileMatchResult {
   file: string
   valid: boolean
   errors: string[]
+  isManualWithTestStep?: boolean
 }
 
 /**
@@ -38,11 +40,11 @@ function formatTestCaseLabel(
 /**
  * Determine test file type from filename
  */
-function getFileType(fileName: string): 'manual' | 'auto' | 'hybrid' {
+function getFileType(fileName: string): 'MANUAL' | 'AUTO' | 'HYBRID' {
   const lower = fileName.toLowerCase()
-  if (lower.includes('.manual.')) return 'manual'
-  if (lower.includes('.auto.')) return 'auto'
-  return 'hybrid'
+  if (lower.includes('.manual.')) return 'MANUAL'
+  if (AUTOMATED_KINDS.some((kind) => lower.includes(`.${kind.toLowerCase()}.`))) return 'AUTO'
+  return 'HYBRID'
 }
 
 /**
@@ -51,10 +53,32 @@ function getFileType(fileName: string): 'manual' | 'auto' | 'hybrid' {
  * @returns Error message or null if valid
  */
 function validateIdField(mdId: string | null, tsId: string | null, context: string): string | null {
-  if (mdId !== null && tsId === null) return `• Missing ${context} in TS (MD has: ${mdId})`
-  if (mdId === null && tsId !== null) return `• Unexpected ${context} in TS (MD has no ${context})`
-  if (mdId !== null && tsId !== null && !matchIDWithSuffix(mdId, tsId))
-    return `• ${context}: ${tsId} → ${mdId}`
+  // Both null - valid (no ID in either)
+  if (mdId === null && tsId === null) return null
+
+  // MD has empty brackets [] - TS must have suffix (not null and not empty)
+  if (mdId === '' && (tsId === null || tsId === '')) {
+    return `• Missing ${context} suffix in TS (MD has [] - use [MANUAL], [AUTO], [HYBRID], etc.)`
+  }
+
+  // Both empty string - valid (empty ID [] in both)
+  if (mdId === '' && tsId === '') return null
+
+  // Both have IDs - check if they match (with suffix support)
+  // This handles: mdId='' + tsId='MANUAL', mdId='tc01' + tsId='tc01-MANUAL', etc.
+  if (mdId !== null && tsId !== null && matchIDWithSuffix(mdId, tsId)) return null
+
+  // MD has non-empty ID but TS doesn't
+  if (mdId !== null && mdId !== '' && tsId === null)
+    return `• Missing ${context} in TS (MD has: ${mdId})`
+
+  // TS has ID but MD doesn't (and they don't match via suffix)
+  if ((mdId === null || mdId === '') && tsId !== null && tsId !== '')
+    return `• Unexpected ${context} in TS (MD has no ${context})`
+
+  // IDs don't match
+  if (mdId !== null && tsId !== null) return `• ${context}: ${tsId} → ${mdId}`
+
   return null
 }
 
@@ -88,6 +112,12 @@ function validateTags(testFile: string, tags: string[]): string[] {
 
   // Check for unexpected tags
   const validTags = [expectedTestTag, expectedSuiteTag]
+
+  // Allow TYPE tags for auto files (api, ui, e2e)
+  if (fileType === 'AUTO') {
+    validTags.push('TAG.TYPE.API', 'TAG.TYPE.UI', 'TAG.TYPE.E2E')
+  }
+
   const unexpectedTags = tags.filter((tag) => !validTags.includes(tag))
   if (unexpectedTags.length > 0) {
     errors.push(`• Unexpected tags: ${unexpectedTags.join(', ')}`)
@@ -137,10 +167,30 @@ function validateTestCaseCount(markdownData: ParsedMD, typeScriptData: ParsedTes
 }
 
 /**
+ * Check if manual test file has test.step calls
+ * Manual tests with test.step should skip step validation
+ */
+function hasTestStepCalls(typeScriptData: ParsedTest): boolean {
+  for (const testCase of typeScriptData.testCases) {
+    // Check if any step is test.step (not just manualStep)
+    for (const kind of testCase.stepCallKinds) {
+      if (kind === 'test.step') {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
  * Validate each test case - IDs, titles, and steps
  * Returns array of error messages for all test cases with problems
  */
-function validateTestCases(markdownData: ParsedMD, typeScriptData: ParsedTest): string[] {
+function validateTestCases(
+  markdownData: ParsedMD,
+  typeScriptData: ParsedTest,
+  isManualWithTestStep: boolean = false
+): string[] {
   const errors: string[] = []
   const maxCount = Math.max(markdownData.testCases.length, typeScriptData.testCases.length)
 
@@ -189,7 +239,16 @@ function validateTestCases(markdownData: ParsedMD, typeScriptData: ParsedTest): 
       )
     }
 
-    // Check steps
+    // Output problems before skipping detailed step validation
+    if (isManualWithTestStep) {
+      if (problems.length > 0) {
+        const tsLabel = formatTestCaseLabel(typeScriptTestCase, i)
+        errors.push(`Test Case #${i + 1}: ${tsLabel}\n  Problems:\n  ${problems.join('\n  ')}`)
+      }
+      continue
+    }
+
+    // Check steps (detailed validation)
     const maxSteps = Math.max(markdownTestCase.stepTtls.length, typeScriptTestCase.stepTtls.length)
 
     for (let j = 0; j < maxSteps; j++) {
@@ -257,6 +316,8 @@ export function matchFiles(
   }
 
   // 3. Validate test case count - if different, stop here
+  const fileType = getFileType(testFile)
+  const manualWithTestStep = fileType === 'MANUAL' && hasTestStepCalls(typeScriptData)
   const countError = validateTestCaseCount(markdownData, typeScriptData)
   if (countError) {
     errors.push(countError)
@@ -264,17 +325,20 @@ export function matchFiles(
     return {
       file: testFile,
       valid: false,
-      errors
+      errors,
+      isManualWithTestStep: manualWithTestStep
     }
   }
 
   // 4. Validate each test case
-  const testCaseErrors = validateTestCases(markdownData, typeScriptData)
+  // Skip step validation for manual tests with test.step - they are intentionally structured
+  const testCaseErrors = validateTestCases(markdownData, typeScriptData, manualWithTestStep)
   errors.push(...testCaseErrors)
 
   return {
     file: testFile,
     valid: errors.length === 0,
-    errors
+    errors,
+    isManualWithTestStep: manualWithTestStep
   }
 }

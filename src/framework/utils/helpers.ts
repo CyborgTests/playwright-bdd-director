@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { AUTOMATED_KINDS } from '../constants/test-files'
+
 export interface ParsedID {
   id: string | null // null=no brackets, ""=[], "TC-01"=[TC-01]
   ttl: string
@@ -22,7 +24,7 @@ export function getMarkdownBaseName(mdFilePath: string): string {
 
 /**
  * Extract base name from test file name
- * Example: "todo.manual.test.ts" -> "todo"
+ * Example: "todo.MANUAL.test.ts" -> "todo"
  * @throws Error if fileName is invalid (empty or no segments)
  */
 export function getTestFileBaseName(fileName: string): string {
@@ -63,7 +65,7 @@ export function parseIDAndTitle(text: string): ParsedID {
  * Rules:
  * - Exact match: markdownID === testID
  * - Empty ID in MD []: testID can be suffix-only (MANUAL, AUTO, HYBRID) without dash
- * - Non-empty ID: testID can have suffix with dash (TC01-01-MANUAL)
+ * - Non-empty ID: testID can have suffix with dash (tc01-01-MANUAL)
  *
  * @example
  * matchIDWithSuffix('TC01-01', 'TC01-01') → true
@@ -75,12 +77,12 @@ export function parseIDAndTitle(text: string): ParsedID {
 export function matchIDWithSuffix(markdownID: string, testID: string): boolean {
   if (markdownID === testID) return true
 
-  // Empty ID in MD [] - TS can use suffix without dash: [MANUAL], [AUTO], [HYBRID]
+  // Empty ID in MD [] - TS can use suffix without dash: [MANUAL], [AUTO], [HYBRID] (upper case only)
   if (markdownID === '') {
-    return /^[A-Z]+$/.test(testID)
+    return /^[A-Z][A-Z0-9]*$/.test(testID)
   }
 
-  // Non-empty ID - TS can use suffix with dash: [TC01-01-MANUAL], [TC01-01-AUTO]
+  // Non-empty ID - TS can use suffix with dash: [tc01-01-MANUAL], [tc01-01-AUTO]
   if (testID.startsWith(markdownID + '-')) return true
 
   return false
@@ -88,12 +90,12 @@ export function matchIDWithSuffix(markdownID: string, testID: string): boolean {
 
 /**
  * Check if test file matches base name and type
- * @example isMatchingTestFile('tests/todo.manual.test.ts', 'todo', 'manual') → true
+ * @example isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'MANUAL') → true
  */
 export function isMatchingTestFile(
   testFilePath: string,
   baseName: string,
-  kind: 'auto' | 'manual'
+  kind: 'AUTO' | 'MANUAL'
 ): boolean {
   const fileName = path.basename(testFilePath)
   const parts = fileName.split('.')
@@ -101,5 +103,23 @@ export function isMatchingTestFile(
   if (parts[0] !== baseName) return false
   if (parts.at(-1) !== 'ts') return false
   if (!parts.includes('test')) return false
-  return parts.includes(kind)
+  return parts.map((p) => p.toLowerCase()).includes(kind.toLowerCase())
+}
+
+/**
+ * Check if any automated test file exists for the given base name
+ * Returns true if at least one of .AUTO., .API., .UI., .E2E. test files exists
+ * @example hasAutomatedTestFile(['tests/auth.API.test.ts'], 'auth') → true
+ */
+export function hasAutomatedTestFile(candidates: string[], baseName: string): boolean {
+  return candidates.some((f) => {
+    const fileName = path.basename(f)
+    const parts = fileName.split('.')
+    if (parts[0] !== baseName) return false
+    if (parts.at(-1) !== 'ts') return false
+    if (!parts.includes('test')) return false
+    // Case-insensitive check for automated kinds
+    const partsLower = parts.map((p) => p.toLowerCase())
+    return AUTOMATED_KINDS.some((kind) => partsLower.includes(kind.toLowerCase()))
+  })
 }

@@ -18,6 +18,10 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "tests/manual/auth.manual.test.ts.backup",
+    "tests/automated/api/auth.api.test.ts.backup"
+  ],
   "exclude": ["node_modules", "dist"]
 }

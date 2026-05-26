@@ -16,12 +16,14 @@ export default tseslint.config(
       'unused-imports': unusedImports
     },
     rules: {
-      'prettier/prettier': 'error',
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error',
-      'no-console': 'warn',
-      'no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'no-console': 'warn',
+      'no-empty-pattern': 'off',
+      'no-unused-vars': 'off',
+      'prettier/prettier': 'error',
+      'simple-import-sort/exports': 'error',
+      'simple-import-sort/imports': 'error',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'error',

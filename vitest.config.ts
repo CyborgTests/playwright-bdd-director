@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/framework/**/*.test.ts'],
-    exclude: ['tests/**'],
+    include: ['tests/unit/**/*.test.ts'],
+    exclude: ['tests/automated/**', 'tests/hybrid/**', 'tests/manual/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

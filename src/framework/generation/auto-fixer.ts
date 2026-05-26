@@ -18,6 +18,28 @@ export interface AutoFixResult {
 }
 
 /**
+ * Check if manual test file has any test.step calls
+ * Manual tests with test.step should not be auto-updated
+ */
+function hasTestStepInManualTest(testFilePath: string, describeCall: CallExpression): boolean {
+  // Only check manual test files
+  if (!testFilePath.includes('.manual.')) return false
+
+  const testCalls = findTestCalls(describeCall)
+  for (const testCall of testCalls) {
+    const stepCalls = findStepCalls(testCall)
+    // Check if any step is test.step (not just manualStep)
+    for (const stepCall of stepCalls) {
+      const expression = stepCall.getExpression().getText()
+      if (expression.endsWith('.step')) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
  * Auto-fix test file to match MD specification
  * Uses ts-morph for safe AST-based code modification
  */
@@ -26,16 +48,28 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
   const project = getSharedProject()
   const sourceFile = project.addSourceFileAtPath(testFilePath)
 
-  // 1. Fix suite ttl
+  // 1. Find describe call
   const describeCall = findDescribeCall(sourceFile)
-  if (describeCall) {
-    fixSuiteTtl(describeCall, mdData, changes)
-
-    // 2. Fix test cases
-    fixTestCases(describeCall, mdData, changes)
+  if (!describeCall) {
+    return { filePath: testFilePath, fixed: false, changes: [] }
   }
 
-  // 3. Save changes if any were made
+  // 2. Skip manual tests with test.step - they are intentionally structured
+  if (hasTestStepInManualTest(testFilePath, describeCall)) {
+    return {
+      filePath: testFilePath,
+      fixed: false,
+      changes: ['Skipped: Manual test with test.step - manual review needed']
+    }
+  }
+
+  // 3. Fix suite ttl
+  fixSuiteTtl(describeCall, mdData, changes)
+
+  // 4. Fix test cases
+  fixTestCases(describeCall, mdData, changes)
+
+  // 5. Save changes if any were made
   if (changes.length > 0) {
     sourceFile.formatText() // Auto-format with Prettier-like formatting
     sourceFile.saveSync()
@@ -50,7 +84,8 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
  */
 function fixSuiteTtl(describeCall: CallExpression, mdData: ParsedMD, changes: string[]): boolean {
   const currentTtl = getStringLiteralValue(describeCall, 0)
-  const expectedTtl = mdData.suiteID ? `[${mdData.suiteID}] ${mdData.suiteTtl}` : mdData.suiteTtl
+  const expectedTtl =
+    mdData.suiteID !== null ? `[${mdData.suiteID}] ${mdData.suiteTtl}` : mdData.suiteTtl
 
   if (currentTtl) {
     // Check if titles match (considering ID suffixes like -AUTO, -MANUAL)
@@ -164,7 +199,25 @@ function fixTestSteps(
     }
 
     if (!stepCall) {
-      // Missing step - skip (don't auto-generate)
+      // Missing step - add it as a placeholder
+      const callback = testCall.getArguments()[1]
+      if (callback && callback.asKind(SyntaxKind.ArrowFunction)) {
+        const arrowFn = callback.asKind(SyntaxKind.ArrowFunction)
+        const body = arrowFn?.getBody()
+        if (body && Node.isBlock(body)) {
+          const block = body.asKind(SyntaxKind.Block)
+          if (block) {
+            // Add new step at the end
+            const newStepCode = `  await test.step('${escapeString(expectedStep)}', async () => {\n    // TODO: Implement step\n  })\n`
+            block.addStatements(newStepCode)
+            changes.push(
+              `  TC#${testCaseIndex} Step#${j + 1}: Added "${expectedStep}" (placeholder)`
+            )
+            continue
+          }
+        }
+      }
+      // Fallback if can't add
       changes.push(
         `  ${getIcon('warning')}  TC#${testCaseIndex} Step#${j + 1} missing: "${expectedStep}"`
       )
@@ -194,7 +247,7 @@ function escapeString(str: string): string {
 /**
  * Preserve suffix from current title when applying expected title
  * Examples:
- *   - current="[TS01-AUTO] Old", expected="[TS01] New" → "[TS01-AUTO] New" (non-empty ID)
+ *   - current="[ts01-AUTO] Old", expected="[ts01] New" → "[ts01-AUTO] New" (non-empty ID)
  *   - current="[AUTO] Old", expected="[] New" → "[AUTO] New" (empty ID)
  */
 function preserveSuffix(currentTtl: string, expectedTtl: string): string {
@@ -214,7 +267,7 @@ function preserveSuffix(currentTtl: string, expectedTtl: string): string {
     }
 
     // Regular case: Non-empty ID with dash-based suffix
-    // Example: current="[TC01-AUTO] Old", expected="[TC01] New" → "[TC01-AUTO] New"
+    // Example: current="[tc01-AUTO] Old", expected="[tc01] New" → "[tc01-AUTO] New"
     if (currentId !== expectedId && currentId.startsWith(expectedId + '-')) {
       return `[${currentId}] ${expectedText}`
     }

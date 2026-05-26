@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { clearMDCache, parseMDFile } from './md-parser'
+import { clearMDCache, parseMDFile } from '@/framework/core/md-parser'
 
 // Temporary test directory
 const TEST_DIR = path.join(process.cwd(), '.test-tmp')
@@ -92,7 +92,7 @@ describe('parseMDFile', () => {
 
 ### [  TC-01  ]   Test case
 
-####   [  01  ]   Step
+####   Step
 `
       const filePath = createMDFile('spaces.md', content)
 
@@ -102,7 +102,7 @@ describe('parseMDFile', () => {
       expect(result.suiteTtl).toBe('Test Suite')
       expect(result.testCases[0].id).toBe('TC-01')
       expect(result.testCases[0].ttl).toBe('Test case')
-      expect(result.testCases[0].stepTtls[0]).toBe('[  01  ]   Step')
+      expect(result.testCases[0].stepTtls[0]).toBe('Step')
     })
   })
 
@@ -187,7 +187,7 @@ Another comment line
       const content = `## [TS01] Suite
 
 ### [TC-01] Test with ID
-#### [01] Step with ID
+#### Step with ID
 
 ### Test without ID
 #### Step without ID
@@ -197,7 +197,7 @@ Another comment line
       const result = parseMDFile(filePath)
 
       expect(result.testCases[0].id).toBe('TC-01')
-      expect(result.testCases[0].stepTtls[0]).toBe('[01] Step with ID')
+      expect(result.testCases[0].stepTtls[0]).toBe('Step with ID')
       expect(result.testCases[1].id).toBe(null)
       expect(result.testCases[1].stepTtls[0]).toBe('Step without ID')
     })
@@ -387,7 +387,7 @@ Some text but no test cases
       const content = `## [TS-01-COMPLEX] Suite
 
 ### [TC-01-02-03] Test
-#### [STEP-01-02-03-04] Step
+#### Step
 `
       const filePath = createMDFile('complex-ids.md', content)
 
@@ -395,7 +395,7 @@ Some text but no test cases
 
       expect(result.suiteID).toBe('TS-01-COMPLEX')
       expect(result.testCases[0].id).toBe('TC-01-02-03')
-      expect(result.testCases[0].stepTtls[0]).toBe('[STEP-01-02-03-04] Step')
+      expect(result.testCases[0].stepTtls[0]).toBe('Step')
     })
 
     it('should handle Unicode characters in titles', () => {

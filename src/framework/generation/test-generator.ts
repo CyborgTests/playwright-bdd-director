@@ -2,29 +2,29 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
-import { SUFFIXES } from '@/framework/constants/paths'
+import { SUFFIXES } from '@/framework/constants/test-files'
 
 import { parseMDFile } from '../core/md-parser'
 import { getIcon } from '../utils/icons'
-import { addManualScript, addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
+import { addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
-type TestType = 'auto' | 'manual'
+type TestType = 'AUTO' | 'MANUAL'
 
-export function generateTestFile(baseName: string, type: TestType): void {
+export function generateTestFile(baseName: string, type: TestType): boolean {
   const mdData = parseMDFile(baseName)
 
-  const outputDir = type === 'auto' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsManual
+  const outputDir = type === 'AUTO' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsManual
 
   // Create output directory if needed
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true })
   }
 
-  const testPath = path.join(outputDir, `${baseName}.${type}.test.ts`)
+  const testPath = path.join(outputDir, `${baseName}.${type.toLowerCase()}.test.ts`)
 
   // Do not overwrite existing files (generation should be idempotent)
   if (fs.existsSync(testPath)) {
-    return
+    return false
   }
 
   // Determine configuration based on test type
@@ -32,21 +32,18 @@ export function generateTestFile(baseName: string, type: TestType): void {
   let importStatement: string
   let testParams: string
   let stepTemplate: (stepLiteral: string) => string
-  let updateScripts: boolean
 
-  if (type === 'auto') {
+  if (type === 'AUTO') {
     suffix = SUFFIXES.AUTO
     importStatement = "import { test } from '@playwright/test'"
     testParams = ''
     stepTemplate = (stepLiteral) =>
       `await test.step(${stepLiteral}, async () => { /* TODO: Implement step logic */ });`
-    updateScripts = false
   } else {
     suffix = SUFFIXES.MANUAL
     importStatement = "import test from '@cyborgtests/test'"
     testParams = '{ manualStep }'
     stepTemplate = (stepLiteral) => `await manualStep(${stepLiteral});`
-    updateScripts = false
   }
 
   // Generate test cases
@@ -57,10 +54,10 @@ export function generateTestFile(baseName: string, type: TestType): void {
         // No ID in MD - use title only
         testTtl = tc.ttl
       } else if (tc.id === '') {
-        // Empty ID [] - use suffix without dash (MANUAL, AUTO, HYBRID)
+        // Empty ID [] - use suffix without dash (MANUAL, AUTO)
         testTtl = `[${suffix.slice(1)}] ${tc.ttl}`
       } else {
-        // Non-empty ID - use suffix with dash (TC01-01-MANUAL)
+        // Non-empty ID - use suffix with dash (tc01-01-MANUAL)
         testTtl = `[${tc.id}${suffix}] ${tc.ttl}`
       }
       const testTtlLiteral = JSON.stringify(testTtl)
@@ -77,10 +74,10 @@ export function generateTestFile(baseName: string, type: TestType): void {
   // Build suite title (with suffix)
   let suiteDescribeTtl: string
   if (mdData.suiteID === '') {
-    // Empty ID [] - use suffix without dash (MANUAL, AUTO, HYBRID)
+    // Empty ID [] - use suffix without dash (MANUAL, AUTO)
     suiteDescribeTtl = `[${suffix.slice(1)}] ${mdData.suiteTtl}`
   } else if (mdData.suiteID) {
-    // Non-empty ID - use suffix with dash (TS01-MANUAL)
+    // Non-empty ID - use suffix with dash (ts01-MANUAL)
     suiteDescribeTtl = `[${mdData.suiteID}${suffix}] ${mdData.suiteTtl}`
   } else {
     // No ID - use title only
@@ -91,11 +88,11 @@ export function generateTestFile(baseName: string, type: TestType): void {
   // Determine tags
   const suiteName = extractSuiteName(baseName)
   const tagConstant = getTagConstant(suiteName)
-  const tags = [`TAG.TEST.${type.toUpperCase()}`, `TAG.SUITE.${tagConstant}`]
+  const tags = [`TAG.TEST.${type}`, `TAG.SUITE.${tagConstant}`]
 
   // Generate file content
   const content = `${importStatement}
-import { TAG } from '@/constants/tags'
+import { TAG } from '@/test-constants/tags'
 
 test.describe(${suiteTtlLiteral}, { tag: [${tags.join(', ')}] }, () => {
 ${testCases}
@@ -106,24 +103,23 @@ ${testCases}
   // eslint-disable-next-line no-console
   console.log(`${getIcon('success')}  Generated: ${testPath}`)
 
-  // Update tags.ts and optionally package.json
+  // Update tags.ts
   try {
     addSuiteTag(suiteName)
-    if (updateScripts) {
-      addManualScript(suiteName)
-    }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     // eslint-disable-next-line no-console
     console.warn(`${getIcon('warning')}  Could not update tags/scripts: ${message}`)
   }
+
+  return true
 }
 
 // Convenience wrappers
-export function generateAutoTestFile(baseName: string): void {
-  generateTestFile(baseName, 'auto')
+export function generateAutoTestFile(baseName: string): boolean {
+  return generateTestFile(baseName, 'AUTO')
 }
 
-export function generateManualTestFile(baseName: string): void {
-  generateTestFile(baseName, 'manual')
+export function generateManualTestFile(baseName: string): boolean {
+  return generateTestFile(baseName, 'MANUAL')
 }

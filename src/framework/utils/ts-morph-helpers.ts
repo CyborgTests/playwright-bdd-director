@@ -1,9 +1,6 @@
 import { CallExpression, Project, SourceFile, SyntaxKind } from 'ts-morph'
 
-import { AST_IDENTIFIERS } from '@/framework/constants/paths'
-
-// Regex constants (compiled once, reused many times)
-const TEST_CALL_PATTERN = /^test(\.(only|skip|fixme))?$/
+import { AST_IDENTIFIERS } from '@/framework/constants/test-files'
 
 // Singleton Project instance for performance
 let _sharedProject: Project | null = null
@@ -24,19 +21,20 @@ export function resetSharedProject(): void {
 }
 
 /**
- * Find test.describe() call in source file
+ * Find *.describe() call in source file
+ * Supports: test.describe(), test.describe.skip(), authTest.describe(), customTest.describe(), and any fixture with .describe()
  */
 export function findDescribeCall(sourceFile: SourceFile): CallExpression | undefined {
   return sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression).find((call) => {
     const expression = call.getExpression().getText()
-    return expression === AST_IDENTIFIERS.TEST_DESCRIBE
+    return expression.includes('.describe')
   })
 }
 
 /**
  * Find all test() calls within describe block
- * Supports: test(), test.only(), test.skip(), test.fixme()
- * Excludes: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll
+ * Supports: test(), test.only(), test.skip(), test.fixme(), authTest(), customTest(), and any fixture
+ * Excludes: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, *.describe
  */
 export function findTestCalls(describeCall: CallExpression): CallExpression[] {
   const args = describeCall.getArguments()
@@ -69,9 +67,14 @@ export function findTestCalls(describeCall: CallExpression): CallExpression[] {
 
     const expression = callExpression.getExpression().getText()
 
-    // Match: test, test.only, test.skip, test.fixme
-    // Exclude: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, test.describe
-    const isTestCall = TEST_CALL_PATTERN.test(expression)
+    // Match: test, test.only, test.skip, test.fixme, authTest, customTest, and any fixture
+    // Exclude: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, *.describe
+    const isTestCall =
+      !expression.includes('.') ||
+      (expression.includes('.') &&
+        !expression.startsWith('test.before') &&
+        !expression.startsWith('test.after') &&
+        !expression.endsWith('.describe'))
 
     if (isTestCall) {
       testCalls.push(callExpression)
@@ -83,7 +86,8 @@ export function findTestCalls(describeCall: CallExpression): CallExpression[] {
 
 /**
  * Find all step calls within test block
- * Supports: manualStep(), test.step()
+ * Supports: manualStep(), test.step(), authTest.step(), customTest.step(), and any fixture with .step
+ * Excludes: manualStep() calls that are inside test.step() - they are part of the step, not separate steps
  */
 export function findStepCalls(testCall: CallExpression): CallExpression[] {
   const args = testCall.getArguments()
@@ -97,9 +101,39 @@ export function findStepCalls(testCall: CallExpression): CallExpression[] {
   return (
     callback.getDescendantsOfKind(SyntaxKind.CallExpression).filter((call) => {
       const expression = call.getExpression().getText()
-      return expression === AST_IDENTIFIERS.MANUAL_STEP || expression === AST_IDENTIFIERS.TEST_STEP
+
+      // Always include test.step calls
+      if (expression.endsWith('.step')) return true
+
+      // For manualStep, check if it's inside a test.step - if so, exclude it
+      if (expression === AST_IDENTIFIERS.MANUAL_STEP) {
+        return !isInsideTestStep(call)
+      }
+
+      return false
     }) ?? []
   )
+}
+
+/**
+ * Check if a call expression is inside a test.step() call
+ */
+function isInsideTestStep(call: CallExpression): boolean {
+  let parent = call.getParent()
+
+  while (parent) {
+    // Check if parent is a CallExpression with .step
+    const parentCall = parent.asKind(SyntaxKind.CallExpression)
+    if (parentCall) {
+      const parentExpression = parentCall.getExpression().getText()
+      if (parentExpression.endsWith('.step')) {
+        return true
+      }
+    }
+    parent = parent.getParent()
+  }
+
+  return false
 }
 
 /**

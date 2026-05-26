@@ -11,5 +11,7 @@ export const AST_IDENTIFIERS = {
 } as const
 
 export const PATTERNS = {
-  SUFFIX_ONLY: /^[A-Z]+$/
+  SUFFIX_ONLY: /^[A-Z][A-Z0-9]*$/
 } as const
+
+export const AUTOMATED_KINDS = ['AUTO', 'API', 'UI', 'E2E'] as const

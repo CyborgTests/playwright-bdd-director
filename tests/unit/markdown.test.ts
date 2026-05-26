@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getHeadingLevel, isHeading } from './markdown'
+import { getHeadingLevel, isHeading } from '@/framework/constants/markdown'
 
 describe('isHeading', () => {
   describe('level 2 (suite)', () => {

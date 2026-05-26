@@ -10,81 +10,81 @@ Review the licenses of the dependencies listed below before distribution.
 
 ### Testing & Playwright
 
-- **`@cyborgtests/test`** — MIT License  
+- **`@cyborgtests/test`** - MIT License  
   Source: `https://www.npmjs.com/package/@cyborgtests/test`
 
-- **`@playwright/test`** — Apache License 2.0  
+- **`@playwright/test`** - Apache License 2.0  
   Source: `https://www.npmjs.com/package/@playwright/test`
 
-- **`@faker-js/faker`** — MIT License  
+- **`@faker-js/faker`** - MIT License  
   Source: `https://www.npmjs.com/package/@faker-js/faker`
 
-- **`monocart-reporter`** — MIT License  
+- **`monocart-reporter`** - MIT License  
   Source: `https://www.npmjs.com/package/monocart-reporter`
 
-- **`vitest`** — MIT License  
+- **`vitest`** - MIT License  
   Source: `https://www.npmjs.com/package/vitest`
 
-- **`@vitest/ui`** — MIT License  
+- **`@vitest/ui`** - MIT License  
   Source: `https://www.npmjs.com/package/@vitest/ui`
 
-- **`@vitest/coverage-v8`** — MIT License  
+- **`@vitest/coverage-v8`** - MIT License  
   Source: `https://www.npmjs.com/package/@vitest/coverage-v8`
 
 ### TypeScript & Tools
 
-- **`typescript`** — Apache License 2.0  
+- **`typescript`** - Apache License 2.0  
   Source: `https://www.npmjs.com/package/typescript`
 
-- **`@types/node`** — MIT License  
+- **`@types/node`** - MIT License  
   Source: `https://www.npmjs.com/package/@types/node`
 
-- **`ts-morph`** — MIT License  
+- **`ts-morph`** - MIT License  
   Source: `https://www.npmjs.com/package/ts-morph`
 
-- **`tsx`** — MIT License  
+- **`tsx`** - MIT License  
   Source: `https://www.npmjs.com/package/tsx`
 
 ### ESLint & TypeScript ESLint
 
-- **`eslint`** — MIT License  
+- **`eslint`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint`
 
-- **`@eslint/js`** — MIT License  
+- **`@eslint/js`** - MIT License  
   Source: `https://www.npmjs.com/package/@eslint/js`
 
-- **`@typescript-eslint/eslint-plugin`** — MIT License  
+- **`@typescript-eslint/eslint-plugin`** - MIT License  
   Source: `https://www.npmjs.com/package/@typescript-eslint/eslint-plugin`
 
-- **`@typescript-eslint/parser`** — BSD-2-Clause License  
+- **`@typescript-eslint/parser`** - BSD-2-Clause License  
   Source: `https://www.npmjs.com/package/@typescript-eslint/parser`
 
-- **`typescript-eslint`** — MIT License  
+- **`typescript-eslint`** - MIT License  
   Source: `https://www.npmjs.com/package/typescript-eslint`
 
 ### ESLint Plugins
 
-- **`eslint-config-prettier`** — MIT License  
+- **`eslint-config-prettier`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint-config-prettier`
 
-- **`eslint-plugin-playwright`** — MIT License  
+- **`eslint-plugin-playwright`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint-plugin-playwright`
 
-- **`eslint-plugin-prettier`** — MIT License  
+- **`eslint-plugin-prettier`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint-plugin-prettier`
 
-- **`eslint-plugin-simple-import-sort`** — MIT License  
+- **`eslint-plugin-simple-import-sort`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint-plugin-simple-import-sort`
 
-- **`eslint-plugin-unused-imports`** — MIT License  
+- **`eslint-plugin-unused-imports`** - MIT License  
   Source: `https://www.npmjs.com/package/eslint-plugin-unused-imports`
 
 ### Code Formatting & Utilities
 
-- **`prettier`** — MIT License  
+- **`prettier`** - MIT License  
   Source: `https://www.npmjs.com/package/prettier`
 
-- **`glob`** — ISC License  
+- **`glob`** - ISC License  
   Source: `https://www.npmjs.com/package/glob`
 
 ## Notes

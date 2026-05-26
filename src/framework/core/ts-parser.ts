@@ -1,6 +1,6 @@
 import { CallExpression, SyntaxKind } from 'ts-morph'
 
-import { PATTERNS } from '../constants/paths'
+import { PATTERNS } from '../constants/test-files'
 import { parseIDAndTitle } from '../utils/helpers'
 import {
   findDescribeCall,
@@ -134,13 +134,13 @@ function extractTagsFromDescribe(describeCall: CallExpression): string[] {
 
 /**
  * Validate no duplicate test case IDs
- * Suffix-only IDs (MANUAL, AUTO, HYBRID) are excluded from duplicate check
+ * Suffix-only IDs (manual, auto) are excluded from duplicate check
  */
 function validateNoDuplicateIDs(testCases: ParsedTestCase[], filePath: string): void {
   const idsWithBrackets = testCases
     .filter((tc) => tc.id !== null && tc.id !== '')
     .map((tc) => tc.id as string)
-    // Exclude suffix-only IDs (all caps, no dashes/numbers) - these come from empty MD IDs []
+    // Exclude suffix-only IDs (all lowercase, no dashes/numbers) - these come from empty MD IDs []
     .filter((id) => !PATTERNS.SUFFIX_ONLY.test(id))
   const duplicateIDs = idsWithBrackets.filter((id, index) => idsWithBrackets.indexOf(id) !== index)
 

@@ -4,10 +4,11 @@ import {
   getErrorMessage,
   getMarkdownBaseName,
   getTestFileBaseName,
+  hasAutomatedTestFile,
   isMatchingTestFile,
   matchIDWithSuffix,
   parseIDAndTitle
-} from './helpers'
+} from '@/framework/utils/helpers'
 
 describe('getErrorMessage', () => {
   it('should extract message from Error instance', () => {
@@ -60,16 +61,16 @@ describe('getTestFileBaseName', () => {
     expect(getTestFileBaseName('todo.manual.test.ts')).toBe('todo')
   })
 
-  it('should extract base name from auto test file', () => {
-    expect(getTestFileBaseName('todo.auto.test.ts')).toBe('todo')
+  it('should extract base name from AUTO test file', () => {
+    expect(getTestFileBaseName('todo.AUTO.test.ts')).toBe('todo')
   })
 
-  it('should extract base name from hybrid test file', () => {
-    expect(getTestFileBaseName('todo.hybrid.test.ts')).toBe('todo')
+  it('should extract base name from HYBRID test file', () => {
+    expect(getTestFileBaseName('todo.HYBRID.test.ts')).toBe('todo')
   })
 
   it('should handle complex base names', () => {
-    expect(getTestFileBaseName('user-auth-flow.manual.test.ts')).toBe('user-auth-flow')
+    expect(getTestFileBaseName('user-auth-flow.MANUAL.test.ts')).toBe('user-auth-flow')
   })
 
   it('should throw error for empty file name', () => {
@@ -79,14 +80,14 @@ describe('getTestFileBaseName', () => {
   })
 
   it('should throw error for file name starting with dot', () => {
-    expect(() => getTestFileBaseName('.manual.test.ts')).toThrow('Invalid file name')
+    expect(() => getTestFileBaseName('.MANUAL.test.ts')).toThrow('Invalid file name')
   })
 })
 
 describe('parseIDAndTitle', () => {
   it('should parse ID with title', () => {
-    expect(parseIDAndTitle('[TC-01] Test case title')).toEqual({
-      id: 'TC-01',
+    expect(parseIDAndTitle('[tc-01] Test case title')).toEqual({
+      id: 'tc-01',
       ttl: 'Test case title'
     })
   })
@@ -106,29 +107,29 @@ describe('parseIDAndTitle', () => {
   })
 
   it('should handle extra spaces', () => {
-    expect(parseIDAndTitle('[TC-01]   Test case title  ')).toEqual({
-      id: 'TC-01',
+    expect(parseIDAndTitle('[tc-01]   Test case title  ')).toEqual({
+      id: 'tc-01',
       ttl: 'Test case title'
     })
   })
 
   it('should handle ID with spaces inside brackets', () => {
-    expect(parseIDAndTitle('[  TC-01  ] Test case title')).toEqual({
-      id: 'TC-01',
+    expect(parseIDAndTitle('[  tc-01  ] Test case title')).toEqual({
+      id: 'tc-01',
       ttl: 'Test case title'
     })
   })
 
   it('should handle complex IDs', () => {
-    expect(parseIDAndTitle('[TS01-TC02-STEP03] Step title')).toEqual({
-      id: 'TS01-TC02-STEP03',
+    expect(parseIDAndTitle('[ts01-tc02-step03] Step title')).toEqual({
+      id: 'ts01-tc02-step03',
       ttl: 'Step title'
     })
   })
 
   it('should handle empty title with ID', () => {
-    expect(parseIDAndTitle('[TC-01]')).toEqual({
-      id: 'TC-01',
+    expect(parseIDAndTitle('[tc-01]')).toEqual({
+      id: 'tc-01',
       ttl: ''
     })
   })
@@ -141,8 +142,8 @@ describe('parseIDAndTitle', () => {
   })
 
   it('should handle text with brackets in title', () => {
-    expect(parseIDAndTitle('[TC-01] Test [important] case')).toEqual({
-      id: 'TC-01',
+    expect(parseIDAndTitle('[tc-01] Test [important] case')).toEqual({
+      id: 'tc-01',
       ttl: 'Test [important] case'
     })
   })
@@ -151,7 +152,7 @@ describe('parseIDAndTitle', () => {
 describe('matchIDWithSuffix', () => {
   describe('exact match', () => {
     it('should match identical IDs', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01-01')).toBe(true)
+      expect(matchIDWithSuffix('tc01-01', 'tc01-01')).toBe(true)
     })
 
     it('should match empty IDs', () => {
@@ -186,104 +187,140 @@ describe('matchIDWithSuffix', () => {
   })
 
   describe('non-empty markdown ID', () => {
-    it('should match ID with dash suffix (TC01-01-AUTO)', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01-01-AUTO')).toBe(true)
+    it('should match ID with dash suffix (tc01-01-AUTO)', () => {
+      expect(matchIDWithSuffix('tc01-01', 'tc01-01-AUTO')).toBe(true)
     })
 
-    it('should match ID with dash suffix (TC01-01-MANUAL)', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01-01-MANUAL')).toBe(true)
+    it('should match ID with dash suffix (tc01-01-MANUAL)', () => {
+      expect(matchIDWithSuffix('tc01-01', 'tc01-01-MANUAL')).toBe(true)
     })
 
-    it('should match ID with dash suffix (TC01-01-HYBRID)', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01-01-HYBRID')).toBe(true)
+    it('should match ID with dash suffix (tc01-01-HYBRID)', () => {
+      expect(matchIDWithSuffix('tc01-01', 'tc01-01-HYBRID')).toBe(true)
     })
 
     it('should not match different ID', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01-02')).toBe(false)
+      expect(matchIDWithSuffix('tc01-01', 'tc01-02')).toBe(false)
     })
 
     it('should not match partial ID', () => {
-      expect(matchIDWithSuffix('TC01-01', 'TC01')).toBe(false)
+      expect(matchIDWithSuffix('tc01-01', 'tc01')).toBe(false)
     })
 
     it('should not match ID without dash separator', () => {
-      expect(matchIDWithSuffix('TC01', 'TC01AUTO')).toBe(false)
+      expect(matchIDWithSuffix('tc01', 'tc01AUTO')).toBe(false)
     })
 
     it('should match complex ID with suffix', () => {
-      expect(matchIDWithSuffix('TS01-TC02-STEP03', 'TS01-TC02-STEP03-AUTO')).toBe(true)
+      expect(matchIDWithSuffix('ts01-tc02-step03', 'ts01-tc02-step03-AUTO')).toBe(true)
     })
   })
 
   describe('edge cases', () => {
     it('should not match non-empty MD ID with suffix-only', () => {
-      expect(matchIDWithSuffix('TC01', 'MANUAL')).toBe(false)
+      expect(matchIDWithSuffix('tc01', 'MANUAL')).toBe(false)
     })
 
     it('should not match when MD ID is longer', () => {
-      expect(matchIDWithSuffix('TC01-01-LONG', 'TC01-01')).toBe(false)
+      expect(matchIDWithSuffix('tc01-01-long', 'tc01-01')).toBe(false)
     })
   })
 })
 
 describe('isMatchingTestFile', () => {
-  describe('manual tests', () => {
-    it('should match manual test file', () => {
-      expect(isMatchingTestFile('tests/todo.manual.test.ts', 'todo', 'manual')).toBe(true)
+  describe('MANUAL tests', () => {
+    it('should match MANUAL test file', () => {
+      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'MANUAL')).toBe(true)
     })
 
-    it('should match manual test file with path', () => {
-      expect(isMatchingTestFile('tests/auth/login.manual.test.ts', 'login', 'manual')).toBe(true)
+    it('should match MANUAL test file with path', () => {
+      expect(isMatchingTestFile('tests/auth/login.MANUAL.test.ts', 'login', 'MANUAL')).toBe(true)
     })
 
     it('should not match different base name', () => {
-      expect(isMatchingTestFile('tests/todo.manual.test.ts', 'login', 'manual')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'login', 'MANUAL')).toBe(false)
     })
 
-    it('should not match auto test when looking for manual', () => {
-      expect(isMatchingTestFile('tests/todo.auto.test.ts', 'todo', 'manual')).toBe(false)
+    it('should not match AUTO test when looking for MANUAL', () => {
+      expect(isMatchingTestFile('tests/todo.AUTO.test.ts', 'todo', 'MANUAL')).toBe(false)
     })
   })
 
-  describe('auto tests', () => {
-    it('should match auto test file', () => {
-      expect(isMatchingTestFile('tests/todo.auto.test.ts', 'todo', 'auto')).toBe(true)
+  describe('AUTO tests', () => {
+    it('should match AUTO test file', () => {
+      expect(isMatchingTestFile('tests/todo.AUTO.test.ts', 'todo', 'AUTO')).toBe(true)
     })
 
-    it('should not match manual test when looking for auto', () => {
-      expect(isMatchingTestFile('tests/todo.manual.test.ts', 'todo', 'auto')).toBe(false)
+    it('should not match MANUAL test when looking for AUTO', () => {
+      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'AUTO')).toBe(false)
     })
   })
 
   describe('invalid formats', () => {
     it('should not match file without .test', () => {
-      expect(isMatchingTestFile('tests/todo.manual.ts', 'todo', 'manual')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.MANUAL.ts', 'todo', 'MANUAL')).toBe(false)
     })
 
     it('should not match file without .ts', () => {
-      expect(isMatchingTestFile('tests/todo.manual.test.js', 'todo', 'manual')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.MANUAL.test.js', 'todo', 'MANUAL')).toBe(false)
     })
 
     it('should not match file with wrong structure', () => {
-      expect(isMatchingTestFile('tests/todo.ts', 'todo', 'manual')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.ts', 'todo', 'MANUAL')).toBe(false)
     })
   })
 
   describe('edge cases', () => {
     it('should handle complex base names', () => {
       expect(
-        isMatchingTestFile('tests/user-auth-flow.manual.test.ts', 'user-auth-flow', 'manual')
+        isMatchingTestFile('tests/user-auth-flow.MANUAL.test.ts', 'user-auth-flow', 'MANUAL')
       ).toBe(true)
     })
 
     it('should handle nested paths', () => {
-      expect(isMatchingTestFile('tests/auth/login/main.manual.test.ts', 'main', 'manual')).toBe(
+      expect(isMatchingTestFile('tests/auth/login/main.MANUAL.test.ts', 'main', 'MANUAL')).toBe(
         true
       )
     })
 
     it('should be case-sensitive for base name', () => {
-      expect(isMatchingTestFile('tests/Todo.manual.test.ts', 'todo', 'manual')).toBe(false)
+      expect(isMatchingTestFile('tests/Todo.MANUAL.test.ts', 'todo', 'MANUAL')).toBe(false)
     })
+  })
+})
+
+describe('hasAutomatedTestFile', () => {
+  it('should return true for .AUTO.test.ts', () => {
+    expect(hasAutomatedTestFile(['tests/auth.AUTO.test.ts'], 'auth')).toBe(true)
+  })
+
+  it('should return true for .API.test.ts', () => {
+    expect(hasAutomatedTestFile(['tests/auth.API.test.ts'], 'auth')).toBe(true)
+  })
+
+  it('should return true for .UI.test.ts', () => {
+    expect(hasAutomatedTestFile(['tests/auth.UI.test.ts'], 'auth')).toBe(true)
+  })
+
+  it('should return true for .E2E.test.ts', () => {
+    expect(hasAutomatedTestFile(['tests/auth.E2E.test.ts'], 'auth')).toBe(true)
+  })
+
+  it('should return false for .MANUAL.test.ts only', () => {
+    expect(hasAutomatedTestFile(['tests/auth.MANUAL.test.ts'], 'auth')).toBe(false)
+  })
+
+  it('should return false for empty candidates', () => {
+    expect(hasAutomatedTestFile([], 'auth')).toBe(false)
+  })
+
+  it('should return false for different base name', () => {
+    expect(hasAutomatedTestFile(['tests/todo.AUTO.test.ts'], 'auth')).toBe(false)
+  })
+
+  it('should return true if any automated kind present among multiple files', () => {
+    expect(
+      hasAutomatedTestFile(['tests/auth.MANUAL.test.ts', 'tests/auth.API.test.ts'], 'auth')
+    ).toBe(true)
   })
 })

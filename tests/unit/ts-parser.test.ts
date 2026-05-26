@@ -1,33 +1,40 @@
+import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { resetSharedProject } from '../utils/ts-morph-helpers'
-import { parseTestFile } from './ts-parser'
+import { parseTestFile } from '@/framework/core/ts-parser'
+import { resetSharedProject } from '@/framework/utils/ts-morph-helpers'
 
-// Temporary test directory
-const TEST_DIR = path.join(process.cwd(), '.test-tmp-ts')
+// Generate unique test directory for each test
+let testDir: string
 
 beforeEach(() => {
   // Reset ts-morph project to release file locks
   resetSharedProject()
 
-  if (!fs.existsSync(TEST_DIR)) {
-    fs.mkdirSync(TEST_DIR, { recursive: true })
-  }
+  // Create unique directory with random suffix
+  const randomSuffix = crypto.randomBytes(4).toString('hex')
+  testDir = path.join(process.cwd(), `.test-tmp-ts-${randomSuffix}`)
+  fs.mkdirSync(testDir, { recursive: true })
 })
 
 afterEach(() => {
   // Reset ts-morph project to release file locks before cleanup
   resetSharedProject()
 
-  if (fs.existsSync(TEST_DIR)) {
-    fs.rmSync(TEST_DIR, { recursive: true, force: true })
+  // Cleanup unique test directory
+  if (fs.existsSync(testDir)) {
+    try {
+      fs.rmSync(testDir, { recursive: true, force: true })
+    } catch {
+      // Ignore cleanup errors - directory is unique, won't conflict with other tests
+    }
   }
 })
 
 function createTSFile(fileName: string, content: string): string {
-  const filePath = path.join(TEST_DIR, fileName)
+  const filePath = path.join(testDir, fileName)
   fs.writeFileSync(filePath, content, 'utf-8')
   return filePath
 }
@@ -38,8 +45,8 @@ describe('parseTestFile', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Test case', async () => {
+test.describe('[ts01] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Test case', async () => {
     await test.step('Step 1', async () => {})
   })
 })`
@@ -47,7 +54,7 @@ test.describe('[TS01] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () 
 
       const result = parseTestFile(filePath)
 
-      expect(result.suiteID).toBe('TS01')
+      expect(result.suiteID).toBe('ts01')
       expect(result.suiteTtl).toBe('Test Suite')
     })
 
@@ -81,18 +88,18 @@ test.describe('Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
       expect(result.suiteTtl).toBe('Test Suite')
     })
 
-    it('should parse suite with suffix (TS01-AUTO)', () => {
+    it('should parse suite with suffix (ts01-auto)', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS01-AUTO] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+test.describe('[ts01-auto] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
   test('Test case', async () => {})
 })`
       const filePath = createTSFile('suite-with-suffix.ts', content)
 
       const result = parseTestFile(filePath)
 
-      expect(result.suiteID).toBe('TS01-AUTO')
+      expect(result.suiteID).toBe('ts01-auto')
       expect(result.suiteTtl).toBe('Test Suite')
     })
   })
@@ -103,14 +110,14 @@ test.describe('[TS01-AUTO] Test Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] Test case title', async () => {})
+  test('[tc-01] Test case title', async () => {})
 })`
       const filePath = createTSFile('test-with-id.ts', content)
 
       const result = parseTestFile(filePath)
 
       expect(result.testCases).toHaveLength(1)
-      expect(result.testCases[0].id).toBe('TC-01')
+      expect(result.testCases[0].id).toBe('tc-01')
       expect(result.testCases[0].ttl).toBe('Test case title')
     })
 
@@ -144,18 +151,18 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
       expect(result.testCases[0].ttl).toBe('Test case without ID')
     })
 
-    it('should parse test case with suffix (TC-01-AUTO)', () => {
+    it('should parse test case with suffix (tc-01-auto)', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01-AUTO] Test case', async () => {})
+  test('[tc-01-auto] Test case', async () => {})
 })`
       const filePath = createTSFile('test-with-suffix.ts', content)
 
       const result = parseTestFile(filePath)
 
-      expect(result.testCases[0].id).toBe('TC-01-AUTO')
+      expect(result.testCases[0].id).toBe('tc-01-auto')
       expect(result.testCases[0].ttl).toBe('Test case')
     })
 
@@ -179,18 +186,18 @@ test.describe('Suite', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }, () => {
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] First test', async () => {})
-  test('[TC-02] Second test', async () => {})
-  test('[TC-03] Third test', async () => {})
+  test('[tc-01] First test', async () => {})
+  test('[tc-02] Second test', async () => {})
+  test('[tc-03] Third test', async () => {})
 })`
       const filePath = createTSFile('multiple-tests.ts', content)
 
       const result = parseTestFile(filePath)
 
       expect(result.testCases).toHaveLength(3)
-      expect(result.testCases[0].id).toBe('TC-01')
-      expect(result.testCases[1].id).toBe('TC-02')
-      expect(result.testCases[2].id).toBe('TC-03')
+      expect(result.testCases[0].id).toBe('tc-01')
+      expect(result.testCases[1].id).toBe('tc-02')
+      expect(result.testCases[2].id).toBe('tc-03')
     })
   })
 
@@ -237,8 +244,8 @@ import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
   test('Test case', async () => {
-    await test.step('[STEP-01] First step', async () => {})
-    await test.step('[STEP-02] Second step', async () => {})
+    await test.step('[step-01] First step', async () => {})
+    await test.step('[step-02] Second step', async () => {})
   })
 })`
       const filePath = createTSFile('steps-with-ids.ts', content)
@@ -246,8 +253,8 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
       const result = parseTestFile(filePath)
 
       expect(result.testCases[0].stepTtls).toEqual([
-        '[STEP-01] First step',
-        '[STEP-02] Second step'
+        '[step-01] First step',
+        '[step-02] Second step'
       ])
     })
 
@@ -377,16 +384,16 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01] First test', async () => {})
-  test('[TC-01] Duplicate ID', async () => {})
+  test('[tc-01] First test', async () => {})
+  test('[tc-01] Duplicate ID', async () => {})
 })`
       const filePath = createTSFile('duplicate-ids.ts', content)
 
       expect(() => parseTestFile(filePath)).toThrow('Duplicate test case IDs')
-      expect(() => parseTestFile(filePath)).toThrow('[TC-01]')
+      expect(() => parseTestFile(filePath)).toThrow('[tc-01]')
     })
 
-    it('should allow suffix-only duplicate IDs (MANUAL, AUTO)', () => {
+    it('should allow suffix-only duplicate IDs (manual, auto)', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
@@ -444,14 +451,14 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test.only('[TC-01] Only test', async () => {})
+  test.only('[tc-01] Only test', async () => {})
 })`
       const filePath = createTSFile('test-only.ts', content)
 
       const result = parseTestFile(filePath)
 
       expect(result.testCases).toHaveLength(1)
-      expect(result.testCases[0].id).toBe('TC-01')
+      expect(result.testCases[0].id).toBe('tc-01')
     })
 
     it('should handle test.skip', () => {
@@ -459,14 +466,14 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test.skip('[TC-01] Skipped test', async () => {})
+  test.skip('[tc-01] Skipped test', async () => {})
 })`
       const filePath = createTSFile('test-skip.ts', content)
 
       const result = parseTestFile(filePath)
 
       expect(result.testCases).toHaveLength(1)
-      expect(result.testCases[0].id).toBe('TC-01')
+      expect(result.testCases[0].id).toBe('tc-01')
     })
 
     it('should handle test.fixme', () => {
@@ -474,32 +481,32 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
 import { TAG } from '@/constants/tags'
 
 test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test.fixme('[TC-01] Fixme test', async () => {})
+  test.fixme('[tc-01] Fixme test', async () => {})
 })`
       const filePath = createTSFile('test-fixme.ts', content)
 
       const result = parseTestFile(filePath)
 
       expect(result.testCases).toHaveLength(1)
-      expect(result.testCases[0].id).toBe('TC-01')
+      expect(result.testCases[0].id).toBe('tc-01')
     })
 
     it('should handle complex IDs with multiple dashes', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/constants/tags'
 
-test.describe('[TS-01-COMPLEX] Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
-  test('[TC-01-02-03-AUTO] Test', async () => {
-    await test.step('[STEP-01-02-03] Step', async () => {})
+test.describe('[ts-01-complex] Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01-02-03-auto] Test', async () => {
+    await test.step('[step-01-02-03] Step', async () => {})
   })
 })`
       const filePath = createTSFile('complex-ids.ts', content)
 
       const result = parseTestFile(filePath)
 
-      expect(result.suiteID).toBe('TS-01-COMPLEX')
-      expect(result.testCases[0].id).toBe('TC-01-02-03-AUTO')
-      expect(result.testCases[0].stepTtls[0]).toBe('[STEP-01-02-03] Step')
+      expect(result.suiteID).toBe('ts-01-complex')
+      expect(result.testCases[0].id).toBe('tc-01-02-03-auto')
+      expect(result.testCases[0].stepTtls[0]).toBe('[step-01-02-03] Step')
     })
 
     it('should handle Unicode characters in titles', () => {
@@ -536,6 +543,22 @@ test.describe('Suite [important]', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () 
       expect(result.suiteTtl).toBe('Suite [important]')
       expect(result.testCases[0].ttl).toBe('Test [critical] case')
       expect(result.testCases[0].stepTtls[0]).toBe('Step [action]')
+    })
+
+    it('should handle test.describe.skip', () => {
+      const content = `import { test } from '@playwright/test'
+import { TAG } from '@/constants/tags'
+
+test.describe.skip('[ts01] Skipped Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
+  test('[tc-01] Test case', async () => {})
+})`
+      const filePath = createTSFile('describe-skip.ts', content)
+
+      const result = parseTestFile(filePath)
+
+      expect(result.suiteID).toBe('ts01')
+      expect(result.suiteTtl).toBe('Skipped Suite')
+      expect(result.testCases).toHaveLength(1)
     })
   })
 })
