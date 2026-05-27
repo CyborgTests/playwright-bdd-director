@@ -78,21 +78,19 @@ This command validates structure, generates test files, and keeps everything in 
 npm run stage
 ```
 
-### 7. Open Playwright UI mode
+### 7. Run tests
 
-The easiest way to run tests - one terminal command opens a full visual GUI:
+Choose one of two ways - they are alternatives, not sequential steps:
+
+**Option A - Visual UI** (recommended for most users):
 
 ```bash
 npm run show
 ```
 
-This opens the Playwright UI where you can browse, filter, and run tests visually, see step timelines, and inspect screenshots - no further terminal interaction needed. Great for non-technical users and exploratory test runs.
+Opens the Playwright UI where you can browse all tests, filter by project (`manual`, `automated`, `hybrid`) or by name, and run any subset with a click. Results appear inline with step details and screenshots.
 
-### 8. Run tests from terminal
-
-For CI pipelines or when you prefer faster, direct runs without the UI overhead.
-
-The Play CLI accepts test types and suite names in any combination - types first, then suites:
+**Option B - Terminal CLI** (for engineers, CI pipelines, or faster runs without UI overhead):
 
 ```bash
 npm run play manual              # all manual tests
@@ -105,17 +103,17 @@ npm run play manual hybrid auth  # manual + hybrid auth tests
 npm run play auth                # all auth tests regardless of type
 ```
 
-The Play CLI automatically runs validation (dress rehearsal) before executing tests.
+Both options automatically run validation before executing tests.
 
-### 9. Complete the test suite
+### 8. View test results
 
-After the Cyborgtests UI panel opens, complete the test suite by clicking step statuses (pass/fail/skip).
-
-### 10. View test results
+After tests finish, close the Playwright UI window - the terminal will become available again. Then open the HTML report:
 
 ```bash
 npm run review
 ```
+
+**For manual and hybrid tests:** the Cyborgtests panel opens automatically during the run. Complete each step by clicking pass/fail/skip - the panel closes on its own when done. Then close the Playwright UI window and run `npm run review`.
 
 ## ⚡ Markdown-Driven Testing Platform
 
@@ -127,7 +125,7 @@ It combines:
 - Cyborgtests for manual and hybrid testing
 - Markdown as the single source of truth
 
-The same Markdown script can drive manual, automated, and hybrid test flows.
+The same Markdown spec keeps manual, automated, and hybrid test files synchronized.
 
 ## 💡 Why Markdown-First Testing?
 
@@ -135,15 +133,15 @@ The same Markdown script can drive manual, automated, and hybrid test flows.
 
 Manual QA, managers, and non-technical stakeholders can review and update test specifications without touching TypeScript.
 
-### 2. One script, multiple implementations
+### 2. One spec file, multiple test implementations
 
-The same Markdown test suite can drive:
+The Markdown file is the **specification** - it defines what needs to be tested. Based on it, Script Stage generates and keeps in sync:
 
-- manual tests
-- automated tests (API, UI, E2E)
-- hybrid tests
+- **Manual test files** - ready to run immediately via Cyborgtests
+- **Automated test skeletons** - structure generated, logic implemented by you
+- **Hybrid test files** - mix of automation and manual checkpoints
 
-All implementations stay synchronized from a single source of truth.
+The MD file does not run tests - it keeps all implementations synchronized. When you change the spec, `npm run stage` propagates those changes across all test files automatically.
 
 ### 3. Works without automation
 
@@ -153,25 +151,25 @@ Script Stage already provides value for manual testing - automation can be added
 
 When automation is needed, the same Markdown structure scales naturally to Playwright E2E, UI, and API testing with full TypeScript support.
 
-## 🤖 Built for AI-Assisted Automation
+## 🤖 AI-Friendly by Design
 
-Markdown is the language AI understands best - and Script Stage is built around it.
+Script Stage is designed to work naturally with AI coding assistants (GitHub Copilot, Cursor, Claude Code, etc.) inside your IDE.
 
-Because test cases live in plain `.md` files:
+The key advantage: **spec files and test files live in the same repository**. An AI assistant sees both at once - it can read `auth.md` and immediately understand what `auth.api.test.ts` is supposed to do, without any context switching.
 
-- **AI can read and write test specs** without understanding TypeScript or framework internals
-- **AI can generate test scenarios** that the Director immediately validates and turns into runnable tests
-- **AI can review coverage** - just point it at `test-suites/` and ask what's missing
-- **AI can auto-fix specs** - if requirements change, update the MD file and let `npm run stage` propagate changes to all implementations automatically
+This unlocks a practical workflow:
 
-The Markdown format is simple enough for AI to produce correctly on the first try, yet structured enough for the framework to parse and validate.
+- **Write test cases with AI** - describe a feature, ask AI to generate the MD spec, run `npm run stage` to validate and generate test skeletons
+- **Implement tests with AI** - AI reads the spec and the skeleton side by side, fills in the Playwright logic with full context
+- **Review coverage with AI** - point AI at `test-suites/` and ask what scenarios are missing or which edge cases are not covered
+- **Propagate spec changes with AI** - update the MD file with AI assistance, run `npm run stage`, and structural changes sync across all test files automatically
 
-**Practical AI workflow:**
+**Example workflow in Cursor or Copilot:**
 
 ```text
-1. Ask AI to write test cases → paste into test-suites/auth.md
-2. npm run stage → framework generates test skeletons + validates structure
-3. Ask AI to implement test steps → fill in the generated skeletons
+1. Ask AI to write test cases → saved directly to test-suites/auth.md
+2. npm run stage → framework validates + generates test skeletons
+3. Ask AI to implement steps → AI reads spec + skeleton, fills in the logic
 4. npm run play auto → run tests
 ```
 
@@ -220,7 +218,7 @@ The Director (`npm run stage`):
 3. Generates missing test skeletons (manual + auto)
 4. Archives orphaned tests (manual + empty auto)
 5. Auto-fixes manual tests to match Markdown
-6. Auto-fixes empty automated tests (no implementation yet)
+6. Auto-fixes empty automated test skeletons (structure only, no logic yet)
 7. Formats and lints test files
 
 The Dress Rehearsal (`npm run dress`):
@@ -241,8 +239,8 @@ The Dress Rehearsal (`npm run dress`):
              │
     ┌────────┴────────┐
     ▼                 ▼
-Manual Tests      Auto Tests
-(auto-fixed)      (TODO stubs)
+Manual Tests      Auto Skeletons
+(auto-fixed)      (fill in logic)
     │                 │
     └─────────┬───────┘
               ▼
