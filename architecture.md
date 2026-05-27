@@ -96,11 +96,9 @@ Script Stage → Scenario Compilation → Native Playwright Test
 
 ### Cons
 
-- Requires custom implementation
-- No large ecosystem yet
-- Needs good parser/compiler design
-- Team must maintain the framework
-- Documentation and tooling must be built
+- Smaller ecosystem compared to Cucumber
+- Team must maintain the framework (no third-party support)
+- Less known outside the Playwright community
 
 ### Best for
 

@@ -222,5 +222,6 @@ Dynamic project selection in `playwright.config.ts` uses `getProjectsFromGrep()`
 3. **New page** - add a page object, extend the base fixture, available in all tests via dependency injection
 4. **New API endpoint** - add method to `AuthClient` (or new client extending `BaseClient`), add schema to `auth.schemas.ts`
 5. **Team growth** - MD specs are readable by non-engineers; test files are readable by engineers; the framework keeps them in sync
+6. **Targeted runs** - the Play CLI accepts any combination of types and suites: `npm run play api ui auth` runs API + UI tests for auth only; `npm run play manual hybrid` runs both manual and hybrid regardless of suite - no config changes needed
 
 Each layer has exactly one responsibility. Changes are local. The framework enforces consistency so the team can focus on test quality instead of structural maintenance.

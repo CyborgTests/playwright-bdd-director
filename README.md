@@ -90,36 +90,19 @@ This opens the Playwright UI where you can browse, filter, and run tests visuall
 
 ### 8. Run tests from terminal
 
-For CI pipelines or when you prefer faster, direct runs without the UI overhead:
+For CI pipelines or when you prefer faster, direct runs without the UI overhead.
 
-Run all manual tests:
-
-```bash
-npm run play manual
-```
-
-Run specific suite (e.g., auth):
+The Play CLI accepts test types and suite names in any combination - types first, then suites:
 
 ```bash
-npm run play manual auth
-```
-
-Run automated tests:
-
-```bash
-npm run play auto
-```
-
-Run API tests only:
-
-```bash
-npm run play api
-```
-
-Run hybrid tests:
-
-```bash
-npm run play hybrid
+npm run play manual              # all manual tests
+npm run play auto                # all automated tests
+npm run play hybrid              # all hybrid tests
+npm run play api                 # all API tests
+npm run play api auth            # API tests for auth suite only
+npm run play api ui auth         # API + UI tests for auth suite
+npm run play manual hybrid auth  # manual + hybrid auth tests
+npm run play auth                # all auth tests regardless of type
 ```
 
 The Play CLI automatically runs validation (dress rehearsal) before executing tests.
@@ -591,20 +574,33 @@ npm run test:coverage # Generate coverage report
 
 ### Play CLI
 
-Unified command interface with built-in validation:
+Unified command interface with built-in validation. Types and suites are freely combinable - specify any number of test types followed by any number of suite names:
 
 ```bash
-npm run play <type> [suite]
+npm run play <types...> [suites...]
 
-# Examples:
-npm run play auto              # All automated tests
-npm run play manual            # All manual tests
-npm run play manual auth       # Manual auth tests only
-npm run play api               # All API tests
-npm run play ui auth           # UI auth tests
-npm run play api ui auth       # API + UI auth tests
-npm run play hybrid            # All hybrid tests
-npm run play auth              # All auth tests (any type)
+# Single type
+npm run play auto                   # All automated tests
+npm run play manual                 # All manual tests
+npm run play api                    # All API tests
+npm run play hybrid                 # All hybrid tests
+
+# Type + suite
+npm run play manual auth            # Manual auth tests only
+npm run play api auth               # API auth tests only
+npm run play ui auth                # UI auth tests only
+
+# Multiple types
+npm run play api ui                 # All API + UI tests
+npm run play manual hybrid          # All manual + hybrid tests
+
+# Multiple types + suite
+npm run play api ui auth            # API + UI tests for auth suite
+npm run play manual hybrid auth     # Manual + hybrid auth tests
+
+# Suite only (no type filter)
+npm run play auth                   # All auth tests (any type)
+npm run play auth todo              # All auth + todo tests (any type)
 ```
 
 **Supported test types:** `auto`, `manual`, `hybrid`, `api`, `ui`, `e2e`
@@ -612,6 +608,7 @@ npm run play auth              # All auth tests (any type)
 **Features:**
 
 - Automatic dress rehearsal before tests
+- Freely combinable types and suites
 - Argument order validation (types before suites)
 - Clean console output
 - Sequential execution for manual/hybrid tests
