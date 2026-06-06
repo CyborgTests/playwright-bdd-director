@@ -12,7 +12,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": ["node", "@playwright/test"],
-    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

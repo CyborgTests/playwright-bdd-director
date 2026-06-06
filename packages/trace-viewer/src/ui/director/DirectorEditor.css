@@ -1,0 +1,176 @@
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.director-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
+.director-editor-filename {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vscode-titleBar-activeForeground, #cccccc);
+}
+
+.director-modified-indicator {
+  color: var(--vscode-gitDecoration-modifiedResourceForeground, #e2c08d);
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.director-spacer {
+  flex: 1;
+}
+
+.director-mode-toggle {
+  display: flex;
+  background: var(--vscode-input-background, #3c3c3c);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.director-mode-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-input-foreground, #cccccc);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.director-mode-btn:hover {
+  background: var(--vscode-inputOption-hoverBackground, rgba(255, 255, 255, 0.1));
+}
+
+.director-mode-btn.active {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+.director-editor-content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.director-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--vscode-descriptionForeground, #999999);
+  font-size: 14px;
+}
+
+/* Textarea Editor */
+.director-textarea {
+  width: 100%;
+  height: 100%;
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-editor-foreground, #d4d4d4);
+  border: none;
+  padding: 12px 16px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+/* Preview */
+.director-preview-content {
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.director-preview-h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, #3e3e42);
+  color: var(--vscode-titleBar-activeForeground, #cccccc);
+}
+
+.director-preview-h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 20px 0 12px 0;
+  color: var(--vscode-titleBar-activeForeground, #cccccc);
+}
+
+.director-preview-h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 10px 0;
+  color: var(--vscode-titleBar-activeForeground, #cccccc);
+}
+
+.director-preview-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.director-preview-bullet {
+  color: var(--vscode-symbolIcon-colorForeground, #75beff);
+  flex: none;
+}
+
+.director-gherkin-keyword {
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 4px;
+  flex: none;
+}
+
+.director-gherkin-keyword.given {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.director-gherkin-keyword.when {
+  color: #2196f3;
+  background: rgba(33, 150, 243, 0.15);
+}
+
+.director-gherkin-keyword.then {
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.15);
+}
+
+.director-gherkin-keyword.and,
+.director-gherkin-keyword.but {
+  color: #9e9e9e;
+  background: rgba(158, 158, 158, 0.15);
+}
+
+.director-preview-empty {
+  height: 8px;
+}
+
+.director-preview-text {
+  padding: 2px 0;
+  color: var(--vscode-foreground, #cccccc);
+}

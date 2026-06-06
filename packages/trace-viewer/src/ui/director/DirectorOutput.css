@@ -1,0 +1,146 @@
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.director-output {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--vscode-panel-background, #1e1e1e);
+  color: var(--vscode-panel-foreground, #cccccc);
+}
+
+.director-output-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--vscode-foreground, #cccccc);
+}
+
+.director-output-content {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 12px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.director-output-empty {
+  color: var(--vscode-descriptionForeground, #999999);
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}
+
+.director-output-line {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.director-output-time {
+  color: var(--vscode-disabledForeground, #666666);
+  flex: none;
+  user-select: none;
+}
+
+.director-output-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.director-output-line.type-info .director-output-message {
+  color: var(--vscode-foreground, #cccccc);
+}
+
+.director-output-line.type-success .director-output-message {
+  color: #4caf50;
+}
+
+.director-output-line.type-error .director-output-message {
+  color: #f44336;
+}
+
+.director-output-line.type-progress .director-output-message {
+  color: var(--vscode-symbolIcon-colorForeground, #75beff);
+}
+
+/* Progress indicator */
+.director-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.director-progress-file {
+  color: var(--vscode-foreground, #cccccc);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.director-progress-status {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.director-progress-status.parsing {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+}
+
+.director-progress-status.generating {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+}
+
+.director-progress-status.compiling {
+  background: rgba(156, 39, 176, 0.2);
+  color: #9c27b0;
+}
+
+.director-progress-status.done {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.director-progress-status.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.director-progress-bar {
+  width: 60px;
+  height: 4px;
+  background: var(--vscode-progressBar-background, #3c3c3c);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.director-progress-fill {
+  height: 100%;
+  background: var(--vscode-progressBar-foreground, #0e639c);
+  transition: width 0.3s ease;
+}
+
+.director-spacer {
+  flex: 1;
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000"></rect>
+
+  <!-- Head -->
+  <rect x="84" y="86" width="344" height="210" rx="96" fill="#fff"></rect>
+
+  <!-- Eyes -->
+  <circle cx="188" cy="191" r="22" fill="#000"></circle>
+  <circle cx="324" cy="191" r="22" fill="#000"></circle>
+
+  <!-- Body -->
+  <path fill="#fff" d="
+      M84 372
+      C84 334 114 310 152 310
+      H360
+      C398 310 428 334 428 372
+      V440
+      H84
+      Z"></path>
+</svg>

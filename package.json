@@ -3,10 +3,13 @@
   "version": "0.3.3",
   "description": "Write the Script, We'll Play the Show",
   "scripts": {
+    "postinstall": "node scripts/patch-playwright.js",
     "stage": "tsx scripts/md-ts-director.ts",
     "dress": "tsx scripts/dress-rehearsal.ts",
     "play": "npm run dress && tsx scripts/play.ts",
     "show": "npm run dress && playwright test --ui",
+    "cold-play": "tsx scripts/play.ts",
+    "cold-show": "playwright test --ui",
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -39,7 +42,7 @@
     "@cyborgtests/test": "^0.3.0",
     "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.4.0",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "1.60.0",
     "@types/node": "^25.6.2",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
@@ -52,6 +55,7 @@
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "glob": "^13.0.6",
+    "minimatch": "^9.0.9",
     "monocart-reporter": "^2.11.1",
     "prettier": "^3.8.3",
     "ts-morph": "^28.0.0",
@@ -62,5 +66,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
   }
 }

@@ -33,9 +33,5 @@ export const TAG = {
    */
   SUITE: {
     AUTH: '@auth',
-    TODO: '@todo',
-    EXAMPLE: '@example',
-    SIMPLE: '@simple',
-    CHECKLIST_TEST: '@checklist-test'
   }
 } as const
