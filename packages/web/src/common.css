@@ -97,11 +97,12 @@ dialog .body {
   margin: 8px;
   border: 1px solid var(--vscode-button-border, #3c3c3c);
   height: 28px;
-  min-width: 40px;
+  min-width: 80px;
   cursor: pointer;
   border-radius: 3px;
   font-weight: 500;
   user-select: none;
+  padding: 0 12px;
 }
 
 .button:focus {
@@ -126,7 +127,7 @@ dialog .body {
 .button.danger {
   background: var(--vscode-errorBackground, #b91c1c);
   border-color: var(--vscode-errorBorder, #dc2626);
-  color: var(--vscode-errorForeground, #ffffff);
+  color: #ffffff;
 }
 
 .button.danger:hover {

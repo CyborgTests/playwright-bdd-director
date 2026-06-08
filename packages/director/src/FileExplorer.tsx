@@ -165,10 +165,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               style={{
                 width: '100%',
                 padding: '8px',
-                backgroundColor: 'var(--vscode-input-background)',
-                border: '1px solid var(--vscode-input-border)',
-                color: 'var(--vscode-input-foreground)',
-                borderRadius: '4px'
+                backgroundColor: 'var(--vscode-input-background, #3c3c3c)',
+                border: '1px solid var(--vscode-input-border, #555)',
+                color: 'var(--vscode-input-foreground, #cccccc)',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
               }}
               autoFocus
             />
@@ -185,10 +186,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               style={{
                 width: '100%',
                 padding: '8px',
-                backgroundColor: 'var(--vscode-input-background)',
-                border: '1px solid var(--vscode-input-border)',
-                color: 'var(--vscode-input-foreground)',
-                borderRadius: '4px'
+                backgroundColor: 'var(--vscode-input-background, #3c3c3c)',
+                border: '1px solid var(--vscode-input-border, #555)',
+                color: 'var(--vscode-input-foreground, #cccccc)',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
               }}
             >
               <option value=".md">.md (Markdown)</option>
@@ -200,9 +202,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               Cancel
             </button>
             <button
-              className="button"
+              className="button success"
               onClick={handleConfirmNewFile}
-              style={{ backgroundColor: '#4caf50' }}
             >
               Create
             </button>
@@ -241,9 +242,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               Cancel
             </button>
             <button
-              className="button"
+              className="button danger"
               onClick={handleConfirmDelete}
-              style={{ backgroundColor: 'var(--vscode-errorForeground)' }}
             >
               Delete
             </button>
