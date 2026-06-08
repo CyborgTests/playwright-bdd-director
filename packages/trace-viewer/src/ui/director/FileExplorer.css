@@ -66,10 +66,20 @@
   margin-left: 4px;
 }
 
-.director-files-list-view .list-view-entry:not(.highlighted):not(.selected) .toolbar-button:not(.toggled) {
+.director-files-list-view .list-view-entry:not(.highlighted):not(.selected):not(.deleting) .toolbar-button:not(.toggled) {
   display: none;
 }
 
 .director-files-list-view .list-view-entry.deleting .toolbar-button {
   display: flex !important;
 }
+
+.director-files-wrapper {
+  flex: 1;
+  overflow: hidden;
+}
+
+.director-files-wrapper .list-view-entry {
+  padding-left: 10px;
+}
+

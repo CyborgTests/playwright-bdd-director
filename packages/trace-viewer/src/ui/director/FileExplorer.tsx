@@ -72,6 +72,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     setShowNewFileDialog(false);
     setNewFileName('');
     setNewFileExt('.md');
+    // Select the file being deleted
+    onFileSelect(file);
     setFileToDelete(file);
     setDeleteButtonRef(buttonEl);
     setShowDeleteDialog(true);
@@ -91,12 +93,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         <div className='section-title'>DIRECTOR</div>
         {onNewFile && <ToolbarButton ref={newFileButtonRef} icon='add' title='New file' onClick={handleNewFile} />}
       </Toolbar>
-      <ListView
-        name='director-files'
-        items={files}
-        id={file => file?.path || ''}
-        isDeleting={(file) => fileToDelete?.path === file?.path && showDeleteDialog}
-        render={file => {
+      <div className="director-files-wrapper">
+        <ListView
+          name='director-files'
+          items={files}
+          id={file => file?.path || ''}
+          isDeleting={(file) => fileToDelete?.path === file?.path && showDeleteDialog}
+          render={file => {
           if (!file) return null;
           return <div className='hbox director-tree-item'>
             <div className='director-tree-item-title'>
@@ -108,17 +111,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             </Toolbar>
           </div>;
         }}
-        icon={file => {
-          if (!file) return '';
-          if (file.status === 'passed') return 'check';
-          if (file.status === 'failed') return 'error';
-          if (file.status === 'running') return 'loading~spin';
-          if (file.status === 'staged') return 'sync';
-          return 'file';
-        }}
         selectedItem={selectedFile}
         onSelected={file => { if (file) onFileSelect(file); }}
         noItemsMessage='No files' />
+      </div>
       
       {/* New File Dialog */}
       <Dialog
@@ -180,6 +176,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             <button
               className="button"
               onClick={handleConfirmNewFile}
+              style={{ backgroundColor: '#4caf50' }}
             >
               Create
             </button>
