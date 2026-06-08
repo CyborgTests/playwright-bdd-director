@@ -37,9 +37,9 @@ import { TestListView } from './uiModeTestListView';
 import { TraceView } from './uiModeTraceView';
 import { SettingsView } from './settingsView';
 import { DefaultSettingsView } from './defaultSettingsView';
-import { DirectorPanel } from './director/DirectorPanel';
-import type { TestFile } from './director/DirectorModel';
-import { saveFile } from './director/wsClient';
+import { DirectorPanel, saveFile } from '@director/index';
+import type { TestFile } from '@director/index';
+import '@director/index.css';
 
 let xtermSize = { cols: 80, rows: 24 };
 const xtermDataSource: XtermDataSource = {
@@ -146,7 +146,7 @@ export const UIModeView: React.FC<{}> = ({
       }
       
       try {
-        const { connectWs, getFiles } = await import('./director/wsClient');
+        const { connectWs, getFiles } = await import('@director/index');
         await connectWs(port);
         const files = await getFiles();
         setDirectorFiles(files);

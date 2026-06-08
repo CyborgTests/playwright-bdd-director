@@ -162,8 +162,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               }}
             >
               <option value=".md">.md (Markdown)</option>
-              <option value=".spec.ts">.spec.ts (TypeScript)</option>
-              <option value=".test.ts">.test.ts (TypeScript)</option>
+              <option value=".feature">.feature (Gherkin)</option>
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>

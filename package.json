@@ -1,9 +1,8 @@
 {
-  "name": "script-stage",
+  "name": "playwright-bdd-director",
   "version": "0.3.3",
   "description": "Write the Script, We'll Play the Show",
   "scripts": {
-    "postinstall": "node scripts/patch-playwright.js",
     "stage": "tsx scripts/md-ts-director.ts",
     "dress": "tsx scripts/dress-rehearsal.ts",
     "play": "npm run dress && tsx scripts/play.ts",
@@ -17,7 +16,9 @@
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write . --log-level silent",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "postinstall": "node scripts/patch-playwright.js",
+    "build": "cd packages/director && npm run build && cd ../trace-viewer && npm run build && cd ../.. && npm run postinstall"
   },
   "keywords": [
     "playwright",

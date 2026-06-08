@@ -4,6 +4,7 @@ package-lock.json
 
 # Build output
 dist/
+temp/
 
 # Test results
 test-results/

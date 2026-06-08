@@ -18,6 +18,7 @@ export { DirectorPanel } from './DirectorPanel';
 export { FileExplorer } from './FileExplorer';
 export { DirectorEditor } from './DirectorEditor';
 export { DirectorOutput } from './DirectorOutput';
+export { saveFile, connectWs, getFiles } from './wsClient';
 export type { 
   TestFile, 
   TestFileStatus, 
