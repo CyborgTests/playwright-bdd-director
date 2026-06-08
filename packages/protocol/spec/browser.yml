@@ -26,7 +26,6 @@ Browser:
         - webkit
 
   commands:
-
     startServer:
       title: Start server
       parameters:
@@ -133,7 +132,6 @@ Browser:
         artifact: Artifact
 
   events:
-
     context:
       parameters:
         context: BrowserContext

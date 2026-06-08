@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-import type { Suite } from './common/test';
-import type { TestInfoImpl } from './worker/testInfo';
+import type { Suite } from './common/test'
+import type { TestInfoImpl } from './worker/testInfo'
 
-let currentTestInfoValue: TestInfoImpl | null = null;
+let currentTestInfoValue: TestInfoImpl | null = null
 export function setCurrentTestInfo(testInfo: TestInfoImpl | null) {
-  currentTestInfoValue = testInfo;
+  currentTestInfoValue = testInfo
 }
 export function currentTestInfo(): TestInfoImpl | null {
-  return currentTestInfoValue;
+  return currentTestInfoValue
 }
 
-let currentFileSuite: Suite | undefined;
+let currentFileSuite: Suite | undefined
 export function setCurrentlyLoadingFileSuite(suite: Suite | undefined) {
-  currentFileSuite = suite;
+  currentFileSuite = suite
 }
 export function currentlyLoadingFileSuite() {
-  return currentFileSuite;
+  return currentFileSuite
 }
 
-let _isWorkerProcess = false;
+let _isWorkerProcess = false
 
 export function setIsWorkerProcess() {
-  _isWorkerProcess = true;
+  _isWorkerProcess = true
 }
 
 export function isWorkerProcess() {
-  return _isWorkerProcess;
+  return _isWorkerProcess
 }

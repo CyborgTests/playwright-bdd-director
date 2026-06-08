@@ -19,7 +19,6 @@ Artifact:
     absolutePath: string
 
   commands:
-
     pathAfterFinished:
       internal: true
       returns:
@@ -59,7 +58,6 @@ Stream:
   type: interface
 
   commands:
-
     read:
       internal: true
       parameters:
@@ -74,7 +72,6 @@ WritableStream:
   type: interface
 
   commands:
-
     write:
       internal: true
       parameters:

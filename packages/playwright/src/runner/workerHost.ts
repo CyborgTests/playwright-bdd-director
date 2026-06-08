@@ -14,46 +14,45 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-import { removeFolders } from '@utils/fileUtils';
+import { removeFolders } from '@utils/fileUtils'
 
-import { ProcessHost } from './processHost';
-import { ipc } from '../common';
-import { artifactsFolderName } from '../isomorphic/folders';
+import { ProcessHost } from './processHost'
+import { ipc } from '../common'
+import { artifactsFolderName } from '../isomorphic/folders'
 
-import type { TestGroup } from './testGroups';
+import type { TestGroup } from './testGroups'
 
-
-let lastWorkerIndex = 0;
+let lastWorkerIndex = 0
 
 type WorkerHostOptions = {
-  parallelIndex: number;
-  config: ipc.SerializedConfig;
-  extraEnv: Record<string, string | undefined>;
-  outputDir: string;
-  pauseOnError: boolean;
-  pauseAtEnd: boolean;
-};
+  parallelIndex: number
+  config: ipc.SerializedConfig
+  extraEnv: Record<string, string | undefined>
+  outputDir: string
+  pauseOnError: boolean
+  pauseAtEnd: boolean
+}
 
 export class WorkerHost extends ProcessHost {
-  readonly parallelIndex: number;
-  readonly workerIndex: number;
-  private _hash: string;
-  private _params: ipc.WorkerInitParams;
-  private _didFail = false;
+  readonly parallelIndex: number
+  readonly workerIndex: number
+  private _hash: string
+  private _params: ipc.WorkerInitParams
+  private _didFail = false
 
   constructor(testGroup: TestGroup, options: WorkerHostOptions) {
-    const workerIndex = lastWorkerIndex++;
+    const workerIndex = lastWorkerIndex++
     super(require.resolve('../worker/workerProcessEntry.js'), `worker-${workerIndex}`, {
       ...options.extraEnv,
       FORCE_COLOR: '1',
-      DEBUG_COLORS: process.env.DEBUG_COLORS === undefined ? '1' : process.env.DEBUG_COLORS,
-    });
-    this.workerIndex = workerIndex;
-    this.parallelIndex = options.parallelIndex;
-    this._hash = testGroup.workerHash;
+      DEBUG_COLORS: process.env.DEBUG_COLORS === undefined ? '1' : process.env.DEBUG_COLORS
+    })
+    this.workerIndex = workerIndex
+    this.parallelIndex = options.parallelIndex
+    this._hash = testGroup.workerHash
 
     this._params = {
       workerIndex: this.workerIndex,
@@ -63,49 +62,51 @@ export class WorkerHost extends ProcessHost {
       config: options.config,
       artifactsDir: path.join(options.outputDir, artifactsFolderName(workerIndex)),
       pauseOnError: options.pauseOnError,
-      pauseAtEnd: options.pauseAtEnd,
-    };
+      pauseAtEnd: options.pauseAtEnd
+    }
   }
 
   async start() {
-    await fs.promises.mkdir(this._params.artifactsDir, { recursive: true });
+    await fs.promises.mkdir(this._params.artifactsDir, { recursive: true })
     return await this.startRunner(this._params, {
-      onStdOut: chunk => this.emit('stdOut', ipc.stdioChunkToParams(chunk)),
-      onStdErr: chunk => this.emit('stdErr', ipc.stdioChunkToParams(chunk)),
-    });
+      onStdOut: (chunk) => this.emit('stdOut', ipc.stdioChunkToParams(chunk)),
+      onStdErr: (chunk) => this.emit('stdErr', ipc.stdioChunkToParams(chunk))
+    })
   }
 
   override async onExit() {
-    await removeFolders([this._params.artifactsDir]);
+    await removeFolders([this._params.artifactsDir])
   }
 
   override async stop(didFail?: boolean) {
-    if (didFail)
-      this._didFail = true;
-    await super.stop();
+    if (didFail) this._didFail = true
+    await super.stop()
   }
 
   runTestGroup(runPayload: ipc.RunPayload) {
-    this.sendMessageNoReply({ method: 'runTestGroup', params: runPayload });
+    this.sendMessageNoReply({ method: 'runTestGroup', params: runPayload })
   }
 
   async sendCustomMessage(payload: ipc.CustomMessageRequestPayload) {
-    return await this.sendMessage({ method: 'customMessage', params: payload }) as ipc.CustomMessageResponsePayload;
+    return (await this.sendMessage({
+      method: 'customMessage',
+      params: payload
+    })) as ipc.CustomMessageResponsePayload
   }
 
   sendResume(payload: ipc.ResumePayload) {
-    this.sendMessageNoReply({ method: 'resume', params: payload });
+    this.sendMessageNoReply({ method: 'resume', params: payload })
   }
 
   hash() {
-    return this._hash;
+    return this._hash
   }
 
   projectId() {
-    return this._params.projectId;
+    return this._params.projectId
   }
 
   didFail() {
-    return this._didFail;
+    return this._didFail
   }
 }

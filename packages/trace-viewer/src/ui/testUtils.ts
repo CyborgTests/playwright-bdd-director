@@ -14,32 +14,22 @@
  * limitations under the License.
  */
 
-export type UITestStatus = 'none' | 'running' | 'scheduled' | 'passed' | 'failed' | 'skipped';
+export type UITestStatus = 'none' | 'running' | 'scheduled' | 'passed' | 'failed' | 'skipped'
 
 export function testStatusIcon(status: UITestStatus): string {
-  if (status === 'scheduled')
-    return 'codicon-clock';
-  if (status === 'running')
-    return 'codicon-loading';
-  if (status === 'failed')
-    return 'codicon-error';
-  if (status === 'passed')
-    return 'codicon-check';
-  if (status === 'skipped')
-    return 'codicon-circle-slash';
-  return 'codicon-circle-outline';
+  if (status === 'scheduled') return 'codicon-clock'
+  if (status === 'running') return 'codicon-loading'
+  if (status === 'failed') return 'codicon-error'
+  if (status === 'passed') return 'codicon-check'
+  if (status === 'skipped') return 'codicon-circle-slash'
+  return 'codicon-circle-outline'
 }
 
 export function testStatusText(status: UITestStatus): string {
-  if (status === 'scheduled')
-    return 'Pending';
-  if (status === 'running')
-    return 'Running';
-  if (status === 'failed')
-    return 'Failed';
-  if (status === 'passed')
-    return 'Passed';
-  if (status === 'skipped')
-    return 'Skipped';
-  return 'Did not run';
+  if (status === 'scheduled') return 'Pending'
+  if (status === 'running') return 'Running'
+  if (status === 'failed') return 'Failed'
+  if (status === 'passed') return 'Passed'
+  if (status === 'skipped') return 'Skipped'
+  return 'Did not run'
 }

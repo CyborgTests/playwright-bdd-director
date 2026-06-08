@@ -14,30 +14,37 @@
   limitations under the License.
 */
 
-import * as React from 'react';
-import { ToolbarButton } from './toolbarButton';
-import { Dialog } from '../shared/dialog';
+import * as React from 'react'
+import { ToolbarButton } from './toolbarButton'
+import { Dialog } from '../shared/dialog'
 
 export interface DialogToolbarButtonProps {
-  title?: string;
-  icon?: string;
-  buttonChildren?: React.ReactNode;
-  anchorRef?: React.RefObject<HTMLElement | null>;
-  dialogDataTestId?: string;
+  title?: string
+  icon?: string
+  buttonChildren?: React.ReactNode
+  anchorRef?: React.RefObject<HTMLElement | null>
+  dialogDataTestId?: string
 }
 
-export const DialogToolbarButton: React.FC<React.PropsWithChildren<DialogToolbarButtonProps>> = ({ title, icon, buttonChildren, anchorRef, dialogDataTestId, children }) => {
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const anchor = anchorRef ?? buttonRef;
+export const DialogToolbarButton: React.FC<React.PropsWithChildren<DialogToolbarButtonProps>> = ({
+  title,
+  icon,
+  buttonChildren,
+  anchorRef,
+  dialogDataTestId,
+  children
+}) => {
+  const buttonRef = React.useRef<HTMLButtonElement>(null)
+  const anchor = anchorRef ?? buttonRef
 
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(false)
   return (
     <>
       <ToolbarButton
         ref={buttonRef}
         icon={icon}
         title={title}
-        onClick={() => setOpen(current => !current)}
+        onClick={() => setOpen((current) => !current)}
       >
         {buttonChildren}
       </ToolbarButton>
@@ -56,5 +63,5 @@ export const DialogToolbarButton: React.FC<React.PropsWithChildren<DialogToolbar
         {children}
       </Dialog>
     </>
-  );
-};
+  )
+}

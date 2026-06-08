@@ -162,7 +162,8 @@ body .drop-target {
 }
 
 /* Limit to a reasonable minimum viewport */
-html, body {
+html,
+body {
   min-width: 550px;
   min-height: 450px;
   overflow: auto;

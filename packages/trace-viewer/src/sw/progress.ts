@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-export type Progress = (done: number, total: number) => undefined;
+export type Progress = (done: number, total: number) => undefined
 
 export function splitProgress(progress: Progress, weights: number[]): Progress[] {
-  const doneList = new Array(weights.length).fill(0);
+  const doneList = new Array(weights.length).fill(0)
   return new Array(weights.length).fill(0).map((_, i) => {
     return (done: number, total: number) => {
-      doneList[i] = done / total * weights[i] * 1000;
-      progress(doneList.reduce((a, b) => a + b, 0), 1000);
-    };
-  });
+      doneList[i] = (done / total) * weights[i] * 1000
+      progress(
+        doneList.reduce((a, b) => a + b, 0),
+        1000
+      )
+    }
+  })
 }

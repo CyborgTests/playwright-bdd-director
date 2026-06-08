@@ -14,53 +14,57 @@
  * limitations under the License.
  */
 
-import { artifactsFolderName } from '@testIsomorphic/folders';
-import type { TreeItem } from '@testIsomorphic/testTree';
-import '@web/common.css';
-import '@web/third_party/vscode/codicon.css';
-import type * as reporterTypes from 'playwright/types/testReporter';
-import React from 'react';
-import type { ContextEntry } from '@isomorphic/trace/entries';
-import type { SourceLocation } from '@isomorphic/trace/traceModel';
-import { TraceModel } from '@isomorphic/trace/traceModel';
-import { Workbench } from './workbench';
+import { artifactsFolderName } from '@testIsomorphic/folders'
+import type { TreeItem } from '@testIsomorphic/testTree'
+import '@web/common.css'
+import '@web/third_party/vscode/codicon.css'
+import type * as reporterTypes from 'playwright/types/testReporter'
+import React from 'react'
+import type { ContextEntry } from '@isomorphic/trace/entries'
+import type { SourceLocation } from '@isomorphic/trace/traceModel'
+import { TraceModel } from '@isomorphic/trace/traceModel'
+import { Workbench } from './workbench'
 
 export const TraceView: React.FC<{
-  item: { treeItem?: TreeItem, testFile?: SourceLocation, testCase?: reporterTypes.TestCase },
-  rootDir?: string,
-  onOpenExternally?: (location: SourceLocation) => void,
-  revealSource?: boolean,
-  pathSeparator: string,
+  item: { treeItem?: TreeItem; testFile?: SourceLocation; testCase?: reporterTypes.TestCase }
+  rootDir?: string
+  onOpenExternally?: (location: SourceLocation) => void
+  revealSource?: boolean
+  pathSeparator: string
 }> = ({ item, rootDir, onOpenExternally, revealSource, pathSeparator }) => {
-  const [model, setModel] = React.useState<{ model: TraceModel, isLive: boolean } | undefined>(undefined);
-  const [counter, setCounter] = React.useState(0);
-  const pollTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const [model, setModel] = React.useState<{ model: TraceModel; isLive: boolean } | undefined>(
+    undefined
+  )
+  const [counter, setCounter] = React.useState(0)
+  const pollTimer = React.useRef<NodeJS.Timeout | null>(null)
 
   const { outputDir } = React.useMemo(() => {
-    const outputDir = item.testCase ? outputDirForTestCase(item.testCase) : undefined;
-    return { outputDir };
-  }, [item]);
+    const outputDir = item.testCase ? outputDirForTestCase(item.testCase) : undefined
+    return { outputDir }
+  }, [item])
 
   React.useEffect(() => {
-    if (pollTimer.current)
-      clearTimeout(pollTimer.current);
+    if (pollTimer.current) clearTimeout(pollTimer.current)
 
-    const result = item.testCase?.results[0];
+    const result = item.testCase?.results[0]
     if (!result || item.treeItem?.status === 'scheduled') {
-      setModel(undefined);
-      return;
+      setModel(undefined)
+      return
     }
 
     // Test finished.
-    const attachment = result && result.duration >= 0 && result.attachments.find(a => a.name === 'trace');
+    const attachment =
+      result && result.duration >= 0 && result.attachments.find((a) => a.name === 'trace')
     if (attachment && attachment.path) {
-      loadSingleTraceFile(attachment.path, result.startTime.getTime()).then(model => setModel({ model, isLive: false }));
-      return;
+      loadSingleTraceFile(attachment.path, result.startTime.getTime()).then((model) =>
+        setModel({ model, isLive: false })
+      )
+      return
     }
 
     if (!outputDir) {
-      setModel(undefined);
-      return;
+      setModel(undefined)
+      return
     }
 
     const traceLocation = [
@@ -68,53 +72,55 @@ export const TraceView: React.FC<{
       artifactsFolderName(result.workerIndex),
       'traces',
       `${item.testCase?.id}.json`
-    ].join(pathSeparator);
+    ].join(pathSeparator)
     // Start polling running test.
     pollTimer.current = setTimeout(async () => {
       try {
-        const model = await loadSingleTraceFile(traceLocation, Date.now());
-        setModel({ model, isLive: true });
+        const model = await loadSingleTraceFile(traceLocation, Date.now())
+        setModel({ model, isLive: true })
       } catch {
-        const model = new TraceModel('', []);
-        model.errorDescriptors.push(...result.errors.flatMap(error => !!error.message ? [{ message: error.message }] : []));
-        setModel({ model, isLive: false });
+        const model = new TraceModel('', [])
+        model.errorDescriptors.push(
+          ...result.errors.flatMap((error) => (!!error.message ? [{ message: error.message }] : []))
+        )
+        setModel({ model, isLive: false })
       } finally {
-        setCounter(counter + 1);
+        setCounter(counter + 1)
       }
-    }, 500);
+    }, 500)
     return () => {
-      if (pollTimer.current)
-        clearTimeout(pollTimer.current);
-    };
-  }, [outputDir, item, setModel, counter, setCounter, pathSeparator]);
+      if (pollTimer.current) clearTimeout(pollTimer.current)
+    }
+  }, [outputDir, item, setModel, counter, setCounter, pathSeparator])
 
-  return <Workbench
-    model={model?.model}
-    key='workbench'
-    showSourcesFirst={true}
-    rootDir={rootDir}
-    fallbackLocation={item.testFile}
-    isLive={model?.isLive}
-    status={item.treeItem?.status}
-    annotations={item.testCase?.annotations ?? []}
-    onOpenExternally={onOpenExternally}
-    revealSource={revealSource}
-  />;
-};
+  return (
+    <Workbench
+      model={model?.model}
+      key="workbench"
+      showSourcesFirst={true}
+      rootDir={rootDir}
+      fallbackLocation={item.testFile}
+      isLive={model?.isLive}
+      status={item.treeItem?.status}
+      annotations={item.testCase?.annotations ?? []}
+      onOpenExternally={onOpenExternally}
+      revealSource={revealSource}
+    />
+  )
+}
 
 const outputDirForTestCase = (testCase: reporterTypes.TestCase): string | undefined => {
   for (let suite: reporterTypes.Suite | undefined = testCase.parent; suite; suite = suite.parent) {
-    if (suite.project())
-      return suite.project()?.outputDir;
+    if (suite.project()) return suite.project()?.outputDir
   }
-  return undefined;
-};
+  return undefined
+}
 
 async function loadSingleTraceFile(absolutePath: string, timestamp: number): Promise<TraceModel> {
-  const traceUri = `file?path=${encodeURIComponent(absolutePath)}&timestamp=${timestamp}`;
-  const params = new URLSearchParams();
-  params.set('trace', traceUri);
-  const response = await fetch(`contexts?${params.toString()}`);
-  const contextEntries = await response.json() as ContextEntry[];
-  return new TraceModel(traceUri, contextEntries);
+  const traceUri = `file?path=${encodeURIComponent(absolutePath)}&timestamp=${timestamp}`
+  const params = new URLSearchParams()
+  params.set('trace', traceUri)
+  const response = await fetch(`contexts?${params.toString()}`)
+  const contextEntries = (await response.json()) as ContextEntry[]
+  return new TraceModel(traceUri, contextEntries)
 }

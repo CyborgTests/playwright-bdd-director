@@ -14,43 +14,37 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React from 'react'
 
 export const GlassPane: React.FC<{
-  cursor: string;
-  onPaneMouseMove?: (e: MouseEvent) => void;
-  onPaneMouseUp?: (e: MouseEvent) => void;
-  onPaneDoubleClick?: (e: MouseEvent) => void;
+  cursor: string
+  onPaneMouseMove?: (e: MouseEvent) => void
+  onPaneMouseUp?: (e: MouseEvent) => void
+  onPaneDoubleClick?: (e: MouseEvent) => void
 }> = ({ cursor, onPaneMouseMove, onPaneMouseUp, onPaneDoubleClick }) => {
   React.useEffect(() => {
-    const glassPaneDiv = document.createElement('div');
-    glassPaneDiv.style.position = 'fixed';
-    glassPaneDiv.style.top = '0';
-    glassPaneDiv.style.right = '0';
-    glassPaneDiv.style.bottom = '0';
-    glassPaneDiv.style.left = '0';
-    glassPaneDiv.style.zIndex = '9999';
-    glassPaneDiv.style.cursor = cursor;
+    const glassPaneDiv = document.createElement('div')
+    glassPaneDiv.style.position = 'fixed'
+    glassPaneDiv.style.top = '0'
+    glassPaneDiv.style.right = '0'
+    glassPaneDiv.style.bottom = '0'
+    glassPaneDiv.style.left = '0'
+    glassPaneDiv.style.zIndex = '9999'
+    glassPaneDiv.style.cursor = cursor
 
-    document.body.appendChild(glassPaneDiv);
+    document.body.appendChild(glassPaneDiv)
 
-    if (onPaneMouseMove)
-      glassPaneDiv.addEventListener('mousemove', onPaneMouseMove);
-    if (onPaneMouseUp)
-      glassPaneDiv.addEventListener('mouseup', onPaneMouseUp);
-    if (onPaneDoubleClick)
-      document.body.addEventListener('dblclick', onPaneDoubleClick);
+    if (onPaneMouseMove) glassPaneDiv.addEventListener('mousemove', onPaneMouseMove)
+    if (onPaneMouseUp) glassPaneDiv.addEventListener('mouseup', onPaneMouseUp)
+    if (onPaneDoubleClick) document.body.addEventListener('dblclick', onPaneDoubleClick)
 
     return () => {
-      if (onPaneMouseMove)
-        glassPaneDiv.removeEventListener('mousemove', onPaneMouseMove);
-      if (onPaneMouseUp)
-        glassPaneDiv.removeEventListener('mouseup', onPaneMouseUp);
-      if (onPaneDoubleClick)
-        document.body.removeEventListener('dblclick', onPaneDoubleClick);
-      document.body.removeChild(glassPaneDiv);
-    };
-  }, [cursor, onPaneMouseMove, onPaneMouseUp, onPaneDoubleClick]);
+      if (onPaneMouseMove) glassPaneDiv.removeEventListener('mousemove', onPaneMouseMove)
+      if (onPaneMouseUp) glassPaneDiv.removeEventListener('mouseup', onPaneMouseUp)
+      if (onPaneDoubleClick) document.body.removeEventListener('dblclick', onPaneDoubleClick)
+      document.body.removeChild(glassPaneDiv)
+    }
+  }, [cursor, onPaneMouseMove, onPaneMouseUp, onPaneDoubleClick])
 
-  return <></>;
-};
+  return <></>
+}

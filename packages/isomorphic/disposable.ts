@@ -15,11 +15,11 @@
  */
 
 export interface Disposable {
-  dispose: () => Promise<void>;
+  dispose: () => Promise<void>
 }
 
 export async function disposeAll(disposables: Disposable[]) {
-  const copy = [...disposables];
-  disposables.length = 0;
-  await Promise.all(copy.map(d => d.dispose()));
+  const copy = [...disposables]
+  disposables.length = 0
+  await Promise.all(copy.map((d) => d.dispose()))
 }

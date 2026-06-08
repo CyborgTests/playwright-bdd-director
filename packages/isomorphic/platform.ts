@@ -14,53 +14,53 @@
  * limitations under the License.
  */
 
-import { webColors } from './colors';
+import { webColors } from './colors'
 
-import type * as fs from 'fs';
-import type * as path from 'path';
-import type { Readable, Writable } from 'stream';
-import type { Colors } from '@isomorphic/colors';
-import type * as channels from '@protocol/channels';
+import type * as fs from 'fs'
+import type * as path from 'path'
+import type { Readable, Writable } from 'stream'
+import type { Colors } from '@isomorphic/colors'
+import type * as channels from '@protocol/channels'
 
 export type Zone = {
-  push(data: unknown): Zone;
-  pop(): Zone;
-  run<R>(func: () => R): R;
-  data<T>(): T | undefined;
-};
+  push(data: unknown): Zone
+  pop(): Zone
+  run<R>(func: () => R): R
+  data<T>(): T | undefined
+}
 
 const noopZone: Zone = {
   push: () => noopZone,
   pop: () => noopZone,
-  run: func => func(),
-  data: () => undefined,
-};
+  run: (func) => func(),
+  data: () => undefined
+}
 
 export type Platform = {
-  name: 'node' | 'web' | 'empty';
+  name: 'node' | 'web' | 'empty'
 
-  boxedStackPrefixes: () => string[];
-  calculateSha1: (text: string) => Promise<string>;
-  colors: Colors;
-  coreDir?: string;
-  createGuid: () => string;
-  defaultMaxListeners: () => number;
-  env: Record<string, string | undefined>;
-  fs: () => typeof fs;
-  inspectCustom: symbol | undefined;
-  isDebugMode: () => boolean;
-  isJSDebuggerAttached: () => boolean;
-  isLogEnabled: (name: 'api' | 'channel') => boolean;
-  isUnderTest: () => boolean,
-  log: (name: 'api' | 'channel', message: string | Error | object) => void;
-  path: () => typeof path;
-  pathSeparator: string;
-  showInternalStackFrames: () => boolean,
-  streamFile: (path: string, writable: Writable) => Promise<void>,
-  streamReadable: (channel: channels.StreamChannel) => Readable,
-  streamWritable: (channel: channels.WritableStreamChannel) => Writable,
-  zones: { empty: Zone, current: () => Zone; };
-};
+  boxedStackPrefixes: () => string[]
+  calculateSha1: (text: string) => Promise<string>
+  colors: Colors
+  coreDir?: string
+  createGuid: () => string
+  defaultMaxListeners: () => number
+  env: Record<string, string | undefined>
+  fs: () => typeof fs
+  inspectCustom: symbol | undefined
+  isDebugMode: () => boolean
+  isJSDebuggerAttached: () => boolean
+  isLogEnabled: (name: 'api' | 'channel') => boolean
+  isUnderTest: () => boolean
+  log: (name: 'api' | 'channel', message: string | Error | object) => void
+  path: () => typeof path
+  pathSeparator: string
+  showInternalStackFrames: () => boolean
+  streamFile: (path: string, writable: Writable) => Promise<void>
+  streamReadable: (channel: channels.StreamChannel) => Readable
+  streamWritable: (channel: channels.WritableStreamChannel) => Writable
+  zones: { empty: Zone; current: () => Zone }
+}
 
 export const emptyPlatform: Platform = {
   name: 'empty',
@@ -68,13 +68,13 @@ export const emptyPlatform: Platform = {
   boxedStackPrefixes: () => [],
 
   calculateSha1: async () => {
-    throw new Error('Not implemented');
+    throw new Error('Not implemented')
   },
 
   colors: webColors,
 
   createGuid: () => {
-    throw new Error('Not implemented');
+    throw new Error('Not implemented')
   },
 
   defaultMaxListeners: () => 10,
@@ -82,7 +82,7 @@ export const emptyPlatform: Platform = {
   env: {},
 
   fs: () => {
-    throw new Error('Not implemented');
+    throw new Error('Not implemented')
   },
 
   inspectCustom: undefined,
@@ -92,15 +92,15 @@ export const emptyPlatform: Platform = {
   isJSDebuggerAttached: () => false,
 
   isLogEnabled(name: 'api' | 'channel') {
-    return false;
+    return false
   },
 
   isUnderTest: () => false,
 
-  log(name: 'api' | 'channel', message: string | Error | object) { },
+  log(name: 'api' | 'channel', message: string | Error | object) {},
 
   path: () => {
-    throw new Error('Function not implemented.');
+    throw new Error('Function not implemented.')
   },
 
   pathSeparator: '/',
@@ -108,16 +108,16 @@ export const emptyPlatform: Platform = {
   showInternalStackFrames: () => false,
 
   streamFile(path: string, writable: Writable): Promise<void> {
-    throw new Error('Streams are not available');
+    throw new Error('Streams are not available')
   },
 
   streamReadable: (channel: channels.StreamChannel) => {
-    throw new Error('Streams are not available');
+    throw new Error('Streams are not available')
   },
 
   streamWritable: (channel: channels.WritableStreamChannel) => {
-    throw new Error('Streams are not available');
+    throw new Error('Streams are not available')
   },
 
-  zones: { empty: noopZone, current: () => noopZone },
-};
+  zones: { empty: noopZone, current: () => noopZone }
+}

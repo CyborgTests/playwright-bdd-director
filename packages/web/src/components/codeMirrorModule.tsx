@@ -15,24 +15,24 @@
 */
 
 // @ts-ignore
-import codemirror from 'codemirror';
-import type codemirrorType from 'codemirror';
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/python/python';
-import 'codemirror/mode/clike/clike';
-import 'codemirror/mode/markdown/markdown';
-import 'codemirror/addon/display/placeholder';
-import 'codemirror/addon/mode/simple';
-import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/addon/edit/closebrackets';
-import 'codemirror/addon/search/search';
-import 'codemirror/addon/search/searchcursor';
-import 'codemirror/addon/search/jump-to-line';
-import 'codemirror/addon/dialog/dialog';
-import 'codemirror/addon/dialog/dialog.css';
+import codemirror from 'codemirror'
+import type codemirrorType from 'codemirror'
+import 'codemirror/lib/codemirror.css'
+import 'codemirror/mode/css/css'
+import 'codemirror/mode/htmlmixed/htmlmixed'
+import 'codemirror/mode/javascript/javascript'
+import 'codemirror/mode/python/python'
+import 'codemirror/mode/clike/clike'
+import 'codemirror/mode/markdown/markdown'
+import 'codemirror/addon/display/placeholder'
+import 'codemirror/addon/mode/simple'
+import 'codemirror/addon/edit/matchbrackets'
+import 'codemirror/addon/edit/closebrackets'
+import 'codemirror/addon/search/search'
+import 'codemirror/addon/search/searchcursor'
+import 'codemirror/addon/search/jump-to-line'
+import 'codemirror/addon/dialog/dialog'
+import 'codemirror/addon/dialog/dialog.css'
 
-export type CodeMirror = typeof codemirrorType;
-export default codemirror;
+export type CodeMirror = typeof codemirrorType
+export default codemirror

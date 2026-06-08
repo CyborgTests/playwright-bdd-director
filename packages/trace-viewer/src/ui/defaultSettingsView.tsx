@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import { type Setting, SettingsView } from './settingsView';
-import { kThemeOptions, type Theme, useThemeSetting } from '@web/theme';
-import { useSetting } from '@web/uiUtils';
+import * as React from 'react'
+import { type Setting, SettingsView } from './settingsView'
+import { kThemeOptions, type Theme, useThemeSetting } from '@web/theme'
+import { useSetting } from '@web/uiUtils'
 
 /**
  * A view of the collection of standard settings used between various applications
@@ -25,12 +25,12 @@ import { useSetting } from '@web/uiUtils';
 export const DefaultSettingsView: React.FC<{
   location: 'ui-mode' | 'trace-viewer'
 }> = ({ location }) => {
-  const [
-    shouldPopulateCanvasFromScreenshot,
-    setShouldPopulateCanvasFromScreenshot,
-  ] = useSetting('shouldPopulateCanvasFromScreenshot', false);
-  const [theme, setTheme] = useThemeSetting();
-  const [mergeFiles, setMergeFiles] = useSetting('mergeFiles', false);
+  const [shouldPopulateCanvasFromScreenshot, setShouldPopulateCanvasFromScreenshot] = useSetting(
+    'shouldPopulateCanvasFromScreenshot',
+    false
+  )
+  const [theme, setTheme] = useThemeSetting()
+  const [mergeFiles, setMergeFiles] = useSetting('mergeFiles', false)
 
   return (
     <SettingsView
@@ -42,20 +42,25 @@ export const DefaultSettingsView: React.FC<{
           name: 'Theme',
           options: kThemeOptions
         } satisfies Setting<Theme>,
-        ...(location === 'ui-mode' ? [{
-          type: 'check',
-          value: mergeFiles,
-          set: setMergeFiles,
-          name: 'Merge files'
-        } satisfies Setting] : []),
+        ...(location === 'ui-mode'
+          ? [
+              {
+                type: 'check',
+                value: mergeFiles,
+                set: setMergeFiles,
+                name: 'Merge files'
+              } satisfies Setting
+            ]
+          : []),
         {
           type: 'check',
           value: shouldPopulateCanvasFromScreenshot,
           set: setShouldPopulateCanvasFromScreenshot,
           name: 'Display canvas content',
-          title: 'Attempt to display the captured canvas appearance in the snapshot preview. May not be accurate.',
-        },
+          title:
+            'Attempt to display the captured canvas appearance in the snapshot preview. May not be accurate.'
+        }
       ]}
     />
-  );
-};
+  )
+}

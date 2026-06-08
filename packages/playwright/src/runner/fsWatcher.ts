@@ -14,59 +14,62 @@
  * limitations under the License.
  */
 
-import chokidar from 'chokidar';
-import type { FSWatcher as ChokidarWatcher } from 'chokidar';
+import chokidar from 'chokidar'
+import type { FSWatcher as ChokidarWatcher } from 'chokidar'
 
-export type FSEvent = { event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir', file: string };
+export type FSEvent = { event: 'add' | 'addDir' | 'change' | 'unlink' | 'unlinkDir'; file: string }
 
 export class FSWatcher {
-  private _onChange: (events: FSEvent[]) => void;
-  private _watchedPaths: string[] = [];
-  private _ignoredFolders: string[] = [];
-  private _collector: FSEvent[] = [];
-  private _fsWatcher: ChokidarWatcher | undefined;
-  private _throttleTimer: NodeJS.Timeout | undefined;
+  private _onChange: (events: FSEvent[]) => void
+  private _watchedPaths: string[] = []
+  private _ignoredFolders: string[] = []
+  private _collector: FSEvent[] = []
+  private _fsWatcher: ChokidarWatcher | undefined
+  private _throttleTimer: NodeJS.Timeout | undefined
 
   constructor(onChange: (events: FSEvent[]) => void) {
-    this._onChange = onChange;
+    this._onChange = onChange
   }
 
   async update(watchedPaths: string[], ignoredFolders: string[], reportPending: boolean) {
-    if (JSON.stringify([this._watchedPaths, this._ignoredFolders]) === JSON.stringify([watchedPaths, ignoredFolders]))
-      return;
+    if (
+      JSON.stringify([this._watchedPaths, this._ignoredFolders]) ===
+      JSON.stringify([watchedPaths, ignoredFolders])
+    )
+      return
 
-    if (reportPending)
-      this._reportEventsIfAny();
+    if (reportPending) this._reportEventsIfAny()
 
-    this._watchedPaths = watchedPaths;
-    this._ignoredFolders = ignoredFolders;
-    void this._fsWatcher?.close();
-    this._fsWatcher = undefined;
-    this._collector.length = 0;
-    clearTimeout(this._throttleTimer);
-    this._throttleTimer = undefined;
+    this._watchedPaths = watchedPaths
+    this._ignoredFolders = ignoredFolders
+    void this._fsWatcher?.close()
+    this._fsWatcher = undefined
+    this._collector.length = 0
+    clearTimeout(this._throttleTimer)
+    this._throttleTimer = undefined
 
-    if (!this._watchedPaths.length)
-      return;
+    if (!this._watchedPaths.length) return
 
-    const ignored = [...this._ignoredFolders, '**/node_modules/**'];
-    this._fsWatcher = chokidar.watch(watchedPaths, { ignoreInitial: true, ignored }).on('all', async (event, file) => {
-      if (this._throttleTimer)
-        clearTimeout(this._throttleTimer);
-      this._collector.push({ event, file });
-      this._throttleTimer = setTimeout(() => this._reportEventsIfAny(), 250);
-    });
+    const ignored = [...this._ignoredFolders, '**/node_modules/**']
+    this._fsWatcher = chokidar
+      .watch(watchedPaths, { ignoreInitial: true, ignored })
+      .on('all', async (event, file) => {
+        if (this._throttleTimer) clearTimeout(this._throttleTimer)
+        this._collector.push({ event, file })
+        this._throttleTimer = setTimeout(() => this._reportEventsIfAny(), 250)
+      })
 
-    await new Promise((resolve, reject) => this._fsWatcher!.once('ready', resolve).once('error', reject));
+    await new Promise((resolve, reject) =>
+      this._fsWatcher!.once('ready', resolve).once('error', reject)
+    )
   }
 
   async close() {
-    await this._fsWatcher?.close();
+    await this._fsWatcher?.close()
   }
 
   private _reportEventsIfAny() {
-    if (this._collector.length)
-      this._onChange(this._collector.slice());
-    this._collector.length = 0;
+    if (this._collector.length) this._onChange(this._collector.slice())
+    this._collector.length = 0
   }
 }

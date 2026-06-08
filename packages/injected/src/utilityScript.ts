@@ -14,35 +14,38 @@
  * limitations under the License.
  */
 
-import { parseEvaluationResultValue, serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers';
+import {
+  parseEvaluationResultValue,
+  serializeAsCallArgument
+} from '@isomorphic/utilityScriptSerializers'
 
 // Keep in sync with eslint.config.mjs
 export type Builtins = {
-  setTimeout: Window['setTimeout'],
-  clearTimeout: Window['clearTimeout'],
-  setInterval: Window['setInterval'],
-  clearInterval: Window['clearInterval'],
-  requestAnimationFrame: Window['requestAnimationFrame'],
-  cancelAnimationFrame: Window['cancelAnimationFrame'],
-  requestIdleCallback: Window['requestIdleCallback'],
-  cancelIdleCallback: Window['cancelIdleCallback'],
-  performance: Window['performance'],
-  Intl: typeof window['Intl'],
-  Date: typeof window['Date'],
-  AbortSignal: typeof window['AbortSignal'],
-};
+  setTimeout: Window['setTimeout']
+  clearTimeout: Window['clearTimeout']
+  setInterval: Window['setInterval']
+  clearInterval: Window['clearInterval']
+  requestAnimationFrame: Window['requestAnimationFrame']
+  cancelAnimationFrame: Window['cancelAnimationFrame']
+  requestIdleCallback: Window['requestIdleCallback']
+  cancelIdleCallback: Window['cancelIdleCallback']
+  performance: Window['performance']
+  Intl: (typeof window)['Intl']
+  Date: (typeof window)['Date']
+  AbortSignal: (typeof window)['AbortSignal']
+}
 
 export class UtilityScript {
-  readonly global: typeof globalThis;
+  readonly global: typeof globalThis
   // Builtins protect injected code from clock emulation.
-  readonly builtins: Builtins;
-  readonly isUnderTest: boolean;
+  readonly builtins: Builtins
+  readonly isUnderTest: boolean
 
   constructor(global: typeof globalThis, isUnderTest: boolean) {
-    this.global = global;
-    this.isUnderTest = isUnderTest;
+    this.global = global
+    this.isUnderTest = isUnderTest
     if ((global as any).__pwClock) {
-      this.builtins = (global as any).__pwClock.builtins;
+      this.builtins = (global as any).__pwClock.builtins
     } else {
       this.builtins = {
         setTimeout: global.setTimeout?.bind(global),
@@ -56,48 +59,51 @@ export class UtilityScript {
         performance: global.performance,
         Intl: global.Intl,
         Date: global.Date,
-        AbortSignal: global.AbortSignal,
-      } satisfies Builtins;
+        AbortSignal: global.AbortSignal
+      } satisfies Builtins
     }
-    if (this.isUnderTest)
-      (global as any).builtins = this.builtins;
+    if (this.isUnderTest) (global as any).builtins = this.builtins
   }
 
-  evaluate(isFunction: boolean | undefined, returnByValue: boolean, expression: string, argCount: number, ...argsAndHandles: any[]) {
-    const args = argsAndHandles.slice(0, argCount);
-    const handles = argsAndHandles.slice(argCount);
-    const parameters = [];
+  evaluate(
+    isFunction: boolean | undefined,
+    returnByValue: boolean,
+    expression: string,
+    argCount: number,
+    ...argsAndHandles: any[]
+  ) {
+    const args = argsAndHandles.slice(0, argCount)
+    const handles = argsAndHandles.slice(argCount)
+    const parameters = []
     for (let i = 0; i < args.length; i++)
-      parameters[i] = parseEvaluationResultValue(args[i], handles);
+      parameters[i] = parseEvaluationResultValue(args[i], handles)
 
-    let result = this.global.eval(expression);
+    let result = this.global.eval(expression)
     if (isFunction === true) {
-      result = result(...parameters);
+      result = result(...parameters)
     } else if (isFunction === false) {
-      result = result;
+      result = result
     } else {
       // auto detect.
-      if (typeof result === 'function')
-        result = result(...parameters);
+      if (typeof result === 'function') result = result(...parameters)
     }
-    return returnByValue ? this._promiseAwareJsonValueNoThrow(result) : result;
+    return returnByValue ? this._promiseAwareJsonValueNoThrow(result) : result
   }
 
   jsonValue(returnByValue: true, value: any) {
     // Special handling of undefined to work-around multi-step returnByValue handling in WebKit.
-    if (value === undefined)
-      return undefined;
-    return serializeAsCallArgument(value, (value: any) => ({ fallThrough: value }));
+    if (value === undefined) return undefined
+    return serializeAsCallArgument(value, (value: any) => ({ fallThrough: value }))
   }
 
   private _promiseAwareJsonValueNoThrow(value: any) {
     const safeJson = (value: any) => {
       try {
-        return this.jsonValue(true, value);
+        return this.jsonValue(true, value)
       } catch (e) {
-        return undefined;
+        return undefined
       }
-    };
+    }
 
     if (value && typeof value === 'object' && typeof value.then === 'function') {
       return (async () => {
@@ -105,10 +111,10 @@ export class UtilityScript {
         // and not some overridden Promise in the page.
         // This makes Firefox and WebKit debugging protocols recognize it as a Promise,
         // properly await and return the value.
-        const promiseValue = await value;
-        return safeJson(promiseValue);
-      })();
+        const promiseValue = await value
+        return safeJson(promiseValue)
+      })()
     }
-    return safeJson(value);
+    return safeJson(value)
   }
 }

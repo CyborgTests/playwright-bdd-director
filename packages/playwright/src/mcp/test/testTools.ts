@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import * as z from 'zod';
-import { ListModeReporter } from '../../runner';
-import { defineTestTool } from './testTool';
+import * as z from 'zod'
+import { ListModeReporter } from '../../runner'
+import { defineTestTool } from './testTool'
 
 export const listTests = defineTestTool({
   schema: {
@@ -24,16 +24,16 @@ export const listTests = defineTestTool({
     title: 'List tests',
     description: 'List tests',
     inputSchema: z.object({}),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
-  handle: async context => {
-    const { testRunner, screen, output } = await context.createTestRunner();
-    const reporter = new ListModeReporter({ screen, includeTestId: true });
-    await testRunner.listTests(reporter, {});
-    return { content: output.map(text => ({ type: 'text', text })) };
-  },
-});
+  handle: async (context) => {
+    const { testRunner, screen, output } = await context.createTestRunner()
+    const reporter = new ListModeReporter({ screen, includeTestId: true })
+    await testRunner.listTests(reporter, {})
+    return { content: output.map((text) => ({ type: 'text', text })) }
+  }
+})
 
 export const runTests = defineTestTool({
   schema: {
@@ -41,21 +41,34 @@ export const runTests = defineTestTool({
     title: 'Run tests',
     description: 'Run tests',
     inputSchema: z.object({
-      locations: z.array(z.string()).optional().describe('Folder, file or location to run: "test/e2e" or "test/e2e/file.spec.ts" or "test/e2e/file.spec.ts:20"'),
-      projects: z.array(z.string()).optional().describe('Projects to run, projects from playwright.config.ts, by default runs all projects. Running with "chromium" is a good start'),
+      locations: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'Folder, file or location to run: "test/e2e" or "test/e2e/file.spec.ts" or "test/e2e/file.spec.ts:20"'
+        ),
+      projects: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'Projects to run, projects from playwright.config.ts, by default runs all projects. Running with "chromium" is a good start'
+        )
     }),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
   handle: async (context, params, signal) => {
-    const { output } = await context.runTestsWithGlobalSetupAndPossiblePause({
-      locations: params.locations ?? [],
-      projects: params.projects,
-      disableConfigReporters: true,
-    }, signal);
-    return { content: [{ type: 'text', text: output }] };
-  },
-});
+    const { output } = await context.runTestsWithGlobalSetupAndPossiblePause(
+      {
+        locations: params.locations ?? [],
+        projects: params.projects,
+        disableConfigReporters: true
+      },
+      signal
+    )
+    return { content: [{ type: 'text', text: output }] }
+  }
+})
 
 export const debugTest = defineTestTool({
   schema: {
@@ -65,24 +78,32 @@ export const debugTest = defineTestTool({
     inputSchema: z.object({
       test: z.object({
         id: z.string().describe('Test ID to debug.'),
-        title: z.string().describe('Human readable test title for granting permission to debug the test.'),
-      }),
+        title: z
+          .string()
+          .describe('Human readable test title for granting permission to debug the test.')
+      })
     }),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
   handle: async (context, params, signal) => {
-    const { output, status } = await context.runTestsWithGlobalSetupAndPossiblePause({
-      headed: context.computedHeaded,
-      locations: [], // we can make this faster by passing the test's location, so we don't need to scan all tests to find the ID
-      testIds: [params.test.id],
-      // For automatic recovery
-      timeout: 0,
-      workers: 1,
-      pauseOnError: true,
-      disableConfigReporters: true,
-      actionTimeout: 5000,
-    }, signal);
-    return { content: [{ type: 'text', text: output }], isError: status !== 'paused' && status !== 'passed' };
-  },
-});
+    const { output, status } = await context.runTestsWithGlobalSetupAndPossiblePause(
+      {
+        headed: context.computedHeaded,
+        locations: [], // we can make this faster by passing the test's location, so we don't need to scan all tests to find the ID
+        testIds: [params.test.id],
+        // For automatic recovery
+        timeout: 0,
+        workers: 1,
+        pauseOnError: true,
+        disableConfigReporters: true,
+        actionTimeout: 5000
+      },
+      signal
+    )
+    return {
+      content: [{ type: 'text', text: output }],
+      isError: status !== 'paused' && status !== 'passed'
+    }
+  }
+})

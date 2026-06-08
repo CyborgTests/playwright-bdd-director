@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { Toolbar } from '@web/components/toolbar';
-import { ToolbarButton } from '@web/components/toolbarButton';
-import { ListView } from '@web/components/listView';
-import { Dialog } from '@web/shared/dialog';
-import '@web/third_party/vscode/codicon.css';
-import type { TestFile } from './DirectorModel';
+import '@web/third_party/vscode/codicon.css'
+import './FileExplorer.css'
 
-import './FileExplorer.css';
+import { ListView } from '@web/components/listView'
+import { Toolbar } from '@web/components/toolbar'
+import { ToolbarButton } from '@web/components/toolbarButton'
+import { Dialog } from '@web/shared/dialog'
+import React from 'react'
+
+import type { TestFile } from './DirectorModel'
 
 export interface FileExplorerProps {
-  files: TestFile[];
-  selectedFile: TestFile | null;
-  onFileSelect: (file: TestFile) => void;
-  onNewFile?: (name: string, ext: string) => void;
-  onDeleteFile?: (file: TestFile) => void;
-  runningFile?: string;
+  files: TestFile[]
+  selectedFile: TestFile | null
+  onFileSelect: (file: TestFile) => void
+  onNewFile?: (name: string, ext: string) => void
+  onDeleteFile?: (file: TestFile) => void
+  runningFile?: string
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -39,83 +40,104 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   onFileSelect,
   onNewFile,
   onDeleteFile,
-  runningFile,
+  runningFile: _runningFile
 }) => {
   // Dialog states
-  const [showNewFileDialog, setShowNewFileDialog] = React.useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-  const [newFileName, setNewFileName] = React.useState('');
-  const [newFileExt, setNewFileExt] = React.useState('.md');
-  const [fileToDelete, setFileToDelete] = React.useState<TestFile | null>(null);
-  const [deleteButtonRef, setDeleteButtonRef] = React.useState<HTMLButtonElement | null>(null);
-  
+  const [showNewFileDialog, setShowNewFileDialog] = React.useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false)
+  const [newFileName, setNewFileName] = React.useState('')
+  const [newFileExt, setNewFileExt] = React.useState('.md')
+  const [fileToDelete, setFileToDelete] = React.useState<TestFile | null>(null)
+  const [deleteButtonRef, setDeleteButtonRef] = React.useState<HTMLButtonElement | null>(null)
+
   // Button refs for anchoring
-  const newFileButtonRef = React.useRef<HTMLButtonElement>(null);
-  
+  const newFileButtonRef = React.useRef<HTMLButtonElement>(null)
+
   // Handlers
   const handleNewFile = () => {
-    setShowDeleteDialog(false);
-    setFileToDelete(null);
-    setDeleteButtonRef(null);
-    setShowNewFileDialog(true);
-    setNewFileName('');
-    setNewFileExt('.md');
-  };
-  
+    setShowDeleteDialog(false)
+    setFileToDelete(null)
+    setDeleteButtonRef(null)
+    setShowNewFileDialog(true)
+    setNewFileName('')
+    setNewFileExt('.md')
+  }
+
   const handleConfirmNewFile = () => {
-    if (!newFileName.trim()) return;
-    onNewFile?.(newFileName, newFileExt);
-    setShowNewFileDialog(false);
-  };
-  
+    if (!newFileName.trim()) return
+    onNewFile?.(newFileName, newFileExt)
+    setShowNewFileDialog(false)
+  }
+
   const handleDeleteFile = (file: TestFile, buttonEl: HTMLButtonElement | null) => {
-    setShowNewFileDialog(false);
-    setNewFileName('');
-    setNewFileExt('.md');
+    setShowNewFileDialog(false)
+    setNewFileName('')
+    setNewFileExt('.md')
     // Select the file being deleted
-    onFileSelect(file);
-    setFileToDelete(file);
-    setDeleteButtonRef(buttonEl);
-    setShowDeleteDialog(true);
-  };
-  
+    onFileSelect(file)
+    setFileToDelete(file)
+    setDeleteButtonRef(buttonEl)
+    setShowDeleteDialog(true)
+  }
+
   const handleConfirmDelete = () => {
-    if (!fileToDelete) return;
-    onDeleteFile?.(fileToDelete);
-    setShowDeleteDialog(false);
-    setFileToDelete(null);
-  };
-  
+    if (!fileToDelete) return
+    onDeleteFile?.(fileToDelete)
+    setShowDeleteDialog(false)
+    setFileToDelete(null)
+  }
+
   return (
     <div className="director-file-explorer">
-      <Toolbar noShadow={true} className='director-section-toolbar'>
-        <img src='cyborgtests-logo.svg' alt="CyborgTests" className="director-panel-logo" />
-        <div className='section-title'>DIRECTOR</div>
-        {onNewFile && <ToolbarButton ref={newFileButtonRef} icon='add' title='New file' onClick={handleNewFile} />}
+      <Toolbar noShadow={true} className="director-section-toolbar">
+        <img src="cyborgtests-logo.svg" alt="CyborgTests" className="director-panel-logo" />
+        <div className="section-title">DIRECTOR</div>
+        {onNewFile && (
+          <ToolbarButton
+            ref={newFileButtonRef}
+            icon="add"
+            title="New file"
+            onClick={handleNewFile}
+          />
+        )}
       </Toolbar>
       <div className="director-files-wrapper">
         <ListView
-          name='director-files'
+          name="director-files"
           items={files}
-          id={file => file?.path || ''}
+          id={(file) => file?.path || ''}
           isDeleting={(file) => fileToDelete?.path === file?.path && showDeleteDialog}
-          render={file => {
-          if (!file) return null;
-          return <div className='hbox director-tree-item'>
-            <div className='director-tree-item-title'>
-              <span>{file.name}</span>
-              {file.isModified && <span className='director-file-modified'>●</span>}
-            </div>
-            <Toolbar noShadow={true}>
-              {onDeleteFile && <ToolbarButton icon='trash' title='Delete' onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleDeleteFile(file, e.currentTarget as HTMLButtonElement); }} />}
-            </Toolbar>
-          </div>;
-        }}
-        selectedItem={selectedFile}
-        onSelected={file => { if (file) onFileSelect(file); }}
-        noItemsMessage='No files' />
+          render={(file) => {
+            if (!file) return null
+            return (
+              <div className="hbox director-tree-item">
+                <div className="director-tree-item-title">
+                  <span>{file.name}</span>
+                  {file.isModified && <span className="director-file-modified">●</span>}
+                </div>
+                <Toolbar noShadow={true}>
+                  {onDeleteFile && (
+                    <ToolbarButton
+                      icon="trash"
+                      title="Delete"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation()
+                        handleDeleteFile(file, e.currentTarget as HTMLButtonElement)
+                      }}
+                    />
+                  )}
+                </Toolbar>
+              </div>
+            )
+          }}
+          selectedItem={selectedFile}
+          onSelected={(file) => {
+            if (file) onFileSelect(file)
+          }}
+          noItemsMessage="No files"
+        />
       </div>
-      
+
       {/* New File Dialog */}
       <Dialog
         open={showNewFileDialog}
@@ -130,7 +152,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         <div className="title">New File</div>
         <div className="body">
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ color: 'var(--vscode-foreground)', display: 'block', marginBottom: '5px' }}>File Name:</label>
+            <label
+              style={{ color: 'var(--vscode-foreground)', display: 'block', marginBottom: '5px' }}
+            >
+              File Name:
+            </label>
             <input
               type="text"
               value={newFileName}
@@ -148,7 +174,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             />
           </div>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ color: 'var(--vscode-foreground)', display: 'block', marginBottom: '5px' }}>Extension:</label>
+            <label
+              style={{ color: 'var(--vscode-foreground)', display: 'block', marginBottom: '5px' }}
+            >
+              Extension:
+            </label>
             <select
               value={newFileExt}
               onChange={(e) => setNewFileExt(e.target.value)}
@@ -166,10 +196,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             </select>
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button
-              className="button"
-              onClick={() => setShowNewFileDialog(false)}
-            >
+            <button className="button" onClick={() => setShowNewFileDialog(false)}>
               Cancel
             </button>
             <button
@@ -182,15 +209,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
           </div>
         </div>
       </Dialog>
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={showDeleteDialog}
         isModal={false}
         requestClose={() => {
-          setShowDeleteDialog(false);
-          setFileToDelete(null);
-          setDeleteButtonRef(null);
+          setShowDeleteDialog(false)
+          setFileToDelete(null)
+          setDeleteButtonRef(null)
         }}
         style={{ minWidth: 250, maxWidth: 250, width: 250 }}
         anchor={{ current: deleteButtonRef }}
@@ -207,8 +234,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             <button
               className="button"
               onClick={() => {
-                setShowDeleteDialog(false);
-                setFileToDelete(null);
+                setShowDeleteDialog(false)
+                setFileToDelete(null)
               }}
             >
               Cancel
@@ -224,5 +251,5 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         </div>
       </Dialog>
     </div>
-  );
-};
+  )
+}

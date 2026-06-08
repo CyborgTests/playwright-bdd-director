@@ -14,43 +14,57 @@
   limitations under the License.
 */
 
-import * as React from 'react';
-import './expandable.css';
-import { clsx } from '../uiUtils';
+import * as React from 'react'
+import './expandable.css'
+import { clsx } from '../uiUtils'
 
-export const Expandable: React.FunctionComponent<React.PropsWithChildren<{
-  title: React.JSX.Element | string,
-  setExpanded: (expanded: boolean) => void,
-  expanded: boolean,
-  expandOnTitleClick?: boolean,
-  className?: string;
-}>> = ({ title, children, setExpanded, expanded, expandOnTitleClick, className }) => {
-  const titleId = React.useId();
-  const regionId = React.useId();
+export const Expandable: React.FunctionComponent<
+  React.PropsWithChildren<{
+    title: React.JSX.Element | string
+    setExpanded: (expanded: boolean) => void
+    expanded: boolean
+    expandOnTitleClick?: boolean
+    className?: string
+  }>
+> = ({ title, children, setExpanded, expanded, expandOnTitleClick, className }) => {
+  const titleId = React.useId()
+  const regionId = React.useId()
 
-  const onClick = React.useCallback(() => setExpanded(!expanded), [expanded, setExpanded]);
+  const onClick = React.useCallback(() => setExpanded(!expanded), [expanded, setExpanded])
 
-  const chevron = <div
-    className={clsx('codicon', expanded ? 'codicon-chevron-down' : 'codicon-chevron-right')}
-    style={{ cursor: 'pointer', color: 'var(--vscode-foreground)', marginLeft: '5px' }}
-    onClick={!expandOnTitleClick ? onClick : undefined} />;
+  const chevron = (
+    <div
+      className={clsx('codicon', expanded ? 'codicon-chevron-down' : 'codicon-chevron-right')}
+      style={{ cursor: 'pointer', color: 'var(--vscode-foreground)', marginLeft: '5px' }}
+      onClick={!expandOnTitleClick ? onClick : undefined}
+    />
+  )
 
-  return <div className={clsx('expandable', expanded && 'expanded', className)}>
-    {expandOnTitleClick ?
-      <div
-        id={titleId}
-        role='button'
-        aria-expanded={expanded}
-        aria-controls={regionId}
-        className='expandable-title'
-        onClick={onClick}>
-        {chevron}
-        {title}
-      </div> :
-      <div className='expandable-title'>
-        {chevron}
-        {title}
-      </div>}
-    {expanded && <div id={regionId} aria-labelledby={titleId} role='region' className='expandable-content'>{children}</div>}
-  </div>;
-};
+  return (
+    <div className={clsx('expandable', expanded && 'expanded', className)}>
+      {expandOnTitleClick ? (
+        <div
+          id={titleId}
+          role="button"
+          aria-expanded={expanded}
+          aria-controls={regionId}
+          className="expandable-title"
+          onClick={onClick}
+        >
+          {chevron}
+          {title}
+        </div>
+      ) : (
+        <div className="expandable-title">
+          {chevron}
+          {title}
+        </div>
+      )}
+      {expanded && (
+        <div id={regionId} aria-labelledby={titleId} role="region" className="expandable-content">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}

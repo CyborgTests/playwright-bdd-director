@@ -20,43 +20,45 @@
 
 /* eslint-disable no-restricted-globals */
 
-import { monotonicTime } from './time';
+import { monotonicTime } from './time'
 
-export async function raceAgainstDeadline<T>(cb: () => Promise<T>, deadline: number): Promise<{ result: T, timedOut: false } | { timedOut: true }> {
-  let timer: NodeJS.Timeout | undefined;
+export async function raceAgainstDeadline<T>(
+  cb: () => Promise<T>,
+  deadline: number
+): Promise<{ result: T; timedOut: false } | { timedOut: true }> {
+  let timer: NodeJS.Timeout | undefined
   // Note: not including "await" here truncates the async stack inside cb(), so always include it.
   return await Promise.race([
-    cb().then(result => {
-      return { result, timedOut: false };
+    cb().then((result) => {
+      return { result, timedOut: false }
     }),
-    new Promise<{ timedOut: true }>(resolve => {
-      if (!deadline)
-        return;
-      timer = setTimeout(() => resolve({ timedOut: true }), deadline - monotonicTime());
-    }),
+    new Promise<{ timedOut: true }>((resolve) => {
+      if (!deadline) return
+      timer = setTimeout(() => resolve({ timedOut: true }), deadline - monotonicTime())
+    })
   ]).finally(() => {
-    clearTimeout(timer);
-  });
+    clearTimeout(timer)
+  })
 }
 
-export async function pollAgainstDeadline<T>(callback: () => Promise<{ continuePolling: boolean, result: T }>, deadline: number, pollIntervals: number[] = [100, 250, 500, 1000]): Promise<{ result?: T, timedOut: boolean }> {
-  const lastPollInterval = pollIntervals.pop() ?? 1000;
-  let lastResult: T|undefined;
-  const wrappedCallback = () => Promise.resolve().then(callback);
+export async function pollAgainstDeadline<T>(
+  callback: () => Promise<{ continuePolling: boolean; result: T }>,
+  deadline: number,
+  pollIntervals: number[] = [100, 250, 500, 1000]
+): Promise<{ result?: T; timedOut: boolean }> {
+  const lastPollInterval = pollIntervals.pop() ?? 1000
+  let lastResult: T | undefined
+  const wrappedCallback = () => Promise.resolve().then(callback)
   while (true) {
-    const time = monotonicTime();
-    if (deadline && time >= deadline)
-      break;
-    const received = await raceAgainstDeadline(wrappedCallback, deadline);
-    if (received.timedOut)
-      break;
-    lastResult = (received as any).result.result;
-    if (!(received as any).result.continuePolling)
-      return { result: lastResult, timedOut: false };
-    const interval = pollIntervals!.shift() ?? lastPollInterval;
-    if (deadline && deadline <= monotonicTime() + interval)
-      break;
-    await new Promise(x => setTimeout(x, interval));
+    const time = monotonicTime()
+    if (deadline && time >= deadline) break
+    const received = await raceAgainstDeadline(wrappedCallback, deadline)
+    if (received.timedOut) break
+    lastResult = (received as any).result.result
+    if (!(received as any).result.continuePolling) return { result: lastResult, timedOut: false }
+    const interval = pollIntervals!.shift() ?? lastPollInterval
+    if (deadline && deadline <= monotonicTime() + interval) break
+    await new Promise((x) => setTimeout(x, interval))
   }
-  return { timedOut: true, result: lastResult };
+  return { timedOut: true, result: lastResult }
 }

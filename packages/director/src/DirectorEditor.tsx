@@ -14,47 +14,47 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { clsx } from '@web/uiUtils';
-import { Toolbar } from '@web/components/toolbar';
-import { ToolbarButton } from '@web/components/toolbarButton';
-import { CodeMirrorWrapper } from '@web/components/codeMirrorWrapper';
-import ReactMarkdown from 'react-markdown';
-import type { TestFile } from './DirectorModel';
+import './DirectorEditor.css'
 
-import './DirectorEditor.css';
+import { CodeMirrorWrapper } from '@web/components/codeMirrorWrapper'
+import { Toolbar } from '@web/components/toolbar'
+import { ToolbarButton } from '@web/components/toolbarButton'
+import React from 'react'
+import ReactMarkdown from 'react-markdown'
 
-type EditorMode = 'editor' | 'preview';
+import type { TestFile } from './DirectorModel'
+
+type EditorMode = 'editor' | 'preview'
 
 export interface DirectorEditorProps {
-  file: TestFile | null;
-  onContentChange: (content: string) => void;
-  onStage: () => void;
-  isStaging: boolean;
+  file: TestFile | null
+  onContentChange: (content: string) => void
+  onStage: () => void
+  isStaging: boolean
 }
 
 export const DirectorEditor: React.FC<DirectorEditorProps> = ({
   file,
   onContentChange,
   onStage,
-  isStaging,
+  isStaging
 }) => {
-  const [mode, setMode] = React.useState<EditorMode>('editor');
-  const [editedContent, setEditedContent] = React.useState<string>(file?.content || '');
+  const [mode, setMode] = React.useState<EditorMode>('editor')
+  const [editedContent, setEditedContent] = React.useState<string>(file?.content || '')
 
   React.useEffect(() => {
-    setEditedContent(file?.content || '');
-  }, [file?.path]);
+    setEditedContent(file?.content || '')
+  }, [file?.path])
 
   const handleContentChange = (content: string) => {
-    setEditedContent(content);
-    onContentChange(content);
-  };
+    setEditedContent(content)
+    onContentChange(content)
+  }
 
   if (!file) {
     return (
       <div className="director-editor">
-        <Toolbar noShadow={true} className='director-section-toolbar'>
+        <Toolbar noShadow={true} className="director-section-toolbar">
           <span className="director-editor-filename">No file selected</span>
           <div className="director-spacer" />
         </Toolbar>
@@ -62,31 +62,31 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
           <div className="director-empty">Select a file to edit</div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="director-editor">
-      <Toolbar noShadow={true} className='director-section-toolbar'>
+      <Toolbar noShadow={true} className="director-section-toolbar">
         <span className="director-editor-filename">{file?.name || 'No file selected'}</span>
         <div className="director-spacer" />
-        
+
         {/* Mode toggle */}
         <div className="director-mode-toggle">
           <ToolbarButton
-            icon='edit'
-            title='Editor'
+            icon="edit"
+            title="Editor"
             toggled={mode === 'editor'}
             onClick={() => setMode('editor')}
           />
           <ToolbarButton
-            icon='eye'
-            title='Preview'
+            icon="eye"
+            title="Preview"
             toggled={mode === 'preview'}
             onClick={() => setMode('preview')}
           />
         </div>
-        
+
         {/* Stage button */}
         <ToolbarButton
           icon={isStaging ? 'sync~spin' : 'sync'}
@@ -95,12 +95,12 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
           disabled={!file || isStaging}
         />
       </Toolbar>
-      
+
       <div className="director-editor-content">
         {mode === 'editor' ? (
           <CodeMirrorWrapper
             text={editedContent}
-            highlighter='markdown'
+            highlighter="markdown"
             onChange={handleContentChange}
             lineNumbers={true}
             wrapLines={true}
@@ -113,5 +113,5 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}

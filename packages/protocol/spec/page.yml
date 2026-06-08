@@ -27,7 +27,6 @@ Page:
     video: Artifact?
 
   commands:
-
     addInitScript:
       title: Add init script
       group: configuration
@@ -71,34 +70,34 @@ Page:
         media:
           type: enum?
           literals:
-          - screen
-          - print
-          - no-override
+            - screen
+            - print
+            - no-override
         colorScheme:
           type: enum?
           literals:
-          - dark
-          - light
-          - no-preference
-          - no-override
+            - dark
+            - light
+            - no-preference
+            - no-override
         reducedMotion:
           type: enum?
           literals:
-          - reduce
-          - no-preference
-          - no-override
+            - reduce
+            - no-preference
+            - no-override
         forcedColors:
           type: enum?
           literals:
-          - active
-          - none
-          - no-override
+            - active
+            - none
+            - no-override
         contrast:
           type: enum?
           literals:
-          - no-preference
-          - more
-          - no-override
+            - no-preference
+            - more
+            - no-override
       flags:
         snapshot: true
         pause: true
@@ -208,8 +207,8 @@ Page:
         type:
           type: enum?
           literals:
-          - png
-          - jpeg
+            - png
+            - jpeg
         quality: int?
         fullPage: boolean?
         clip: Rect?
@@ -339,9 +338,9 @@ Page:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: int?
       flags:
         slowMo: true
@@ -355,9 +354,9 @@ Page:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: int?
       flags:
         slowMo: true
@@ -374,9 +373,9 @@ Page:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: int?
       flags:
         slowMo: true
@@ -594,13 +593,13 @@ Page:
         event:
           type: enum
           literals:
-          - console
-          - dialog
-          - fileChooser
-          - request
-          - response
-          - requestFinished
-          - requestFailed
+            - console
+            - dialog
+            - fileChooser
+            - request
+            - response
+            - requestFinished
+            - requestFailed
         enabled: boolean
 
     setDockTile:
@@ -615,8 +614,8 @@ Page:
         kind:
           type: enum
           literals:
-          - local
-          - session
+            - local
+            - session
       returns:
         items:
           type: array
@@ -629,8 +628,8 @@ Page:
         kind:
           type: enum
           literals:
-          - local
-          - session
+            - local
+            - session
         name: string
       returns:
         value: string?
@@ -642,8 +641,8 @@ Page:
         kind:
           type: enum
           literals:
-          - local
-          - session
+            - local
+            - session
         name: string
         value: string
 
@@ -654,8 +653,8 @@ Page:
         kind:
           type: enum
           literals:
-          - local
-          - session
+            - local
+            - session
         name: string
 
     webStorageClear:
@@ -665,11 +664,10 @@ Page:
         kind:
           type: enum
           literals:
-          - local
-          - session
+            - local
+            - session
 
   events:
-
     bindingCall:
       parameters:
         binding: BindingCall

@@ -14,95 +14,97 @@
   limitations under the License.
 */
 
-import * as React from 'react';
-import './xtermWrapper.css';
-import type { ITheme, Terminal } from '@xterm/xterm';
-import type { FitAddon } from '@xterm/addon-fit';
-import type { XtermModule } from './xtermModule';
-import { currentDocumentTheme, addThemeListener, removeThemeListener } from '../theme';
-import { useMeasure } from '../uiUtils';
+import * as React from 'react'
+import './xtermWrapper.css'
+import type { ITheme, Terminal } from '@xterm/xterm'
+import type { FitAddon } from '@xterm/addon-fit'
+import type { XtermModule } from './xtermModule'
+import { currentDocumentTheme, addThemeListener, removeThemeListener } from '../theme'
+import { useMeasure } from '../uiUtils'
 
 export type XtermDataSource = {
-  pending: (string | Uint8Array)[];
-  clear: () => void,
-  write: (data: string | Uint8Array) => void;
-  resize: (cols: number, rows: number) => void;
-};
+  pending: (string | Uint8Array)[]
+  clear: () => void
+  write: (data: string | Uint8Array) => void
+  resize: (cols: number, rows: number) => void
+}
 
-export const XtermWrapper: React.FC<{ source: XtermDataSource }> = ({
-  source,
-}) => {
-  const [measure, xtermElement] = useMeasure<HTMLDivElement>();
-  const [theme, setTheme] = React.useState(currentDocumentTheme());
-  const [modulePromise] = React.useState<Promise<XtermModule>>(import('./xtermModule').then(m => m.default));
-  const terminal = React.useRef<{ terminal: Terminal, fitAddon: FitAddon } | null>(null);
-
-  React.useEffect(() => {
-    addThemeListener(setTheme);
-    return () => removeThemeListener(setTheme);
-  }, []);
+export const XtermWrapper: React.FC<{ source: XtermDataSource }> = ({ source }) => {
+  const [measure, xtermElement] = useMeasure<HTMLDivElement>()
+  const [theme, setTheme] = React.useState(currentDocumentTheme())
+  const [modulePromise] = React.useState<Promise<XtermModule>>(
+    import('./xtermModule').then((m) => m.default)
+  )
+  const terminal = React.useRef<{ terminal: Terminal; fitAddon: FitAddon } | null>(null)
 
   React.useEffect(() => {
-    const oldSourceWrite = source.write;
-    const oldSourceClear = source.clear;
+    addThemeListener(setTheme)
+    return () => removeThemeListener(setTheme)
+  }, [])
 
-    (async () => {
+  React.useEffect(() => {
+    const oldSourceWrite = source.write
+    const oldSourceClear = source.clear
+
+    ;(async () => {
       // Always load the module first.
-      const { Terminal, FitAddon } = await modulePromise;
-      const element = xtermElement.current;
-      if (!element)
-        return;
+      const { Terminal, FitAddon } = await modulePromise
+      const element = xtermElement.current
+      if (!element) return
 
-      const terminalTheme = theme === 'dark-mode' ? darkTheme : lightTheme;
-      if (terminal.current && terminal.current.terminal.options.theme === terminalTheme)
-        return;
+      const terminalTheme = theme === 'dark-mode' ? darkTheme : lightTheme
+      if (terminal.current && terminal.current.terminal.options.theme === terminalTheme) return
 
-      if (terminal.current)
-        element.textContent = '';
+      if (terminal.current) element.textContent = ''
 
       const newTerminal = new Terminal({
         convertEol: true,
         fontSize: 13,
         scrollback: 10000,
         fontFamily: 'monospace',
-        theme: terminalTheme,
-      });
+        theme: terminalTheme
+      })
 
-      const fitAddon = new FitAddon();
-      newTerminal.loadAddon(fitAddon);
-      for (const p of source.pending)
-        newTerminal.write(p);
-      source.write = (data => {
-        source.pending.push(data);
-        newTerminal.write(data);
-      });
+      const fitAddon = new FitAddon()
+      newTerminal.loadAddon(fitAddon)
+      for (const p of source.pending) newTerminal.write(p)
+      source.write = (data) => {
+        source.pending.push(data)
+        newTerminal.write(data)
+      }
       source.clear = () => {
-        source.pending = [];
-        newTerminal.clear();
-      };
-      newTerminal.open(element);
-      fitAddon.fit();
-      terminal.current = { terminal: newTerminal, fitAddon };
-    })();
+        source.pending = []
+        newTerminal.clear()
+      }
+      newTerminal.open(element)
+      fitAddon.fit()
+      terminal.current = { terminal: newTerminal, fitAddon }
+    })()
     return () => {
-      source.clear = oldSourceClear;
-      source.write = oldSourceWrite;
-    };
-  }, [modulePromise, terminal, xtermElement, source, theme]);
+      source.clear = oldSourceClear
+      source.write = oldSourceWrite
+    }
+  }, [modulePromise, terminal, xtermElement, source, theme])
 
   React.useEffect(() => {
     // Fit reads data from the terminal itself, which updates lazily, probably on some timer
     // or mutation observer. Work around it.
     setTimeout(() => {
-      if (!terminal.current)
-        return;
-      terminal.current.fitAddon.fit();
-      source.resize(terminal.current.terminal.cols, terminal.current.terminal.rows);
-    }, 250);
-  }, [measure, source]);
+      if (!terminal.current) return
+      terminal.current.fitAddon.fit()
+      source.resize(terminal.current.terminal.cols, terminal.current.terminal.rows)
+    }, 250)
+  }, [measure, source])
 
-  return <div data-testid='output' className='xterm-wrapper' style={{ flex: 'auto' }} ref={xtermElement}></div>;
-};
+  return (
+    <div
+      data-testid="output"
+      className="xterm-wrapper"
+      style={{ flex: 'auto' }}
+      ref={xtermElement}
+    ></div>
+  )
+}
 
 const lightTheme: ITheme = {
   foreground: '#383a42',
@@ -125,8 +127,8 @@ const lightTheme: ITheme = {
   brightCyan: '#0184bc',
   brightWhite: '#383a42',
   selectionBackground: '#d7d7d7',
-  selectionForeground: '#383a42',
-};
+  selectionForeground: '#383a42'
+}
 
 const darkTheme: ITheme = {
   foreground: '#f8f8f2',
@@ -149,5 +151,5 @@ const darkTheme: ITheme = {
   brightCyan: '#a4ffff',
   brightWhite: '#e6e6e6',
   selectionBackground: '#44475a',
-  selectionForeground: '#f8f8f2',
-};
+  selectionForeground: '#f8f8f2'
+}

@@ -19,18 +19,18 @@ ShowActionsOptions:
     position:
       type: enum?
       literals:
-      - top-left
-      - top
-      - top-right
-      - bottom-left
-      - bottom
-      - bottom-right
+        - top-left
+        - top
+        - top-right
+        - bottom-left
+        - bottom
+        - bottom-right
     fontSize: int?
     cursor:
       type: enum?
       literals:
-      - none
-      - pointer
+        - none
+        - pointer
 
 CommonScreenshotOptions:
   type: mixin
@@ -39,18 +39,18 @@ CommonScreenshotOptions:
     caret:
       type: enum?
       literals:
-      - hide
-      - initial
+        - hide
+        - initial
     animations:
       type: enum?
       literals:
-      - disabled
-      - allow
+        - disabled
+        - allow
     scale:
       type: enum?
       literals:
-      - css
-      - device
+        - css
+        - device
     mask:
       type: array?
       items:
@@ -147,42 +147,42 @@ ContextOptions:
         send:
           type: enum?
           literals:
-          - always
-          - unauthorized
+            - always
+            - unauthorized
     deviceScaleFactor: float?
     isMobile: boolean?
     hasTouch: boolean?
     colorScheme:
       type: enum?
       literals:
-      - dark
-      - light
-      - no-preference
-      - no-override
+        - dark
+        - light
+        - no-preference
+        - no-override
     reducedMotion:
       type: enum?
       literals:
-      - reduce
-      - no-preference
-      - no-override
+        - reduce
+        - no-preference
+        - no-override
     forcedColors:
       type: enum?
       literals:
-      - active
-      - none
-      - no-override
+        - active
+        - none
+        - no-override
     acceptDownloads:
       type: enum?
       literals:
-      - accept
-      - deny
-      - internal-browser-default
+        - accept
+        - deny
+        - internal-browser-default
     contrast:
       type: enum?
       literals:
-      - no-preference
-      - more
-      - no-override
+        - no-preference
+        - more
+        - no-override
     baseURL: string?
     recordVideo:
       type: object?
@@ -201,8 +201,8 @@ ContextOptions:
     serviceWorkers:
       type: enum?
       literals:
-      - allow
-      - block
+        - allow
+        - block
     selectorEngines:
       type: array?
       items: SelectorEngine

@@ -15,7 +15,7 @@
  */
 
 function toMessage(message: any): string {
-  return String(message === undefined || message === null ? '' : message);
+  return String(message === undefined || message === null ? '' : message)
 }
 
 // Stock WebKit RDP has no dialog API. We override window.alert/confirm/prompt
@@ -23,33 +23,48 @@ function toMessage(message: any): string {
 // which holds the response until the host-side Dialog handler resolves.
 export function installDialogBridge(window: Window & typeof globalThis, endpoint: string) {
   function post(type: string, message: string, defaultValue: string): any {
-    const xhr = new window.XMLHttpRequest();
-    try { xhr.open('POST', endpoint, false); } catch (e) { return null; }
+    const xhr = new window.XMLHttpRequest()
+    try {
+      xhr.open('POST', endpoint, false)
+    } catch (e) {
+      return null
+    }
     // text/plain body keeps this a "simple" CORS request — no preflight.
-    try { xhr.send(JSON.stringify({ type, message, defaultValue })); } catch (e) { return null; }
-    if (xhr.status !== 200)
-      return null;
-    try { return JSON.parse(xhr.responseText); } catch (e) { return null; }
+    try {
+      xhr.send(JSON.stringify({ type, message, defaultValue }))
+    } catch (e) {
+      return null
+    }
+    if (xhr.status !== 200) return null
+    try {
+      return JSON.parse(xhr.responseText)
+    } catch (e) {
+      return null
+    }
   }
   Object.defineProperty(window, 'alert', {
-    configurable: true, writable: false,
-    value: function(message: any) { post('alert', toMessage(message), ''); },
-  });
+    configurable: true,
+    writable: false,
+    value: function (message: any) {
+      post('alert', toMessage(message), '')
+    }
+  })
   Object.defineProperty(window, 'confirm', {
-    configurable: true, writable: false,
-    value: function(message: any) {
-      const r = post('confirm', toMessage(message), '');
-      return !!(r && r.accept);
-    },
-  });
+    configurable: true,
+    writable: false,
+    value: function (message: any) {
+      const r = post('confirm', toMessage(message), '')
+      return !!(r && r.accept)
+    }
+  })
   Object.defineProperty(window, 'prompt', {
-    configurable: true, writable: false,
-    value: function(message: any, defaultValue: any) {
-      const def = toMessage(defaultValue);
-      const r = post('prompt', toMessage(message), def);
-      if (!r || !r.accept)
-        return null;
-      return typeof r.promptText === 'string' ? r.promptText : def;
-    },
-  });
+    configurable: true,
+    writable: false,
+    value: function (message: any, defaultValue: any) {
+      const def = toMessage(defaultValue)
+      const r = post('prompt', toMessage(message), def)
+      if (!r || !r.accept) return null
+      return typeof r.promptText === 'string' ? r.promptText : def
+    }
+  })
 }

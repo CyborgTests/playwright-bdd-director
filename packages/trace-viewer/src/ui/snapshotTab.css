@@ -74,7 +74,9 @@
 
 .snapshot-container {
   display: block;
-  box-shadow: 0 12px 28px 0 rgba(0,0,0,.2),0 2px 4px 0 rgba(0,0,0,.1);
+  box-shadow:
+    0 12px 28px 0 rgba(0, 0, 0, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
 
 .snapshot-browser-body {
@@ -90,7 +92,7 @@
   position: relative;
 }
 
-iframe[name=snapshot] {
+iframe[name='snapshot'] {
   position: absolute;
   top: 0;
   left: 0;
@@ -101,7 +103,7 @@ iframe[name=snapshot] {
   visibility: hidden;
 }
 
-iframe.snapshot-visible[name=snapshot] {
+iframe.snapshot-visible[name='snapshot'] {
   visibility: visible;
 }
 

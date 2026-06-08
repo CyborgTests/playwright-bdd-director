@@ -14,40 +14,42 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { Readable } from 'stream';
+import fs from 'fs'
+import path from 'path'
+import { Readable } from 'stream'
 
-import mime from 'mime';
-import * as yazl from 'yazl';
-import { ManualPromise } from '@isomorphic/manualPromise';
-import { calculateSha1, createGuid } from '@utils/crypto';
-import { removeFolders, sanitizeForFilePath } from '@utils/fileUtils';
-import { getUserAgent } from 'playwright-core/lib/coreBundle';
+import mime from 'mime'
+import * as yazl from 'yazl'
+import { ManualPromise } from '@isomorphic/manualPromise'
+import { calculateSha1, createGuid } from '@utils/crypto'
+import { removeFolders, sanitizeForFilePath } from '@utils/fileUtils'
+import { getUserAgent } from 'playwright-core/lib/coreBundle'
 
-import { resolveOutputFile, CommonReporterOptions } from './base';
-import { TeleReporterEmitter } from './teleEmitter';
+import { resolveOutputFile, CommonReporterOptions } from './base'
+import { TeleReporterEmitter } from './teleEmitter'
 
-import type { BlobReporterOptions } from '../../types/test';
-import type { FullConfig, FullResult, TestCase, TestResult } from '../../types/testReporter';
-import type { BlobReportMetadata, JsonAttachment, JsonEvent } from '../isomorphic/teleReceiver';
-import type { EventEmitter } from 'events';
+import type { BlobReporterOptions } from '../../types/test'
+import type { FullConfig, FullResult, TestCase, TestResult } from '../../types/testReporter'
+import type { BlobReportMetadata, JsonAttachment, JsonEvent } from '../isomorphic/teleReceiver'
+import type { EventEmitter } from 'events'
 
-export const currentBlobReportVersion = 2;
+export const currentBlobReportVersion = 2
 
 export class BlobReporter extends TeleReporterEmitter {
-  private readonly _messages: JsonEvent[] = [];
-  private readonly _attachments: { originalPath: string, zipEntryPath: string }[] = [];
-  private readonly _options: BlobReporterOptions & CommonReporterOptions;
-  private readonly _salt: string;
-  private _config!: FullConfig;
+  private readonly _messages: JsonEvent[] = []
+  private readonly _attachments: { originalPath: string; zipEntryPath: string }[] = []
+  private readonly _options: BlobReporterOptions & CommonReporterOptions
+  private readonly _salt: string
+  private _config!: FullConfig
 
   constructor(options: BlobReporterOptions & CommonReporterOptions) {
-    super(message => this._messages.push(message));
-    this._options = options;
+    super((message) => this._messages.push(message))
+    this._options = options
     if (this._options.fileName && !this._options.fileName.endsWith('.zip'))
-      throw new Error(`Blob report file name must end with .zip extension: ${this._options.fileName}`);
-    this._salt = createGuid();
+      throw new Error(
+        `Blob report file name must end with .zip extension: ${this._options.fileName}`
+      )
+    this._salt = createGuid()
   }
 
   override onConfigure(config: FullConfig) {
@@ -57,15 +59,15 @@ export class BlobReporter extends TeleReporterEmitter {
       // TODO: remove after some time, recommend config.tag instead.
       name: process.env.PWTEST_BOT_NAME,
       shard: config.shard ?? undefined,
-      pathSeparator: path.sep,
-    };
+      pathSeparator: path.sep
+    }
     this._messages.push({
       method: 'onBlobReportMetadata',
       params: metadata
-    });
+    })
 
-    this._config = config;
-    super.onConfigure(config);
+    this._config = config
+    super.onConfigure(config)
   }
 
   override async onTestPaused(test: TestCase, result: TestResult) {
@@ -74,33 +76,35 @@ export class BlobReporter extends TeleReporterEmitter {
   }
 
   override async onEnd(result: FullResult): Promise<void> {
-    await super.onEnd(result);
+    await super.onEnd(result)
 
-    const zipFileName = await this._prepareOutputFile();
+    const zipFileName = await this._prepareOutputFile()
 
-    const zipFile = new yazl.ZipFile();
-    const zipFinishPromise = new ManualPromise<undefined>();
-    const finishPromise = zipFinishPromise.catch(e => {
-      throw new Error(`Failed to write report ${zipFileName}: ` + e.message);
-    });
+    const zipFile = new yazl.ZipFile()
+    const zipFinishPromise = new ManualPromise<undefined>()
+    const finishPromise = zipFinishPromise.catch((e) => {
+      throw new Error(`Failed to write report ${zipFileName}: ` + e.message)
+    })
 
-    (zipFile as any as EventEmitter).on('error', error => zipFinishPromise.reject(error));
-    zipFile.outputStream.pipe(fs.createWriteStream(zipFileName)).on('close', () => {
-      zipFinishPromise.resolve(undefined);
-    }).on('error', error => zipFinishPromise.reject(error));
+    ;(zipFile as any as EventEmitter).on('error', (error) => zipFinishPromise.reject(error))
+    zipFile.outputStream
+      .pipe(fs.createWriteStream(zipFileName))
+      .on('close', () => {
+        zipFinishPromise.resolve(undefined)
+      })
+      .on('error', (error) => zipFinishPromise.reject(error))
 
     for (const { originalPath, zipEntryPath } of this._attachments) {
-      if (!fs.statSync(originalPath, { throwIfNoEntry: false })?.isFile())
-        continue;
-      zipFile.addFile(originalPath, zipEntryPath);
+      if (!fs.statSync(originalPath, { throwIfNoEntry: false })?.isFile()) continue
+      zipFile.addFile(originalPath, zipEntryPath)
     }
 
-    const lines = this._messages.map(m => JSON.stringify(m) + '\n');
-    const content = Readable.from(lines);
-    zipFile.addReadStream(content, 'report.jsonl');
-    zipFile.end();
+    const lines = this._messages.map((m) => JSON.stringify(m) + '\n')
+    const content = Readable.from(lines)
+    zipFile.addReadStream(content, 'report.jsonl')
+    zipFile.end()
 
-    await finishPromise;
+    await finishPromise
   }
 
   private async _prepareOutputFile() {
@@ -108,39 +112,37 @@ export class BlobReporter extends TeleReporterEmitter {
       ...this._options,
       default: {
         fileName: this._defaultReportName(this._config),
-        outputDir: 'blob-report',
+        outputDir: 'blob-report'
       }
-    })!;
-    if (!process.env.PWTEST_BLOB_DO_NOT_REMOVE)
-      await removeFolders([outputDir!]);
-    await fs.promises.mkdir(path.dirname(outputFile), { recursive: true });
-    return outputFile;
+    })!
+    if (!process.env.PWTEST_BLOB_DO_NOT_REMOVE) await removeFolders([outputDir!])
+    await fs.promises.mkdir(path.dirname(outputFile), { recursive: true })
+    return outputFile
   }
 
   private _defaultReportName(config: FullConfig) {
-    let reportName = 'report';
+    let reportName = 'report'
     if (this._options._commandHash)
-      reportName += '-' + sanitizeForFilePath(this._options._commandHash);
+      reportName += '-' + sanitizeForFilePath(this._options._commandHash)
     if (config.shard) {
-      const paddedNumber = `${config.shard.current}`.padStart(`${config.shard.total}`.length, '0');
-      reportName = `${reportName}-${paddedNumber}`;
+      const paddedNumber = `${config.shard.current}`.padStart(`${config.shard.total}`.length, '0')
+      reportName = `${reportName}-${paddedNumber}`
     }
-    return `${reportName}.zip`;
+    return `${reportName}.zip`
   }
 
   override _serializeAttachments(attachments: TestResult['attachments']): JsonAttachment[] {
-    return super._serializeAttachments(attachments).map(attachment => {
-      if (!attachment.path)
-        return attachment;
+    return super._serializeAttachments(attachments).map((attachment) => {
+      if (!attachment.path) return attachment
       // Add run guid to avoid clashes between shards.
-      const sha1 = calculateSha1(attachment.path + this._salt);
-      const extension = mime.getExtension(attachment.contentType) || 'dat';
-      const newPath = `resources/${sha1}.${extension}`;
-      this._attachments.push({ originalPath: attachment.path, zipEntryPath: newPath });
+      const sha1 = calculateSha1(attachment.path + this._salt)
+      const extension = mime.getExtension(attachment.contentType) || 'dat'
+      const newPath = `resources/${sha1}.${extension}`
+      this._attachments.push({ originalPath: attachment.path, zipEntryPath: newPath })
       return {
         ...attachment,
-        path: newPath,
-      };
-    });
+        path: newPath
+      }
+    })
   }
 }

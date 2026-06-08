@@ -50,9 +50,9 @@
   border: 1px solid #e85aad;
 }
 .tag-color-4 {
-  background-color: #FFF0EB;
-  color: #9E2F1C;
-  border: 1px solid #EA6045;
+  background-color: #fff0eb;
+  color: #9e2f1c;
+  border: 1px solid #ea6045;
 }
 .tag-color-5 {
   background-color: #fff1e5;
@@ -82,8 +82,8 @@
 }
 .dark-mode .tag-color-4 {
   background-color: #460701;
-  color: #FFA28B;
-  border: 1px solid #EC6547;
+  color: #ffa28b;
+  border: 1px solid #ec6547;
 }
 .dark-mode .tag-color-5 {
   background-color: #471700;

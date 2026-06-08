@@ -14,478 +14,516 @@
  * limitations under the License.
  */
 
-import type { Metadata, TestAnnotation } from '../../types/test';
-import type * as reporterTypes from '../../types/testReporter';
-import type { ReporterV2 } from '../reporters/reporterV2';
+import type { Metadata, TestAnnotation } from '../../types/test'
+import type * as reporterTypes from '../../types/testReporter'
+import type { ReporterV2 } from '../reporters/reporterV2'
 
-export type StringIntern = (s: string) => string;
-export type JsonLocation = reporterTypes.Location;
-export type JsonError = string;
-export type JsonStackFrame = { file: string, line: number, column: number };
+export type StringIntern = (s: string) => string
+export type JsonLocation = reporterTypes.Location
+export type JsonError = string
+export type JsonStackFrame = { file: string; line: number; column: number }
 
-export type JsonStdIOType = 'stdout' | 'stderr';
+export type JsonStdIOType = 'stdout' | 'stderr'
 
-export type JsonConfig = Pick<reporterTypes.FullConfig, 'configFile' | 'globalTimeout' | 'maxFailures' | 'metadata' | 'rootDir' | 'version' | 'workers' | 'globalSetup' | 'globalTeardown' | 'shard'> & {
+export type JsonConfig = Pick<
+  reporterTypes.FullConfig,
+  | 'configFile'
+  | 'globalTimeout'
+  | 'maxFailures'
+  | 'metadata'
+  | 'rootDir'
+  | 'version'
+  | 'workers'
+  | 'globalSetup'
+  | 'globalTeardown'
+  | 'shard'
+> & {
   // optional for backwards compatibility
-  tags?: reporterTypes.FullConfig['tags'],
-  webServer?: reporterTypes.FullConfig['webServer'],
-  failOnFlakyTests?: reporterTypes.FullConfig['failOnFlakyTests'],
-};
+  tags?: reporterTypes.FullConfig['tags']
+  webServer?: reporterTypes.FullConfig['webServer']
+  failOnFlakyTests?: reporterTypes.FullConfig['failOnFlakyTests']
+}
 
 export type JsonPattern = {
-  s?: string;
-  r?: { source: string, flags: string };
-};
+  s?: string
+  r?: { source: string; flags: string }
+}
 
 export type JsonProject = {
-  grep: JsonPattern[];
-  grepInvert: JsonPattern[];
-  metadata: Metadata;
-  name: string;
-  dependencies: string[];
+  grep: JsonPattern[]
+  grepInvert: JsonPattern[]
+  metadata: Metadata
+  name: string
+  dependencies: string[]
   // This is relative to root dir.
-  snapshotDir: string;
+  snapshotDir: string
   // This is relative to root dir.
-  outputDir: string;
-  repeatEach: number;
-  retries: number;
-  suites: JsonSuite[];
-  teardown?: string;
+  outputDir: string
+  repeatEach: number
+  retries: number
+  suites: JsonSuite[]
+  teardown?: string
   // This is relative to root dir.
-  testDir: string;
-  testIgnore: JsonPattern[];
-  testMatch: JsonPattern[];
-  timeout: number;
-  use: { [key: string]: any };
-  ignoreSnapshots?: boolean;
-};
+  testDir: string
+  testIgnore: JsonPattern[]
+  testMatch: JsonPattern[]
+  timeout: number
+  use: { [key: string]: any }
+  ignoreSnapshots?: boolean
+}
 
 export type JsonSuite = {
-  title: string;
-  location?: JsonLocation;
-  entries: (JsonSuite | JsonTestCase)[];
-};
+  title: string
+  location?: JsonLocation
+  entries: (JsonSuite | JsonTestCase)[]
+}
 
 export type JsonTestCase = {
-  testId: string;
-  title: string;
-  location: JsonLocation;
-  retries: number;
-  tags?: string[];
-  repeatEachIndex: number;
-  annotations?: TestAnnotation[];
-};
+  testId: string
+  title: string
+  location: JsonLocation
+  retries: number
+  tags?: string[]
+  repeatEachIndex: number
+  annotations?: TestAnnotation[]
+}
 
 export type JsonTestEnd = {
-  testId: string;
-  expectedStatus: reporterTypes.TestStatus;
-  timeout: number;
+  testId: string
+  expectedStatus: reporterTypes.TestStatus
+  timeout: number
   // Dropped in 1.52. Kept as empty array for backwards compatibility.
-  annotations: [];
-};
+  annotations: []
+}
 
 export type JsonTestResultStart = {
-  id: string;
-  retry: number;
-  workerIndex: number;
-  parallelIndex: number;
-  startTime: number;
-};
+  id: string
+  retry: number
+  workerIndex: number
+  parallelIndex: number
+  startTime: number
+}
 
-export type JsonAttachment = Omit<reporterTypes.TestResult['attachments'][0], 'body'> & { base64?: string; };
+export type JsonAttachment = Omit<reporterTypes.TestResult['attachments'][0], 'body'> & {
+  base64?: string
+}
 
 export type JsonTestResultEnd = {
-  id: string;
-  duration: number;
-  status: reporterTypes.TestStatus;
-  errors: reporterTypes.TestError[];
+  id: string
+  duration: number
+  status: reporterTypes.TestStatus
+  errors: reporterTypes.TestError[]
   /** No longer emitted, but kept for backwards compatibility */
-  attachments?: JsonAttachment[];
-  annotations?: TestAnnotation[];
-};
+  attachments?: JsonAttachment[]
+  annotations?: TestAnnotation[]
+}
 
 export type JsonTestStepStart = {
-  id: string;
-  parentStepId?: string;
-  title: string;
-  category: string,
-  startTime: number;
-  location?: reporterTypes.Location;
-};
+  id: string
+  parentStepId?: string
+  title: string
+  category: string
+  startTime: number
+  location?: reporterTypes.Location
+}
 
 export type JsonTestStepEnd = {
-  id: string;
-  duration: number;
-  error?: reporterTypes.TestError;
-  attachments?: number[]; // index of JsonTestResultEnd.attachments
-  annotations?: TestAnnotation[];
-};
+  id: string
+  duration: number
+  error?: reporterTypes.TestError
+  attachments?: number[] // index of JsonTestResultEnd.attachments
+  annotations?: TestAnnotation[]
+}
 
 export type JsonTestResultOnAttach = {
-  testId: string;
-  resultId: string;
-  attachments: JsonAttachment[];
-};
+  testId: string
+  resultId: string
+  attachments: JsonAttachment[]
+}
 
 export type JsonFullResult = {
-  status: reporterTypes.FullResult['status'];
-  startTime: number;
-  duration: number;
-};
+  status: reporterTypes.FullResult['status']
+  startTime: number
+  duration: number
+}
 
-export type JsonEvent = JsonOnConfigureEvent | JsonOnBlobReportMetadataEvent | JsonOnEndEvent | JsonOnExitEvent | JsonOnProjectEvent | JsonOnBeginEvent | JsonOnTestBeginEvent
-  | JsonOnTestEndEvent | JsonOnStepBeginEvent | JsonOnStepEndEvent | JsonOnAttachEvent | JsonOnErrorEvent | JsonOnTestPausedEvent | JsonOnStdIOEvent;
+export type JsonEvent =
+  | JsonOnConfigureEvent
+  | JsonOnBlobReportMetadataEvent
+  | JsonOnEndEvent
+  | JsonOnExitEvent
+  | JsonOnProjectEvent
+  | JsonOnBeginEvent
+  | JsonOnTestBeginEvent
+  | JsonOnTestEndEvent
+  | JsonOnStepBeginEvent
+  | JsonOnStepEndEvent
+  | JsonOnAttachEvent
+  | JsonOnErrorEvent
+  | JsonOnTestPausedEvent
+  | JsonOnStdIOEvent
 
 export type JsonOnConfigureEvent = {
-  method: 'onConfigure';
+  method: 'onConfigure'
   params: {
-    config: JsonConfig;
-  };
-};
+    config: JsonConfig
+  }
+}
 
 export type JsonOnBlobReportMetadataEvent = {
-  method: 'onBlobReportMetadata';
-  params: BlobReportMetadata;
-};
+  method: 'onBlobReportMetadata'
+  params: BlobReportMetadata
+}
 
 export type JsonOnProjectEvent = {
-  method: 'onProject';
+  method: 'onProject'
   params: {
-    project: JsonProject;
-  };
-};
+    project: JsonProject
+  }
+}
 
 export type JsonOnBeginEvent = {
-  method: 'onBegin';
-  params: undefined;
-};
+  method: 'onBegin'
+  params: undefined
+}
 
 export type JsonOnTestBeginEvent = {
-  method: 'onTestBegin';
+  method: 'onTestBegin'
   params: {
-    testId: string;
-    result: JsonTestResultStart;
-  };
-};
+    testId: string
+    result: JsonTestResultStart
+  }
+}
 
 export type JsonOnTestPausedEvent = {
-  method: 'onTestPaused';
+  method: 'onTestPaused'
   params: {
-    testId: string;
-    resultId: string;
-    errors: reporterTypes.TestError[];
-  };
-};
+    testId: string
+    resultId: string
+    errors: reporterTypes.TestError[]
+  }
+}
 
 export type JsonOnTestEndEvent = {
-  method: 'onTestEnd';
+  method: 'onTestEnd'
   params: {
-    test: JsonTestEnd;
-    testId?: string;
-    result: JsonTestResultEnd;
-  };
-};
+    test: JsonTestEnd
+    testId?: string
+    result: JsonTestResultEnd
+  }
+}
 
 export type JsonOnStepBeginEvent = {
-  method: 'onStepBegin';
+  method: 'onStepBegin'
   params: {
-    testId: string;
-    resultId: string;
-    step: JsonTestStepStart;
-  };
-};
+    testId: string
+    resultId: string
+    step: JsonTestStepStart
+  }
+}
 
 export type JsonOnStepEndEvent = {
-  method: 'onStepEnd';
+  method: 'onStepEnd'
   params: {
-    testId: string;
-    resultId: string;
-    step: JsonTestStepEnd;
-  };
-};
+    testId: string
+    resultId: string
+    step: JsonTestStepEnd
+  }
+}
 
 export type JsonOnAttachEvent = {
-  method: 'onAttach';
-  params: JsonTestResultOnAttach;
-};
+  method: 'onAttach'
+  params: JsonTestResultOnAttach
+}
 
 export type JsonOnErrorEvent = {
-  method: 'onError';
+  method: 'onError'
   params: {
-    error: reporterTypes.TestError;
-    workerInfo?: { workerIndex: number, parallelIndex: number, projectName: string };
-  };
-};
+    error: reporterTypes.TestError
+    workerInfo?: { workerIndex: number; parallelIndex: number; projectName: string }
+  }
+}
 
 export type JsonOnStdIOEvent = {
-  method: 'onStdIO';
+  method: 'onStdIO'
   params: {
-    type: JsonStdIOType;
-    testId?: string;
-    resultId?: string;
-    data: string;
-    isBase64: boolean;
-  };
-};
+    type: JsonStdIOType
+    testId?: string
+    resultId?: string
+    data: string
+    isBase64: boolean
+  }
+}
 
 export type JsonOnEndEvent = {
-  method: 'onEnd';
+  method: 'onEnd'
   params: {
-    result: JsonFullResult;
-  };
-};
+    result: JsonFullResult
+  }
+}
 
 export type JsonOnExitEvent = {
-  method: 'onExit';
-  params: undefined;
-};
+  method: 'onExit'
+  params: undefined
+}
 
 export type BlobReportMetadata = {
-  version: number;
-  userAgent: string;
-  name?: string;
-  shard?: { total: number, current: number };
-  pathSeparator?: string;
-};
+  version: number
+  userAgent: string
+  name?: string
+  shard?: { total: number; current: number }
+  pathSeparator?: string
+}
 
 type TeleReporterReceiverOptions = {
-  mergeProjects?: boolean;
-  mergeTestCases?: boolean;
-  resolvePath?: (rootDir: string, relativePath: string) => string;
-  configOverrides?: Pick<reporterTypes.FullConfig, 'configFile' | 'quiet' | 'reportSlowTests' | 'reporter'>;
-  clearPreviousResultsWhenTestBegins?: boolean;
-};
+  mergeProjects?: boolean
+  mergeTestCases?: boolean
+  resolvePath?: (rootDir: string, relativePath: string) => string
+  configOverrides?: Pick<
+    reporterTypes.FullConfig,
+    'configFile' | 'quiet' | 'reportSlowTests' | 'reporter'
+  >
+  clearPreviousResultsWhenTestBegins?: boolean
+}
 
 export class TeleReporterReceiver {
-  public isListing = false;
-  private _rootSuite: TeleSuite;
-  private _options: TeleReporterReceiverOptions;
-  private _reporter: ReporterV2;
-  private _tests = new Map<string, TeleTestCase>();
-  private _rootDir!: string;
-  private _config!: reporterTypes.FullConfig;
+  public isListing = false
+  private _rootSuite: TeleSuite
+  private _options: TeleReporterReceiverOptions
+  private _reporter: ReporterV2
+  private _tests = new Map<string, TeleTestCase>()
+  private _rootDir!: string
+  private _config!: reporterTypes.FullConfig
 
   constructor(reporter: ReporterV2, options: TeleReporterReceiverOptions = {}) {
-    this._rootSuite = new TeleSuite('', 'root');
-    this._options = options;
-    this._reporter = reporter;
+    this._rootSuite = new TeleSuite('', 'root')
+    this._options = options
+    this._reporter = reporter
   }
 
   reset() {
-    this._rootSuite._entries = [];
-    this._tests.clear();
+    this._rootSuite._entries = []
+    this._tests.clear()
   }
 
   dispatch(message: JsonEvent): Promise<void> | void {
-    const { method, params } = message;
+    const { method, params } = message
     if (method === 'onConfigure') {
-      this._onConfigure(params.config);
-      return;
+      this._onConfigure(params.config)
+      return
     }
     if (method === 'onProject') {
-      this._onProject(params.project);
-      return;
+      this._onProject(params.project)
+      return
     }
     if (method === 'onBegin') {
-      this._onBegin();
-      return;
+      this._onBegin()
+      return
     }
     if (method === 'onTestBegin') {
-      this._onTestBegin(params.testId, params.result);
-      return;
+      this._onTestBegin(params.testId, params.result)
+      return
     }
     if (method === 'onTestPaused') {
-      this._onTestPaused(params.testId, params.resultId, params.errors);
-      return;
+      this._onTestPaused(params.testId, params.resultId, params.errors)
+      return
     }
     if (method === 'onTestEnd') {
-      this._onTestEnd(params.test, params.result);
-      return;
+      this._onTestEnd(params.test, params.result)
+      return
     }
     if (method === 'onStepBegin') {
-      this._onStepBegin(params.testId, params.resultId, params.step);
-      return;
+      this._onStepBegin(params.testId, params.resultId, params.step)
+      return
     }
     if (method === 'onAttach') {
-      this._onAttach(params.testId, params.resultId, params.attachments);
-      return;
+      this._onAttach(params.testId, params.resultId, params.attachments)
+      return
     }
     if (method === 'onStepEnd') {
-      this._onStepEnd(params.testId, params.resultId, params.step);
-      return;
+      this._onStepEnd(params.testId, params.resultId, params.step)
+      return
     }
     if (method === 'onError') {
-      this._onError(params.error, params.workerInfo);
-      return;
+      this._onError(params.error, params.workerInfo)
+      return
     }
     if (method === 'onStdIO') {
-      this._onStdIO(params.type, params.testId, params.resultId, params.data, params.isBase64);
-      return;
+      this._onStdIO(params.type, params.testId, params.resultId, params.data, params.isBase64)
+      return
     }
-    if (method === 'onEnd')
-      return this._onEnd(params.result);
-    if (method === 'onExit')
-      return this._onExit();
+    if (method === 'onEnd') return this._onEnd(params.result)
+    if (method === 'onExit') return this._onExit()
   }
 
   private _onConfigure(config: JsonConfig) {
-    this._rootDir = config.rootDir;
-    this._config = this._parseConfig(config);
-    this._reporter.onConfigure?.(this._config);
+    this._rootDir = config.rootDir
+    this._config = this._parseConfig(config)
+    this._reporter.onConfigure?.(this._config)
   }
 
   private _onProject(project: JsonProject) {
-    let projectSuite = this._options.mergeProjects ? this._rootSuite.suites.find(suite => suite.project()!.name === project.name) : undefined;
+    let projectSuite = this._options.mergeProjects
+      ? this._rootSuite.suites.find((suite) => suite.project()!.name === project.name)
+      : undefined
     if (!projectSuite) {
-      projectSuite = new TeleSuite(project.name, 'project');
-      this._rootSuite._addSuite(projectSuite);
+      projectSuite = new TeleSuite(project.name, 'project')
+      this._rootSuite._addSuite(projectSuite)
     }
 
-    const parsed = this._parseProject(project);
+    const parsed = this._parseProject(project)
     // Always update project in watch mode.
-    projectSuite._project = parsed;
+    projectSuite._project = parsed
 
-    let index = -1;
+    let index = -1
     if (this._options.mergeProjects)
-      index = this._config.projects.findIndex(p => p.name === project.name);
-    if (index === -1)
-      this._config.projects.push(parsed);
-    else
-      this._config.projects[index] = parsed;
+      index = this._config.projects.findIndex((p) => p.name === project.name)
+    if (index === -1) this._config.projects.push(parsed)
+    else this._config.projects[index] = parsed
 
-    for (const suite of project.suites)
-      this._mergeSuiteInto(suite, projectSuite);
+    for (const suite of project.suites) this._mergeSuiteInto(suite, projectSuite)
   }
 
   private _onBegin() {
-    this._reporter.onBegin?.(this._rootSuite);
+    this._reporter.onBegin?.(this._rootSuite)
   }
 
   private _onTestBegin(testId: string, payload: JsonTestResultStart) {
-    const test = this._tests.get(testId)!;
-    if (this._options.clearPreviousResultsWhenTestBegins)
-      test.results = [];
-    const testResult = test._createTestResult(payload.id);
-    testResult.retry = payload.retry;
-    testResult.workerIndex = payload.workerIndex;
-    testResult.parallelIndex = payload.parallelIndex;
-    testResult.setStartTimeNumber(payload.startTime);
-    this._reporter.onTestBegin?.(test, testResult);
+    const test = this._tests.get(testId)!
+    if (this._options.clearPreviousResultsWhenTestBegins) test.results = []
+    const testResult = test._createTestResult(payload.id)
+    testResult.retry = payload.retry
+    testResult.workerIndex = payload.workerIndex
+    testResult.parallelIndex = payload.parallelIndex
+    testResult.setStartTimeNumber(payload.startTime)
+    this._reporter.onTestBegin?.(test, testResult)
   }
 
   private _onTestPaused(testId: string, resultId: string, errors: reporterTypes.TestError[]) {
-    const test = this._tests.get(testId)!;
-    const result = test.results.find(r => r._id === resultId)!;
+    const test = this._tests.get(testId)!
+    const result = test.results.find((r) => r._id === resultId)!
 
-    result.errors.push(...errors);
-    result.error = result.errors[0];
-    void this._reporter.onTestPaused?.(test, result);
+    result.errors.push(...errors)
+    result.error = result.errors[0]
+    void this._reporter.onTestPaused?.(test, result)
   }
 
   private _onTestEnd(testEndPayload: JsonTestEnd, payload: JsonTestResultEnd) {
-    const test = this._tests.get(testEndPayload.testId)!;
-    test.timeout = testEndPayload.timeout;
-    test.expectedStatus = testEndPayload.expectedStatus;
-    const result = test.results.find(r => r._id === payload.id)!;
-    result.duration = payload.duration;
-    result.status = payload.status;
-    result.errors.push(...payload.errors ?? []);
-    result.error = result.errors[0];
+    const test = this._tests.get(testEndPayload.testId)!
+    test.timeout = testEndPayload.timeout
+    test.expectedStatus = testEndPayload.expectedStatus
+    const result = test.results.find((r) => r._id === payload.id)!
+    result.duration = payload.duration
+    result.status = payload.status
+    result.errors.push(...(payload.errors ?? []))
+    result.error = result.errors[0]
     // Attachments are only present here from legacy blobs. These override all _onAttach events
-    if (!!payload.attachments)
-      result.attachments = this._parseAttachments(payload.attachments);
+    if (!!payload.attachments) result.attachments = this._parseAttachments(payload.attachments)
     if (payload.annotations) {
-      this._absoluteAnnotationLocationsInplace(payload.annotations);
-      result.annotations = payload.annotations;
-      test.annotations = payload.annotations;
+      this._absoluteAnnotationLocationsInplace(payload.annotations)
+      result.annotations = payload.annotations
+      test.annotations = payload.annotations
     }
-    this._reporter.onTestEnd?.(test, result);
+    this._reporter.onTestEnd?.(test, result)
     // Free up the memory as won't see these step ids.
-    result._stepMap = new Map();
+    result._stepMap = new Map()
   }
 
   private _onStepBegin(testId: string, resultId: string, payload: JsonTestStepStart) {
-    const test = this._tests.get(testId)!;
-    const result = test.results.find(r => r._id === resultId)!;
-    const parentStep = payload.parentStepId ? result._stepMap.get(payload.parentStepId) : undefined;
+    const test = this._tests.get(testId)!
+    const result = test.results.find((r) => r._id === resultId)!
+    const parentStep = payload.parentStepId ? result._stepMap.get(payload.parentStepId) : undefined
 
-    const location = this._absoluteLocation(payload.location);
-    const step = new TeleTestStep(payload, parentStep, location, result);
-    if (parentStep)
-      parentStep.steps.push(step);
-    else
-      result.steps.push(step);
-    result._stepMap.set(payload.id, step);
-    this._reporter.onStepBegin?.(test, result, step);
+    const location = this._absoluteLocation(payload.location)
+    const step = new TeleTestStep(payload, parentStep, location, result)
+    if (parentStep) parentStep.steps.push(step)
+    else result.steps.push(step)
+    result._stepMap.set(payload.id, step)
+    this._reporter.onStepBegin?.(test, result, step)
   }
 
   private _onStepEnd(testId: string, resultId: string, payload: JsonTestStepEnd) {
-    const test = this._tests.get(testId)!;
-    const result = test.results.find(r => r._id === resultId)!;
-    const step = result._stepMap.get(payload.id)!;
-    step._endPayload = payload;
-    step.duration = payload.duration;
-    step.error = payload.error;
-    this._reporter.onStepEnd?.(test, result, step);
+    const test = this._tests.get(testId)!
+    const result = test.results.find((r) => r._id === resultId)!
+    const step = result._stepMap.get(payload.id)!
+    step._endPayload = payload
+    step.duration = payload.duration
+    step.error = payload.error
+    this._reporter.onStepEnd?.(test, result, step)
   }
 
   private _onAttach(testId: string, resultId: string, attachments: JsonAttachment[]) {
-    const test = this._tests.get(testId)!;
-    const result = test.results.find(r => r._id === resultId)!;
-    result.attachments.push(...attachments.map(a => ({
-      name: a.name,
-      contentType: a.contentType,
-      path: a.path,
-      body: a.base64 && (globalThis as any).Buffer ? Buffer.from(a.base64, 'base64') : undefined,
-    })));
+    const test = this._tests.get(testId)!
+    const result = test.results.find((r) => r._id === resultId)!
+    result.attachments.push(
+      ...attachments.map((a) => ({
+        name: a.name,
+        contentType: a.contentType,
+        path: a.path,
+        body: a.base64 && (globalThis as any).Buffer ? Buffer.from(a.base64, 'base64') : undefined
+      }))
+    )
   }
 
-  private _onError(error: reporterTypes.TestError, workerInfo?: { workerIndex: number, parallelIndex: number, projectName: string }) {
-    let fullWorkerInfo: reporterTypes.WorkerInfo | undefined;
+  private _onError(
+    error: reporterTypes.TestError,
+    workerInfo?: { workerIndex: number; parallelIndex: number; projectName: string }
+  ) {
+    let fullWorkerInfo: reporterTypes.WorkerInfo | undefined
     if (workerInfo) {
-      const project = this._config.projects.find(p => p.name === workerInfo.projectName);
+      const project = this._config.projects.find((p) => p.name === workerInfo.projectName)
       if (project) {
         fullWorkerInfo = {
           workerIndex: workerInfo.workerIndex,
           parallelIndex: workerInfo.parallelIndex,
           config: this._config,
-          project,
-        };
+          project
+        }
       }
     }
-    this._reporter.onError?.(error, fullWorkerInfo);
+    this._reporter.onError?.(error, fullWorkerInfo)
   }
 
-  private _onStdIO(type: JsonStdIOType, testId: string | undefined, resultId: string | undefined, data: string, isBase64: boolean) {
-    const chunk = isBase64 ? ((globalThis as any).Buffer ? Buffer.from(data, 'base64') : atob(data)) : data;
-    const test = testId ? this._tests.get(testId) : undefined;
-    const result = test && resultId ? test.results.find(r => r._id === resultId) : undefined;
+  private _onStdIO(
+    type: JsonStdIOType,
+    testId: string | undefined,
+    resultId: string | undefined,
+    data: string,
+    isBase64: boolean
+  ) {
+    const chunk = isBase64
+      ? (globalThis as any).Buffer
+        ? Buffer.from(data, 'base64')
+        : atob(data)
+      : data
+    const test = testId ? this._tests.get(testId) : undefined
+    const result = test && resultId ? test.results.find((r) => r._id === resultId) : undefined
     if (type === 'stdout') {
-      result?.stdout.push(chunk);
-      this._reporter.onStdOut?.(chunk, test, result);
+      result?.stdout.push(chunk)
+      this._reporter.onStdOut?.(chunk, test, result)
     } else {
-      result?.stderr.push(chunk);
-      this._reporter.onStdErr?.(chunk, test, result);
+      result?.stderr.push(chunk)
+      this._reporter.onStdErr?.(chunk, test, result)
     }
   }
 
   private async _onEnd(result: JsonFullResult): Promise<void> {
-    await this._reporter.onEnd?.(asFullResult(result));
+    await this._reporter.onEnd?.(asFullResult(result))
   }
 
   private _onExit(): Promise<void> | void {
-    return this._reporter.onExit?.();
+    return this._reporter.onExit?.()
   }
 
   private _parseConfig(config: JsonConfig): reporterTypes.FullConfig {
-    const result = asFullConfig(config);
+    const result = asFullConfig(config)
     if (this._options.configOverrides) {
-      result.configFile = this._options.configOverrides.configFile;
-      result.reportSlowTests = this._options.configOverrides.reportSlowTests;
-      result.quiet = this._options.configOverrides.quiet;
-      result.reporter = [...this._options.configOverrides.reporter];
+      result.configFile = this._options.configOverrides.configFile
+      result.reportSlowTests = this._options.configOverrides.reportSlowTests
+      result.quiet = this._options.configOverrides.quiet
+      result.reporter = [...this._options.configOverrides.reporter]
     }
-    return result;
+    return result
   }
 
   private _parseProject(project: JsonProject): TeleFullProject {
@@ -505,279 +543,296 @@ export class TeleReporterReceiver {
       teardown: project.teardown,
       snapshotDir: this._absolutePath(project.snapshotDir),
       ignoreSnapshots: project.ignoreSnapshots ?? false,
-      use: project.use,
-    };
+      use: project.use
+    }
   }
 
-  private _parseAttachments(attachments: JsonAttachment[]): reporterTypes.TestResult['attachments'] {
-    return attachments.map(a => {
+  private _parseAttachments(
+    attachments: JsonAttachment[]
+  ): reporterTypes.TestResult['attachments'] {
+    return attachments.map((a) => {
       return {
         ...a,
-        body: a.base64 && (globalThis as any).Buffer ? Buffer.from(a.base64, 'base64') : undefined,
-      };
-    });
+        body: a.base64 && (globalThis as any).Buffer ? Buffer.from(a.base64, 'base64') : undefined
+      }
+    })
   }
 
   private _mergeSuiteInto(jsonSuite: JsonSuite, parent: TeleSuite): void {
-    let targetSuite = parent.suites.find(s => s.title === jsonSuite.title);
+    let targetSuite = parent.suites.find((s) => s.title === jsonSuite.title)
     if (!targetSuite) {
-      targetSuite = new TeleSuite(jsonSuite.title, parent.type === 'project' ? 'file' : 'describe');
-      parent._addSuite(targetSuite);
+      targetSuite = new TeleSuite(jsonSuite.title, parent.type === 'project' ? 'file' : 'describe')
+      parent._addSuite(targetSuite)
     }
-    targetSuite.location = this._absoluteLocation(jsonSuite.location);
-    jsonSuite.entries.forEach(e => {
-      if ('testId' in e)
-        this._mergeTestInto(e, targetSuite!);
-      else
-        this._mergeSuiteInto(e, targetSuite!);
-    });
+    targetSuite.location = this._absoluteLocation(jsonSuite.location)
+    jsonSuite.entries.forEach((e) => {
+      if ('testId' in e) this._mergeTestInto(e, targetSuite!)
+      else this._mergeSuiteInto(e, targetSuite!)
+    })
   }
 
   private _mergeTestInto(jsonTest: JsonTestCase, parent: TeleSuite) {
-    let targetTest = this._options.mergeTestCases ? parent.tests.find(s => s.title === jsonTest.title && s.repeatEachIndex === jsonTest.repeatEachIndex) : undefined;
+    let targetTest = this._options.mergeTestCases
+      ? parent.tests.find(
+          (s) => s.title === jsonTest.title && s.repeatEachIndex === jsonTest.repeatEachIndex
+        )
+      : undefined
     if (!targetTest) {
-      targetTest = new TeleTestCase(jsonTest.testId, jsonTest.title, this._absoluteLocation(jsonTest.location), jsonTest.repeatEachIndex);
-      parent._addTest(targetTest);
-      this._tests.set(targetTest.id, targetTest);
+      targetTest = new TeleTestCase(
+        jsonTest.testId,
+        jsonTest.title,
+        this._absoluteLocation(jsonTest.location),
+        jsonTest.repeatEachIndex
+      )
+      parent._addTest(targetTest)
+      this._tests.set(targetTest.id, targetTest)
     }
-    this._updateTest(jsonTest, targetTest);
+    this._updateTest(jsonTest, targetTest)
   }
 
   private _updateTest(payload: JsonTestCase, test: TeleTestCase): TeleTestCase {
-    test.id = payload.testId;
-    test.location = this._absoluteLocation(payload.location);
-    test.retries = payload.retries;
-    test.tags = payload.tags ?? [];
-    test.annotations = payload.annotations ?? [];
-    this._absoluteAnnotationLocationsInplace(test.annotations);
-    return test;
+    test.id = payload.testId
+    test.location = this._absoluteLocation(payload.location)
+    test.retries = payload.retries
+    test.tags = payload.tags ?? []
+    test.annotations = payload.annotations ?? []
+    this._absoluteAnnotationLocationsInplace(test.annotations)
+    return test
   }
 
   private _absoluteAnnotationLocationsInplace(annotations: TestAnnotation[]) {
     for (const annotation of annotations) {
-      if (annotation.location)
-        annotation.location = this._absoluteLocation(annotation.location);
+      if (annotation.location) annotation.location = this._absoluteLocation(annotation.location)
     }
   }
 
-  private _absoluteLocation(location: reporterTypes.Location): reporterTypes.Location;
-  private _absoluteLocation(location?: reporterTypes.Location): reporterTypes.Location | undefined;
-  private _absoluteLocation(location: reporterTypes.Location | undefined): reporterTypes.Location | undefined {
-    if (!location)
-      return location;
+  private _absoluteLocation(location: reporterTypes.Location): reporterTypes.Location
+  private _absoluteLocation(location?: reporterTypes.Location): reporterTypes.Location | undefined
+  private _absoluteLocation(
+    location: reporterTypes.Location | undefined
+  ): reporterTypes.Location | undefined {
+    if (!location) return location
     return {
       ...location,
-      file: this._absolutePath(location.file),
-    };
+      file: this._absolutePath(location.file)
+    }
   }
 
-  private _absolutePath(relativePath: string): string;
-  private _absolutePath(relativePath?: string): string | undefined;
+  private _absolutePath(relativePath: string): string
+  private _absolutePath(relativePath?: string): string | undefined
   private _absolutePath(relativePath?: string): string | undefined {
-    if (relativePath === undefined)
-      return;
-    return this._options.resolvePath ? this._options.resolvePath(this._rootDir, relativePath) : this._rootDir + '/' + relativePath;
+    if (relativePath === undefined) return
+    return this._options.resolvePath
+      ? this._options.resolvePath(this._rootDir, relativePath)
+      : this._rootDir + '/' + relativePath
   }
 }
 
 export class TeleSuite implements reporterTypes.Suite {
-  title: string;
-  location?: reporterTypes.Location;
-  parent?: TeleSuite;
-  _entries: (TeleSuite | TeleTestCase)[] = [];
-  _requireFile: string = '';
-  _timeout: number | undefined;
-  _retries: number | undefined;
-  _project: TeleFullProject | undefined;
-  _parallelMode: 'none' | 'default' | 'serial' | 'parallel' = 'none';
-  private readonly _type: 'root' | 'project' | 'file' | 'describe';
+  title: string
+  location?: reporterTypes.Location
+  parent?: TeleSuite
+  _entries: (TeleSuite | TeleTestCase)[] = []
+  _requireFile: string = ''
+  _timeout: number | undefined
+  _retries: number | undefined
+  _project: TeleFullProject | undefined
+  _parallelMode: 'none' | 'default' | 'serial' | 'parallel' = 'none'
+  private readonly _type: 'root' | 'project' | 'file' | 'describe'
 
   constructor(title: string, type: 'root' | 'project' | 'file' | 'describe') {
-    this.title = title;
-    this._type = type;
+    this.title = title
+    this._type = type
   }
 
   get type() {
-    return this._type;
+    return this._type
   }
 
   get suites(): TeleSuite[] {
-    return this._entries.filter(e => e.type !== 'test') as TeleSuite[];
+    return this._entries.filter((e) => e.type !== 'test') as TeleSuite[]
   }
 
   get tests(): TeleTestCase[] {
-    return this._entries.filter(e => e.type === 'test') as TeleTestCase[];
+    return this._entries.filter((e) => e.type === 'test') as TeleTestCase[]
   }
 
   entries() {
-    return this._entries;
+    return this._entries
   }
 
   allTests(): reporterTypes.TestCase[] {
-    const result: reporterTypes.TestCase[] = [];
+    const result: reporterTypes.TestCase[] = []
     const visit = (suite: reporterTypes.Suite) => {
       for (const entry of suite.entries()) {
-        if (entry.type === 'test')
-          result.push(entry);
-        else
-          visit(entry);
+        if (entry.type === 'test') result.push(entry)
+        else visit(entry)
       }
-    };
-    visit(this);
-    return result;
+    }
+    visit(this)
+    return result
   }
 
   titlePath(): string[] {
-    const titlePath = this.parent ? this.parent.titlePath() : [];
+    const titlePath = this.parent ? this.parent.titlePath() : []
     // Ignore anonymous describe blocks.
-    if (this.title || this._type !== 'describe')
-      titlePath.push(this.title);
-    return titlePath;
+    if (this.title || this._type !== 'describe') titlePath.push(this.title)
+    return titlePath
   }
 
   project(): TeleFullProject | undefined {
-    return this._project ?? this.parent?.project();
+    return this._project ?? this.parent?.project()
   }
 
   _addTest(test: TeleTestCase) {
-    test.parent = this;
-    this._entries.push(test);
+    test.parent = this
+    this._entries.push(test)
   }
 
   _addSuite(suite: TeleSuite) {
-    suite.parent = this;
-    this._entries.push(suite);
+    suite.parent = this
+    this._entries.push(suite)
   }
 }
 
 export class TeleTestCase implements reporterTypes.TestCase {
-  title: string;
-  fn = () => {};
-  results: TeleTestResult[] = [];
-  location: reporterTypes.Location;
-  parent!: TeleSuite;
-  type: 'test' = 'test';
+  title: string
+  fn = () => {}
+  results: TeleTestResult[] = []
+  location: reporterTypes.Location
+  parent!: TeleSuite
+  type: 'test' = 'test'
 
-  expectedStatus: reporterTypes.TestStatus = 'passed';
-  timeout = 0;
-  annotations: TestAnnotation[] = [];
-  retries = 0;
-  tags: string[] = [];
-  repeatEachIndex = 0;
-  id: string;
+  expectedStatus: reporterTypes.TestStatus = 'passed'
+  timeout = 0
+  annotations: TestAnnotation[] = []
+  retries = 0
+  tags: string[] = []
+  repeatEachIndex = 0
+  id: string
 
-  constructor(id: string, title: string, location: reporterTypes.Location, repeatEachIndex: number) {
-    this.id = id;
-    this.title = title;
-    this.location = location;
-    this.repeatEachIndex = repeatEachIndex;
+  constructor(
+    id: string,
+    title: string,
+    location: reporterTypes.Location,
+    repeatEachIndex: number
+  ) {
+    this.id = id
+    this.title = title
+    this.location = location
+    this.repeatEachIndex = repeatEachIndex
   }
 
   titlePath(): string[] {
-    const titlePath = this.parent ? this.parent.titlePath() : [];
-    titlePath.push(this.title);
-    return titlePath;
+    const titlePath = this.parent ? this.parent.titlePath() : []
+    titlePath.push(this.title)
+    return titlePath
   }
 
   outcome(): 'skipped' | 'expected' | 'unexpected' | 'flaky' {
-    return computeTestCaseOutcome(this);
+    return computeTestCaseOutcome(this)
   }
 
   ok(): boolean {
-    const status = this.outcome();
-    return status === 'expected' || status === 'flaky' || status === 'skipped';
+    const status = this.outcome()
+    return status === 'expected' || status === 'flaky' || status === 'skipped'
   }
 
   _createTestResult(id: string): TeleTestResult {
-    const result = new TeleTestResult(this.results.length, id);
-    this.results.push(result);
-    return result;
+    const result = new TeleTestResult(this.results.length, id)
+    this.results.push(result)
+    return result
   }
 }
 
 class TeleTestStep implements reporterTypes.TestStep {
-  title: string;
-  category: string;
-  location: reporterTypes.Location | undefined;
-  parent: reporterTypes.TestStep | undefined;
-  duration: number = -1;
-  steps: reporterTypes.TestStep[] = [];
-  error: reporterTypes.TestError | undefined;
+  title: string
+  category: string
+  location: reporterTypes.Location | undefined
+  parent: reporterTypes.TestStep | undefined
+  duration: number = -1
+  steps: reporterTypes.TestStep[] = []
+  error: reporterTypes.TestError | undefined
 
-  private _result: TeleTestResult;
-  _endPayload?: JsonTestStepEnd;
+  private _result: TeleTestResult
+  _endPayload?: JsonTestStepEnd
 
-  private _startTime: number = 0;
+  private _startTime: number = 0
 
-  constructor(payload: JsonTestStepStart, parentStep: reporterTypes.TestStep | undefined, location: reporterTypes.Location | undefined, result: TeleTestResult) {
-    this.title = payload.title;
-    this.category = payload.category;
-    this.location = location;
-    this.parent = parentStep;
-    this._startTime = payload.startTime;
-    this._result = result;
+  constructor(
+    payload: JsonTestStepStart,
+    parentStep: reporterTypes.TestStep | undefined,
+    location: reporterTypes.Location | undefined,
+    result: TeleTestResult
+  ) {
+    this.title = payload.title
+    this.category = payload.category
+    this.location = location
+    this.parent = parentStep
+    this._startTime = payload.startTime
+    this._result = result
   }
 
   titlePath() {
-    const parentPath = this.parent?.titlePath() || [];
-    return [...parentPath, this.title];
+    const parentPath = this.parent?.titlePath() || []
+    return [...parentPath, this.title]
   }
 
   get startTime(): Date {
-    return new Date(this._startTime);
+    return new Date(this._startTime)
   }
 
   set startTime(value: Date) {
-    this._startTime = +value;
+    this._startTime = +value
   }
 
   get attachments() {
-    return this._endPayload?.attachments?.map(index => this._result.attachments[index]) ?? [];
+    return this._endPayload?.attachments?.map((index) => this._result.attachments[index]) ?? []
   }
 
   get annotations() {
-    return this._endPayload?.annotations ?? [];
+    return this._endPayload?.annotations ?? []
   }
 }
 
 export class TeleTestResult implements reporterTypes.TestResult {
-  retry: reporterTypes.TestResult['retry'];
-  parallelIndex: reporterTypes.TestResult['parallelIndex'] = -1;
-  workerIndex: reporterTypes.TestResult['workerIndex'] = -1;
-  duration: reporterTypes.TestResult['duration'] = -1;
-  stdout: reporterTypes.TestResult['stdout'] = [];
-  stderr: reporterTypes.TestResult['stderr'] = [];
-  attachments: reporterTypes.TestResult['attachments'] = [];
-  annotations: reporterTypes.TestResult['annotations'] = [];
-  status: reporterTypes.TestStatus = 'skipped';
-  steps: TeleTestStep[] = [];
-  errors: reporterTypes.TestResult['errors'] = [];
-  error: reporterTypes.TestResult['error'];
+  retry: reporterTypes.TestResult['retry']
+  parallelIndex: reporterTypes.TestResult['parallelIndex'] = -1
+  workerIndex: reporterTypes.TestResult['workerIndex'] = -1
+  duration: reporterTypes.TestResult['duration'] = -1
+  stdout: reporterTypes.TestResult['stdout'] = []
+  stderr: reporterTypes.TestResult['stderr'] = []
+  attachments: reporterTypes.TestResult['attachments'] = []
+  annotations: reporterTypes.TestResult['annotations'] = []
+  status: reporterTypes.TestStatus = 'skipped'
+  steps: TeleTestStep[] = []
+  errors: reporterTypes.TestResult['errors'] = []
+  error: reporterTypes.TestResult['error']
 
-  _stepMap = new Map<string, TeleTestStep>();
-  _id: string;
+  _stepMap = new Map<string, TeleTestStep>()
+  _id: string
 
-  private _startTime: number = 0;
+  private _startTime: number = 0
 
   constructor(retry: number, id: string) {
-    this.retry = retry;
-    this._id = id;
+    this.retry = retry
+    this._id = id
   }
 
   setStartTimeNumber(startTime: number) {
-    this._startTime = startTime;
+    this._startTime = startTime
   }
 
   get startTime(): Date {
-    return new Date(this._startTime);
+    return new Date(this._startTime)
   }
 
   set startTime(value: Date) {
-    this._startTime = +value;
+    this._startTime = +value
   }
 }
 
-export type TeleFullProject = reporterTypes.FullProject;
+export type TeleFullProject = reporterTypes.FullProject
 
 export const baseFullConfig: reporterTypes.FullConfig = {
   argv: [],
@@ -804,52 +859,51 @@ export const baseFullConfig: reporterTypes.FullConfig = {
   updateSourceMethod: 'patch',
   version: '',
   workers: 0,
-  webServer: null,
-};
+  webServer: null
+}
 
-export function serializeRegexPatterns(patterns: string | RegExp | (string | RegExp)[]): JsonPattern[] {
-  if (!Array.isArray(patterns))
-    patterns = [patterns];
-  return patterns.map(s => {
-    if (typeof s === 'string')
-      return { s };
-    return { r: { source: s.source, flags: s.flags } };
-  });
+export function serializeRegexPatterns(
+  patterns: string | RegExp | (string | RegExp)[]
+): JsonPattern[] {
+  if (!Array.isArray(patterns)) patterns = [patterns]
+  return patterns.map((s) => {
+    if (typeof s === 'string') return { s }
+    return { r: { source: s.source, flags: s.flags } }
+  })
 }
 
 export function parseRegexPatterns(patterns: JsonPattern[]): (string | RegExp)[] {
-  return patterns.map(p => {
-    if (p.s !== undefined)
-      return p.s;
-    return new RegExp(p.r!.source, p.r!.flags);
-  });
+  return patterns.map((p) => {
+    if (p.s !== undefined) return p.s
+    return new RegExp(p.r!.source, p.r!.flags)
+  })
 }
 
 export function computeTestCaseOutcome(test: reporterTypes.TestCase) {
-  let skipped = 0;
-  let didNotRun = 0;
-  let expected = 0;
-  let interrupted = 0;
-  let unexpected = 0;
+  let skipped = 0
+  let didNotRun = 0
+  let expected = 0
+  let interrupted = 0
+  let unexpected = 0
   for (const result of test.results) {
     if (result.status === 'interrupted') {
-      ++interrupted; // eslint-disable-line @typescript-eslint/no-unused-vars
+      ++interrupted // eslint-disable-line @typescript-eslint/no-unused-vars
     } else if (result.status === 'skipped' && test.expectedStatus === 'skipped') {
       // Only tests "expected to be skipped" are skipped. These were specifically
       // marked with test.skip or test.fixme.
-      ++skipped;
+      ++skipped
     } else if (result.status === 'skipped') {
       // Tests that were expected to run, but were skipped are "did not run".
       // This happens when:
       // - testing finished early;
       // - test failure prevented other tests in the serial suite to run;
       // - probably more cases!
-      ++didNotRun; // eslint-disable-line @typescript-eslint/no-unused-vars
+      ++didNotRun // eslint-disable-line @typescript-eslint/no-unused-vars
     } else if (result.status === test.expectedStatus) {
       // Either passed and expected to pass, or failed and expected to fail.
-      ++expected;
+      ++expected
     } else {
-      ++unexpected;
+      ++unexpected
     }
   }
 
@@ -860,23 +914,20 @@ export function computeTestCaseOutcome(test: reporterTypes.TestCase) {
   // and show it as "skipped" in all reporters.
   //
   // More exotic cases like "failed on first run and skipped on retry" are flaky.
-  if (expected === 0 && unexpected === 0)
-    return 'skipped';  // all results were skipped or interrupted
-  if (unexpected === 0)
-    return 'expected';  // no failures, just expected+skipped
-  if (expected === 0 && skipped === 0)
-    return 'unexpected';  // only failures
-  return 'flaky';  // expected+unexpected or skipped+unexpected
+  if (expected === 0 && unexpected === 0) return 'skipped' // all results were skipped or interrupted
+  if (unexpected === 0) return 'expected' // no failures, just expected+skipped
+  if (expected === 0 && skipped === 0) return 'unexpected' // only failures
+  return 'flaky' // expected+unexpected or skipped+unexpected
 }
 
 export function asFullResult(result: JsonFullResult): reporterTypes.FullResult {
   return {
     status: result.status,
     startTime: new Date(result.startTime),
-    duration: result.duration,
-  };
+    duration: result.duration
+  }
 }
 
 export function asFullConfig(config: JsonConfig): reporterTypes.FullConfig {
-  return { ...baseFullConfig, ...config };
+  return { ...baseFullConfig, ...config }
 }

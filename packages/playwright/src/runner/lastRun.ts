@@ -14,66 +14,73 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-import type { FullResult, Suite } from '../../types/testReporter';
-import type { config as commonConfig } from '../common';
-import type { ReporterV2 } from '../reporters/reporterV2';
+import type { FullResult, Suite } from '../../types/testReporter'
+import type { config as commonConfig } from '../common'
+import type { ReporterV2 } from '../reporters/reporterV2'
 
 type LastRunInfo = {
-  status: FullResult['status'];
-  failedTests: string[];
-};
+  status: FullResult['status']
+  failedTests: string[]
+}
 
 export class LastRunReporter implements ReporterV2 {
-  private _lastRunFile: string | undefined;
-  private _suite: Suite | undefined;
-  private _listMode: boolean;
+  private _lastRunFile: string | undefined
+  private _suite: Suite | undefined
+  private _listMode: boolean
 
-  constructor(filteredProjects: commonConfig.FullProjectInternal[], listMode?: boolean, lastFailedFileOverride?: string) {
-    this._listMode = !!listMode;
-    const override = lastFailedFileOverride ?? process.env.PLAYWRIGHT_LAST_RUN_OUTPUT_FILE;
+  constructor(
+    filteredProjects: commonConfig.FullProjectInternal[],
+    listMode?: boolean,
+    lastFailedFileOverride?: string
+  ) {
+    this._listMode = !!listMode
+    const override = lastFailedFileOverride ?? process.env.PLAYWRIGHT_LAST_RUN_OUTPUT_FILE
     if (override) {
-      this._lastRunFile = path.resolve(process.cwd(), override);
+      this._lastRunFile = path.resolve(process.cwd(), override)
     } else {
-      const [project] = filteredProjects;
-      if (project)
-        this._lastRunFile = path.join(project.project.outputDir, '.last-run.json');
+      const [project] = filteredProjects
+      if (project) this._lastRunFile = path.join(project.project.outputDir, '.last-run.json')
     }
   }
 
   async filterLastFailed(): Promise<string[]> {
-    if (!this._lastRunFile)
-      return [];
+    if (!this._lastRunFile) return []
     try {
-      const lastRunInfo = JSON.parse(await fs.promises.readFile(this._lastRunFile, 'utf8')) as LastRunInfo;
-      return lastRunInfo.failedTests;
+      const lastRunInfo = JSON.parse(
+        await fs.promises.readFile(this._lastRunFile, 'utf8')
+      ) as LastRunInfo
+      return lastRunInfo.failedTests
     } catch {
-      return [];
+      return []
     }
   }
 
   version(): 'v2' {
-    return 'v2';
+    return 'v2'
   }
 
   printsToStdio() {
-    return false;
+    return false
   }
 
   onBegin(suite: Suite) {
-    this._suite = suite;
+    this._suite = suite
   }
 
   async onEnd(result: FullResult) {
-    if (!this._lastRunFile || this._listMode)
-      return;
+    if (!this._lastRunFile || this._listMode) return
     const lastRunInfo: LastRunInfo = {
       status: result.status,
-      failedTests: this._suite?.allTests().filter(t => !t.ok()).map(t => t.id) || [],
-    };
-    await fs.promises.mkdir(path.dirname(this._lastRunFile), { recursive: true });
-    await fs.promises.writeFile(this._lastRunFile, JSON.stringify(lastRunInfo, undefined, 2));
+      failedTests:
+        this._suite
+          ?.allTests()
+          .filter((t) => !t.ok())
+          .map((t) => t.id) || []
+    }
+    await fs.promises.mkdir(path.dirname(this._lastRunFile), { recursive: true })
+    await fs.promises.writeFile(this._lastRunFile, JSON.stringify(lastRunInfo, undefined, 2))
   }
 }

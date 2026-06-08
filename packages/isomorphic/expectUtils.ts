@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import { isRegExp, isString } from './rtti';
-import type { ExpectedTextValue } from '@protocol/channels';
+import { isRegExp, isString } from './rtti'
+import type { ExpectedTextValue } from '@protocol/channels'
 
-export function serializeExpectedTextValues(items: (string | RegExp)[], options: { matchSubstring?: boolean, normalizeWhiteSpace?: boolean, ignoreCase?: boolean } = {}): ExpectedTextValue[] {
-  return items.map(i => ({
+export function serializeExpectedTextValues(
+  items: (string | RegExp)[],
+  options: { matchSubstring?: boolean; normalizeWhiteSpace?: boolean; ignoreCase?: boolean } = {}
+): ExpectedTextValue[] {
+  return items.map((i) => ({
     string: isString(i) ? i : undefined,
     regexSource: isRegExp(i) ? i.source : undefined,
     regexFlags: isRegExp(i) ? i.flags : undefined,
     matchSubstring: options.matchSubstring,
     ignoreCase: options.ignoreCase,
-    normalizeWhiteSpace: options.normalizeWhiteSpace,
-  }));
+    normalizeWhiteSpace: options.normalizeWhiteSpace
+  }))
 }

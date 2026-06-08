@@ -14,101 +14,130 @@
  * limitations under the License.
  */
 
+import fs from 'fs'
+import path from 'path'
 
-import fs from 'fs';
-import path from 'path';
+import { escapeTemplateString, isString } from '@isomorphic/stringUtils'
+import { existsAsync } from '@utils/fileUtils'
 
-import { escapeTemplateString, isString } from '@isomorphic/stringUtils';
-import { existsAsync } from '@utils/fileUtils';
+import {
+  expectTypes,
+  formatMatcherMessage,
+  printReceivedStringContainExpectedSubstring
+} from './matcherHint'
+import { expectConfig } from './expect'
 
-import { expectTypes, formatMatcherMessage, printReceivedStringContainExpectedSubstring } from './matcherHint';
-import { expectConfig } from './expect';
+import type { MatcherResult } from './matcherHint'
+import type { ExpectMatcherStateInternal, FrameEx, LocatorEx } from './matchers'
+import type { MatcherReceived } from '@injected/ariaSnapshot'
+import type { Page } from 'playwright-core'
 
-import type { MatcherResult } from './matcherHint';
-import type { ExpectMatcherStateInternal, FrameEx, LocatorEx } from './matchers';
-import type { MatcherReceived } from '@injected/ariaSnapshot';
-import type { Page } from 'playwright-core';
+type ToMatchAriaSnapshotExpected =
+  | {
+      name?: string
+      path?: string
+      timeout?: number
+    }
+  | string
 
-
-type ToMatchAriaSnapshotExpected = {
-  name?: string;
-  path?: string;
-  timeout?: number;
-} | string;
-
-const kImpossibleAriaMatch = `- none "Generating new baseline"`;
+const kImpossibleAriaMatch = `- none "Generating new baseline"`
 
 export async function toMatchAriaSnapshot(
   this: ExpectMatcherStateInternal,
   receiver: LocatorEx | Page,
   expectedParam?: ToMatchAriaSnapshotExpected,
-  options: { timeout?: number } = {},
+  options: { timeout?: number } = {}
 ): Promise<MatcherResult<string | RegExp, string>> {
-  const matcherName = 'toMatchAriaSnapshot';
-  expectTypes(receiver, ['Page', 'Locator'], matcherName);
-  const locator = (receiver as any)._apiName === 'Page' ? undefined : receiver as LocatorEx;
+  const matcherName = 'toMatchAriaSnapshot'
+  expectTypes(receiver, ['Page', 'Locator'], matcherName)
+  const locator = (receiver as any)._apiName === 'Page' ? undefined : (receiver as LocatorEx)
 
-  const testInfo = expectConfig().testInfo;
-  if (!testInfo)
-    throw new Error(`${matcherName}() must be called during the test`);
+  const testInfo = expectConfig().testInfo
+  if (!testInfo) throw new Error(`${matcherName}() must be called during the test`)
 
   if (expectConfig().ignoreSnapshots)
-    return { pass: !this.isNot, message: () => '', name: 'toMatchAriaSnapshot', expected: '' };
+    return { pass: !this.isNot, message: () => '', name: 'toMatchAriaSnapshot', expected: '' }
 
-  const updateSnapshots = expectConfig().updateSnapshots;
+  const updateSnapshots = expectConfig().updateSnapshots
 
-  let expected: string;
-  let timeout: number;
-  let expectedPath: string | undefined;
+  let expected: string
+  let timeout: number
+  let expectedPath: string | undefined
   if (isString(expectedParam)) {
-    expected = expectedParam;
-    timeout = options.timeout ?? this.timeout;
+    expected = expectedParam
+    timeout = options.timeout ?? this.timeout
   } else {
-    const legacyPath = testInfo._resolveSnapshotPaths('aria', expectedParam?.name, 'dontUpdateSnapshotIndex', '.yml').absoluteSnapshotPath;
-    expectedPath = testInfo._resolveSnapshotPaths('aria', expectedParam?.name, 'updateSnapshotIndex').absoluteSnapshotPath;
+    const legacyPath = testInfo._resolveSnapshotPaths(
+      'aria',
+      expectedParam?.name,
+      'dontUpdateSnapshotIndex',
+      '.yml'
+    ).absoluteSnapshotPath
+    expectedPath = testInfo._resolveSnapshotPaths(
+      'aria',
+      expectedParam?.name,
+      'updateSnapshotIndex'
+    ).absoluteSnapshotPath
     // in 1.51, we changed the default template to use .aria.yml extension
     // for backwards compatibility, we check for the legacy .yml extension
-    if (!(await existsAsync(expectedPath)) && await existsAsync(legacyPath))
-      expectedPath = legacyPath;
-    expected = await fs.promises.readFile(expectedPath, 'utf8').catch(() => '');
-    timeout = expectedParam?.timeout ?? this.timeout;
+    if (!(await existsAsync(expectedPath)) && (await existsAsync(legacyPath)))
+      expectedPath = legacyPath
+    expected = await fs.promises.readFile(expectedPath, 'utf8').catch(() => '')
+    timeout = expectedParam?.timeout ?? this.timeout
   }
 
-  const isMissingBaseline = updateSnapshots === 'missing' && !expected;
+  const isMissingBaseline = updateSnapshots === 'missing' && !expected
   if (isMissingBaseline && this.isNot) {
-    const message = `Matchers using ".not" can't generate new baselines`;
-    return { pass: this.isNot, message: () => message, name: 'toMatchAriaSnapshot' };
+    const message = `Matchers using ".not" can't generate new baselines`
+    return { pass: this.isNot, message: () => message, name: 'toMatchAriaSnapshot' }
   }
-  const generateBaseline = !this.isNot && (updateSnapshots === 'all' || isMissingBaseline);
+  const generateBaseline = !this.isNot && (updateSnapshots === 'all' || isMissingBaseline)
   if (generateBaseline) {
     // When generating new baseline, run entire pipeline against impossible match.
-    expected = kImpossibleAriaMatch;
+    expected = kImpossibleAriaMatch
   }
 
-  expected = unshift(expected);
+  expected = unshift(expected)
 
-  const globalChildren = expectConfig().toMatchAriaSnapshot?.children;
+  const globalChildren = expectConfig().toMatchAriaSnapshot?.children
   if (globalChildren && !expected.match(/^- \/children:/m))
-    expected = `- /children: ${globalChildren}\n` + expected;
+    expected = `- /children: ${globalChildren}\n` + expected
 
-  const expectParams = { expectedValue: expected, isNot: this.isNot, timeout };
-  const { matches: pass, received, log, timedOut, errorMessage } = locator ?
-    await (locator as LocatorEx)._expect('to.match.aria', expectParams) :
-    await ((receiver as Page).mainFrame() as FrameEx)._expect('to.match.aria', expectParams);
-  const typedReceived = received?.value as MatcherReceived;
+  const expectParams = { expectedValue: expected, isNot: this.isNot, timeout }
+  const {
+    matches: pass,
+    received,
+    log,
+    timedOut,
+    errorMessage
+  } = locator
+    ? await (locator as LocatorEx)._expect('to.match.aria', expectParams)
+    : await ((receiver as Page).mainFrame() as FrameEx)._expect('to.match.aria', expectParams)
+  const typedReceived = received?.value as MatcherReceived
 
   const message = () => {
-    let printedExpected: string | undefined;
-    let printedReceived: string | undefined;
-    let printedDiff: string | undefined;
+    let printedExpected: string | undefined
+    let printedReceived: string | undefined
+    let printedDiff: string | undefined
     if (errorMessage) {
-      printedExpected = `Expected: ${this.isNot ? 'not ' : ''}${this.utils.printExpected(expected)}`;
+      printedExpected = `Expected: ${this.isNot ? 'not ' : ''}${this.utils.printExpected(expected)}`
     } else if (pass) {
-      const receivedString = printReceivedStringContainExpectedSubstring(this.utils, typedReceived.raw, typedReceived.raw.indexOf(expected), expected.length);
-      printedExpected = `Expected: not ${this.utils.printExpected(expected)}`;
-      printedReceived = `Received: ${receivedString}`;
+      const receivedString = printReceivedStringContainExpectedSubstring(
+        this.utils,
+        typedReceived.raw,
+        typedReceived.raw.indexOf(expected),
+        expected.length
+      )
+      printedExpected = `Expected: not ${this.utils.printExpected(expected)}`
+      printedReceived = `Received: ${receivedString}`
     } else {
-      printedDiff = this.utils.printDiffOrStringify(expected, typedReceived.raw, 'Expected', 'Received', false);
+      printedDiff = this.utils.printDiffOrStringify(
+        expected,
+        typedReceived.raw,
+        'Expected',
+        'Received',
+        false
+      )
     }
     return formatMatcherMessage(this.utils, {
       isNot: this.isNot,
@@ -122,34 +151,46 @@ export async function toMatchAriaSnapshot(
       printedReceived,
       printedDiff,
       errorMessage,
-      log,
-    });
-  };
+      log
+    })
+  }
 
-  if (errorMessage)
-    return { pass: this.isNot, message, name: 'toMatchAriaSnapshot', expected };
+  if (errorMessage) return { pass: this.isNot, message, name: 'toMatchAriaSnapshot', expected }
 
   if (!this.isNot) {
     if (generateBaseline || (updateSnapshots === 'changed' && pass === this.isNot)) {
       if (expectedPath) {
-        await fs.promises.mkdir(path.dirname(expectedPath), { recursive: true });
-        await fs.promises.writeFile(expectedPath, typedReceived.regex, 'utf8');
-        const relativePath = path.relative(process.cwd(), expectedPath);
+        await fs.promises.mkdir(path.dirname(expectedPath), { recursive: true })
+        await fs.promises.writeFile(expectedPath, typedReceived.regex, 'utf8')
+        const relativePath = path.relative(process.cwd(), expectedPath)
         if (isMissingBaseline) {
-          const message = `A snapshot doesn't exist at ${relativePath}, writing actual.`;
-          return { pass: true, message: () => '', name: 'toMatchAriaSnapshot', softError: new Error(message), shouldNotRetryTest: true };
+          const message = `A snapshot doesn't exist at ${relativePath}, writing actual.`
+          return {
+            pass: true,
+            message: () => '',
+            name: 'toMatchAriaSnapshot',
+            softError: new Error(message),
+            shouldNotRetryTest: true
+          }
         }
-        const message = `A snapshot is generated at ${relativePath}.`;
+        const message = `A snapshot is generated at ${relativePath}.`
         /* eslint-disable no-console */
-        console.log(message);
-        return { pass: true, message: () => '', name: 'toMatchAriaSnapshot' };
+        console.log(message)
+        return { pass: true, message: () => '', name: 'toMatchAriaSnapshot' }
       } else {
-        const suggestedRebaseline = `\`\n${escapeTemplateString(indent(typedReceived.regex, '{indent}  '))}\n{indent}\``;
+        const suggestedRebaseline = `\`\n${escapeTemplateString(indent(typedReceived.regex, '{indent}  '))}\n{indent}\``
         if (isMissingBaseline) {
-          const message = 'A snapshot is not provided, generating new baseline.';
-          return { pass: true, message: () => '', name: 'toMatchAriaSnapshot', suggestedRebaseline, softError: new Error(message), shouldNotRetryTest: true };
+          const message = 'A snapshot is not provided, generating new baseline.'
+          return {
+            pass: true,
+            message: () => '',
+            name: 'toMatchAriaSnapshot',
+            suggestedRebaseline,
+            softError: new Error(message),
+            shouldNotRetryTest: true
+          }
         }
-        return { pass: true, message: () => '', name: 'toMatchAriaSnapshot', suggestedRebaseline };
+        return { pass: true, message: () => '', name: 'toMatchAriaSnapshot', suggestedRebaseline }
       }
     }
   }
@@ -161,23 +202,27 @@ export async function toMatchAriaSnapshot(
     pass,
     actual: typedReceived?.raw,
     log,
-    timeout: timedOut ? timeout : undefined,
-  };
+    timeout: timedOut ? timeout : undefined
+  }
 }
 
 function unshift(snapshot: string): string {
-  const lines = snapshot.split('\n');
-  let whitespacePrefixLength = 100;
+  const lines = snapshot.split('\n')
+  let whitespacePrefixLength = 100
   for (const line of lines) {
-    if (!line.trim())
-      continue;
-    const match = line.match(/^(\s*)/);
-    if (match && match[1].length < whitespacePrefixLength)
-      whitespacePrefixLength = match[1].length;
+    if (!line.trim()) continue
+    const match = line.match(/^(\s*)/)
+    if (match && match[1].length < whitespacePrefixLength) whitespacePrefixLength = match[1].length
   }
-  return lines.filter(t => t.trim()).map(line => line.substring(whitespacePrefixLength)).join('\n');
+  return lines
+    .filter((t) => t.trim())
+    .map((line) => line.substring(whitespacePrefixLength))
+    .join('\n')
 }
 
 function indent(snapshot: string, indent: string): string {
-  return snapshot.split('\n').map(line => indent + line).join('\n');
+  return snapshot
+    .split('\n')
+    .map((line) => indent + line)
+    .join('\n')
 }

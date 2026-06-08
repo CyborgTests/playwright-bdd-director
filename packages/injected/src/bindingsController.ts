@@ -14,70 +14,66 @@
  * limitations under the License.
  */
 
-import { serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers';
+import { serializeAsCallArgument } from '@isomorphic/utilityScriptSerializers'
 
-import type { SerializedValue } from '@isomorphic/utilityScriptSerializers';
+import type { SerializedValue } from '@isomorphic/utilityScriptSerializers'
 
 export type BindingPayload = {
-  name: string;
-  seq: number;
-  serializedArgs: SerializedValue[],
-};
+  name: string
+  seq: number
+  serializedArgs: SerializedValue[]
+}
 
 type BindingData = {
-  callbacks: Map<number, { resolve: (value: any) => void, reject: (error: Error) => void }>;
-  lastSeq: number;
-  removed: boolean;
-};
+  callbacks: Map<number, { resolve: (value: any) => void; reject: (error: Error) => void }>
+  lastSeq: number
+  removed: boolean
+}
 
 export class BindingsController {
-  private _global: typeof globalThis;
-  private _globalBindingName: string;
-  private _bindings = new Map<string, BindingData>();
+  private _global: typeof globalThis
+  private _globalBindingName: string
+  private _bindings = new Map<string, BindingData>()
 
   constructor(global: typeof globalThis, globalBindingName: string) {
-    this._global = global;
-    this._globalBindingName = globalBindingName;
+    this._global = global
+    this._globalBindingName = globalBindingName
   }
 
   addBinding(bindingName: string) {
     const data: BindingData = {
       callbacks: new Map(),
       lastSeq: 0,
-      removed: false,
-    };
-    this._bindings.set(bindingName, data);
-    (this._global as any)[bindingName] = (...args: any[]) => {
-      if (data.removed)
-        throw new Error(`binding "${bindingName}" has been removed`);
-      const seq = ++data.lastSeq;
-      const promise = new Promise((resolve, reject) => data.callbacks.set(seq, { resolve, reject }));
-      const serializedArgs = [];
+      removed: false
+    }
+    this._bindings.set(bindingName, data)
+    ;(this._global as any)[bindingName] = (...args: any[]) => {
+      if (data.removed) throw new Error(`binding "${bindingName}" has been removed`)
+      const seq = ++data.lastSeq
+      const promise = new Promise((resolve, reject) => data.callbacks.set(seq, { resolve, reject }))
+      const serializedArgs = []
       for (let i = 0; i < args.length; i++) {
-        serializedArgs[i] = serializeAsCallArgument(args[i], v => {
-          return { fallThrough: v };
-        });
+        serializedArgs[i] = serializeAsCallArgument(args[i], (v) => {
+          return { fallThrough: v }
+        })
       }
-      const payload: BindingPayload = { name: bindingName, seq, serializedArgs };
-      (this._global as any)[this._globalBindingName](JSON.stringify(payload));
-      return promise;
-    };
+      const payload: BindingPayload = { name: bindingName, seq, serializedArgs }
+      ;(this._global as any)[this._globalBindingName](JSON.stringify(payload))
+      return promise
+    }
   }
 
   removeBinding(bindingName: string) {
-    const data = this._bindings.get(bindingName);
-    if (data)
-      data.removed = true;
-    this._bindings.delete(bindingName);
-    delete (this._global as any)[bindingName];
+    const data = this._bindings.get(bindingName)
+    if (data) data.removed = true
+    this._bindings.delete(bindingName)
+    delete (this._global as any)[bindingName]
   }
 
-  deliverBindingResult(arg: { name: string, seq: number, result?: any, error?: any }) {
-    const callbacks = this._bindings.get(arg.name)!.callbacks;
-    if ('error' in arg)
-      callbacks.get(arg.seq)!.reject(arg.error);
-    else
-      callbacks.get(arg.seq)!.resolve(arg.result);
-    callbacks.delete(arg.seq);
+  deliverBindingResult(arg: { name: string; seq: number; result?: any; error?: any }) {
+    const callbacks = this._bindings.get(arg.name)!.callbacks
+    if ('error' in arg) callbacks.get(arg.seq)!.reject(arg.error)
+    else callbacks.get(arg.seq)!.resolve(arg.result)
+    callbacks.delete(arg.seq)
   }
 }

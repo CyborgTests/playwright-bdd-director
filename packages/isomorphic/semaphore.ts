@@ -14,37 +14,37 @@
  * limitations under the License.
  */
 
-import { ManualPromise } from './manualPromise';
+import { ManualPromise } from './manualPromise'
 
 export class Semaphore {
-  private _max: number;
-  private _acquired = 0;
-  private _queue: ManualPromise[] = [];
+  private _max: number
+  private _acquired = 0
+  private _queue: ManualPromise[] = []
 
   constructor(max: number) {
-    this._max = max;
+    this._max = max
   }
 
   setMax(max: number) {
-    this._max = max;
+    this._max = max
   }
 
   acquire(): Promise<void> {
-    const lock = new ManualPromise();
-    this._queue.push(lock);
-    this._flush();
-    return lock;
+    const lock = new ManualPromise()
+    this._queue.push(lock)
+    this._flush()
+    return lock
   }
 
   release() {
-    --this._acquired;
-    this._flush();
+    --this._acquired
+    this._flush()
   }
 
   private _flush() {
     while (this._acquired < this._max && this._queue.length) {
-      ++this._acquired;
-      this._queue.shift()!.resolve();
+      ++this._acquired
+      this._queue.shift()!.resolve()
     }
   }
 }

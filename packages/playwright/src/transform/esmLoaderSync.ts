@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import url from 'url';
+import fs from 'fs'
+import url from 'url'
 
-import { currentFileDepsCollector } from './compilationCache';
-import { resolveHook, shouldTransform, transformHook } from './transform';
-import { fileIsModule } from '../util';
+import { currentFileDepsCollector } from './compilationCache'
+import { resolveHook, shouldTransform, transformHook } from './transform'
+import { fileIsModule } from '../util'
 
-export function resolve(specifier: string, context: { parentURL?: string, conditions?: string[] }, nextResolve: Function) {
+export function resolve(
+  specifier: string,
+  context: { parentURL?: string; conditions?: string[] },
+  nextResolve: Function
+) {
   if (context.parentURL && context.parentURL.startsWith('file://')) {
-    const filename = url.fileURLToPath(context.parentURL);
-    const resolved = resolveHook(filename, specifier);
+    const filename = url.fileURLToPath(context.parentURL)
+    const resolved = resolveHook(filename, specifier)
     if (resolved !== undefined) {
       // These hooks serve both require() and import. The two default resolvers disagree on
       // what an already-resolved specifier should look like:
@@ -32,13 +36,15 @@ export function resolve(specifier: string, context: { parentURL?: string, condit
       // - the ESM resolver wants a file:// URL and, on Windows, mistakes an absolute path's
       //   drive letter for a URL scheme ("Received protocol 'c:'").
       // The `import` condition is present only for ESM resolution, so use it to pick the form.
-      specifier = context.conditions?.includes('import') ? url.pathToFileURL(resolved).toString() : resolved;
+      specifier = context.conditions?.includes('import')
+        ? url.pathToFileURL(resolved).toString()
+        : resolved
     }
   }
-  const result = nextResolve(specifier, context);
+  const result = nextResolve(specifier, context)
   if (result?.url && result.url.startsWith('file://'))
-    currentFileDepsCollector()?.add(url.fileURLToPath(result.url));
-  return result;
+    currentFileDepsCollector()?.add(url.fileURLToPath(result.url))
+  return result
 }
 
 // non-js files have undefined
@@ -54,35 +60,33 @@ const kSupportedFormats = new Map([
   ['typescript', null],
   [null, null],
   [undefined, undefined]
-]);
+])
 
 export function load(moduleUrl: string, context: { format?: string }, nextLoad: Function) {
   // Bail out for wasm, json, etc.
-  if (!kSupportedFormats.has(context.format))
-    return nextLoad(moduleUrl, context);
+  if (!kSupportedFormats.has(context.format)) return nextLoad(moduleUrl, context)
 
   // Bail for built-in modules.
-  if (!moduleUrl.startsWith('file://'))
-    return nextLoad(moduleUrl, context);
+  if (!moduleUrl.startsWith('file://')) return nextLoad(moduleUrl, context)
 
-  const filename = url.fileURLToPath(moduleUrl);
+  const filename = url.fileURLToPath(moduleUrl)
 
   // Bail for node_modules.
-  if (!shouldTransform(filename))
-    return nextLoad(moduleUrl, context);
+  if (!shouldTransform(filename)) return nextLoad(moduleUrl, context)
 
   // Output format is required, so we determine it manually when unknown.
-  const format = kSupportedFormats.get(context.format) || (fileIsModule(filename) ? 'module' : 'commonjs');
+  const format =
+    kSupportedFormats.get(context.format) || (fileIsModule(filename) ? 'module' : 'commonjs')
 
-  const code = fs.readFileSync(filename, 'utf-8');
+  const code = fs.readFileSync(filename, 'utf-8')
   // Pass `moduleUrl` only for ESM. For CommonJS we omit it so that babel
   // down-transpiles `import`/`export` to `require`/`exports`.
-  const transformed = transformHook(code, filename, format === 'module' ? moduleUrl : undefined);
+  const transformed = transformHook(code, filename, format === 'module' ? moduleUrl : undefined)
 
   // shortCircuit is required to designate no more loaders should be called.
   return {
     format,
     source: transformed.code,
-    shortCircuit: true,
-  };
+    shortCircuit: true
+  }
 }

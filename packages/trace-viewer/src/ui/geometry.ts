@@ -15,11 +15,11 @@
 */
 
 export type Size = {
-  width: number;
-  height: number;
-};
+  width: number
+  height: number
+}
 
 export type Boundaries = {
-  minimum: number;
-  maximum: number;
-};
+  minimum: number
+  maximum: number
+}

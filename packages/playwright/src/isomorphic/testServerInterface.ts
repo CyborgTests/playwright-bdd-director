@@ -14,115 +14,114 @@
  * limitations under the License.
  */
 
-import type { Event } from './events';
-import type { JsonEvent } from './teleReceiver';
-import type * as reporterTypes from '../../types/testReporter';
+import type { Event } from './events'
+import type { JsonEvent } from './teleReceiver'
+import type * as reporterTypes from '../../types/testReporter'
 
 // -- Reuse boundary -- Everything below this line is reused in the vscode extension.
 
-export type ReportEntry = JsonEvent;
+export type ReportEntry = JsonEvent
 
 export interface TestServerInterface {
   initialize(params: {
-    serializer?: string,
-    closeOnDisconnect?: boolean,
-    interceptStdio?: boolean,
-    watchTestDirs?: boolean,
-    populateDependenciesOnList?: boolean,
-  }): Promise<void>;
+    serializer?: string
+    closeOnDisconnect?: boolean
+    interceptStdio?: boolean
+    watchTestDirs?: boolean
+    populateDependenciesOnList?: boolean
+  }): Promise<void>
 
-  ping(params: {}): Promise<void>;
+  ping(params: {}): Promise<void>
 
-  watch(params: {
-    fileNames: string[];
-  }): Promise<void>;
+  watch(params: { fileNames: string[] }): Promise<void>
 
-  open(params: { location: reporterTypes.Location }): Promise<void>;
+  open(params: { location: reporterTypes.Location }): Promise<void>
 
-  resizeTerminal(params: { cols: number, rows: number }): Promise<void>;
+  resizeTerminal(params: { cols: number; rows: number }): Promise<void>
 
-  checkBrowsers(params: {}): Promise<{ hasBrowsers: boolean }>;
+  checkBrowsers(params: {}): Promise<{ hasBrowsers: boolean }>
 
-  installBrowsers(params: {}): Promise<void>;
+  installBrowsers(params: {}): Promise<void>
 
   runGlobalSetup(params: {}): Promise<{
-    report: ReportEntry[],
-    env: [string, string | null][],
+    report: ReportEntry[]
+    env: [string, string | null][]
     status: reporterTypes.FullResult['status']
-  }>;
+  }>
 
   runGlobalTeardown(params: {}): Promise<{
-    report: ReportEntry[],
+    report: ReportEntry[]
     status: reporterTypes.FullResult['status']
-  }>;
+  }>
 
-  clearCache(params: {}): Promise<void>;
+  clearCache(params: {}): Promise<void>
 
-  listFiles(params: {
-    projects?: string[];
-  }): Promise<{
-    report: ReportEntry[];
+  listFiles(params: { projects?: string[] }): Promise<{
+    report: ReportEntry[]
     status: reporterTypes.FullResult['status']
-  }>;
+  }>
 
   /**
    * Returns list of teleReporter events.
    */
   listTests(params: {
-    projects?: string[];
-    locations?: string[];
-    grep?: string;
-    grepInvert?: string;
-    onlyChanged?: boolean;
+    projects?: string[]
+    locations?: string[]
+    grep?: string
+    grepInvert?: string
+    onlyChanged?: boolean
   }): Promise<{
-    report: ReportEntry[],
+    report: ReportEntry[]
     status: reporterTypes.FullResult['status']
-  }>;
+  }>
 
   runTests(params: {
-    locations: string[];
-    grep?: string;
-    grepInvert?: string;
-    testIds?: string[];
-    headed?: boolean;
-    workers?: number | string;
-    maxFailures?: number;
-    updateSnapshots?: 'all' | 'changed' | 'missing' | 'none';
-    updateSourceMethod?: 'overwrite' | 'patch' | '3way';
-    reporters?: string[],
-    trace?: 'on' | 'off';
-    video?: 'on' | 'off';
-    projects?: string[];
-    reuseContext?: boolean;
-    connectWsEndpoint?: string;
-    timeout?: number;
-    pauseOnError?: boolean;
-    pauseAtEnd?: boolean;
+    locations: string[]
+    grep?: string
+    grepInvert?: string
+    testIds?: string[]
+    headed?: boolean
+    workers?: number | string
+    maxFailures?: number
+    updateSnapshots?: 'all' | 'changed' | 'missing' | 'none'
+    updateSourceMethod?: 'overwrite' | 'patch' | '3way'
+    reporters?: string[]
+    trace?: 'on' | 'off'
+    video?: 'on' | 'off'
+    projects?: string[]
+    reuseContext?: boolean
+    connectWsEndpoint?: string
+    timeout?: number
+    pauseOnError?: boolean
+    pauseAtEnd?: boolean
   }): Promise<{
-    status: reporterTypes.FullResult['status'];
-  }>;
+    status: reporterTypes.FullResult['status']
+  }>
 
   findRelatedTestFiles(params: {
-    files: string[];
-  }): Promise<{ testFiles: string[]; errors?: reporterTypes.TestError[]; }>;
+    files: string[]
+  }): Promise<{ testFiles: string[]; errors?: reporterTypes.TestError[] }>
 
-  stopTests(params: {}): Promise<void>;
+  stopTests(params: {}): Promise<void>
 
-  closeGracefully(params: {}): Promise<void>;
+  closeGracefully(params: {}): Promise<void>
 }
 
 export interface TestServerInterfaceEvents {
-  onReport: Event<any>;
-  onStdio: Event<{ type: 'stdout' | 'stderr', text?: string, buffer?: string }>;
-  onTestFilesChanged: Event<{ testFiles: string[] }>;
-  onLoadTraceRequested: Event<{ traceUrl: string }>;
-  onTestPaused: Event<{ errors: reporterTypes.TestError[] }>;
+  onReport: Event<any>
+  onStdio: Event<{ type: 'stdout' | 'stderr'; text?: string; buffer?: string }>
+  onTestFilesChanged: Event<{ testFiles: string[] }>
+  onLoadTraceRequested: Event<{ traceUrl: string }>
+  onTestPaused: Event<{ errors: reporterTypes.TestError[] }>
 }
 
 export interface TestServerInterfaceEventEmitters {
-  dispatchEvent(event: 'report', params: ReportEntry): void;
-  dispatchEvent(event: 'stdio', params: { type: 'stdout' | 'stderr', text?: string, buffer?: string }): void;
-  dispatchEvent(event: 'testFilesChanged', params: { testFiles: string[] }): void;
-  dispatchEvent(event: 'loadTraceRequested', params: { traceUrl: string }): void;
-  dispatchEvent(event: 'testPaused', params: { errors: reporterTypes.TestError[] }): void;
+  dispatchEvent(event: 'report', params: ReportEntry): void
+  dispatchEvent(
+    event: 'stdio',
+    params: { type: 'stdout' | 'stderr'; text?: string; buffer?: string }
+  ): void
+  dispatchEvent(event: 'testFilesChanged', params: { testFiles: string[] }): void
+  dispatchEvent(event: 'loadTraceRequested', params: { traceUrl: string }): void
+  dispatchEvent(event: 'testPaused', params: { errors: reporterTypes.TestError[] }): void
 }

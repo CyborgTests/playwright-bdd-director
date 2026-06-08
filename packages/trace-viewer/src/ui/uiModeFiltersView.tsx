@@ -14,92 +14,155 @@
  * limitations under the License.
  */
 
-import '@web/common.css';
-import { Expandable } from '@web/components/expandable';
-import '@web/third_party/vscode/codicon.css';
-import { settings } from '@web/uiUtils';
-import React from 'react';
-import './uiModeFiltersView.css';
-import type { TeleSuiteUpdaterTestModel } from '@testIsomorphic/teleSuiteUpdater';
+import '@web/common.css'
+import { Expandable } from '@web/components/expandable'
+import '@web/third_party/vscode/codicon.css'
+import { settings } from '@web/uiUtils'
+import React from 'react'
+import './uiModeFiltersView.css'
+import type { TeleSuiteUpdaterTestModel } from '@testIsomorphic/teleSuiteUpdater'
 
 export const FiltersView: React.FC<{
-  filterText: string;
-  setFilterText: (text: string) => void;
-  statusFilters: Map<string, boolean>;
-  setStatusFilters: (filters: Map<string, boolean>) => void;
-  projectFilters: Map<string, boolean>;
-  setProjectFilters: (filters: Map<string, boolean>) => void;
-  onlyChanged: boolean;
-  setOnlyChanged: (value: boolean) => void;
-  testModel: TeleSuiteUpdaterTestModel | undefined,
-  runTests: () => void;
-}> = ({ filterText, setFilterText, statusFilters, setStatusFilters, projectFilters, setProjectFilters, onlyChanged, setOnlyChanged, testModel, runTests }) => {
-  const [expanded, setExpanded] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  filterText: string
+  setFilterText: (text: string) => void
+  statusFilters: Map<string, boolean>
+  setStatusFilters: (filters: Map<string, boolean>) => void
+  projectFilters: Map<string, boolean>
+  setProjectFilters: (filters: Map<string, boolean>) => void
+  onlyChanged: boolean
+  setOnlyChanged: (value: boolean) => void
+  testModel: TeleSuiteUpdaterTestModel | undefined
+  runTests: () => void
+}> = ({
+  filterText,
+  setFilterText,
+  statusFilters,
+  setStatusFilters,
+  projectFilters,
+  setProjectFilters,
+  onlyChanged,
+  setOnlyChanged,
+  testModel,
+  runTests
+}) => {
+  const [expanded, setExpanded] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   React.useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    inputRef.current?.focus()
+  }, [])
 
-  const statusLine = [...statusFilters.entries()].filter(([_, v]) => v).map(([s]) => s).join(' ') || 'all';
-  const projectsLine = [...projectFilters.entries()].filter(([_, v]) => v).map(([p]) => p).join(' ') || 'all';
-  return <div className='filters'>
-    <Expandable
-      expanded={expanded}
-      setExpanded={setExpanded}
-      title={<input ref={inputRef} type='search' placeholder='Filter (e.g. text, @tag)' spellCheck={false} value={filterText}
-        onChange={e => {
-          setFilterText(e.target.value);
-        }}
-        onKeyDown={e => {
-          if (e.key === 'Enter')
-            runTests();
-        }} />}>
-    </Expandable>
-    <div className='filter-summary' title={'Status: ' + statusLine + '\nProjects: ' + projectsLine + (onlyChanged ? '\nOnly changed' : '')} onClick={() => setExpanded(!expanded)}>
-      <span className='filter-label'>Status:</span> {statusLine}
-      <span className='filter-label'>Projects:</span> {projectsLine}
-      {onlyChanged && <><span className='filter-label'>Only changed</span></>}
+  const statusLine =
+    [...statusFilters.entries()]
+      .filter(([_, v]) => v)
+      .map(([s]) => s)
+      .join(' ') || 'all'
+  const projectsLine =
+    [...projectFilters.entries()]
+      .filter(([_, v]) => v)
+      .map(([p]) => p)
+      .join(' ') || 'all'
+  return (
+    <div className="filters">
+      <Expandable
+        expanded={expanded}
+        setExpanded={setExpanded}
+        title={
+          <input
+            ref={inputRef}
+            type="search"
+            placeholder="Filter (e.g. text, @tag)"
+            spellCheck={false}
+            value={filterText}
+            onChange={(e) => {
+              setFilterText(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') runTests()
+            }}
+          />
+        }
+      ></Expandable>
+      <div
+        className="filter-summary"
+        title={
+          'Status: ' +
+          statusLine +
+          '\nProjects: ' +
+          projectsLine +
+          (onlyChanged ? '\nOnly changed' : '')
+        }
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span className="filter-label">Status:</span> {statusLine}
+        <span className="filter-label">Projects:</span> {projectsLine}
+        {onlyChanged && (
+          <>
+            <span className="filter-label">Only changed</span>
+          </>
+        )}
+      </div>
+      {expanded && (
+        <>
+          <div className="hbox" style={{ marginLeft: 14, maxHeight: 200, overflowY: 'auto' }}>
+            <div className="filter-list" role="list" data-testid="status-filters">
+              {[...statusFilters.entries()].map(([status, value]) => {
+                return (
+                  <div className="filter-entry" key={status} role="listitem">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={() => {
+                          const copy = new Map(statusFilters)
+                          copy.set(status, !copy.get(status))
+                          setStatusFilters(copy)
+                        }}
+                      />
+                      <div>{status}</div>
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="filter-list" role="list" data-testid="project-filters">
+              {[...projectFilters.entries()].map(([projectName, value]) => {
+                return (
+                  <div className="filter-entry" key={projectName} role="listitem">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={() => {
+                          const copy = new Map(projectFilters)
+                          copy.set(projectName, !copy.get(projectName))
+                          setProjectFilters(copy)
+                          const configFile = testModel?.config?.configFile
+                          if (configFile)
+                            settings.setObject(
+                              configFile + ':projects',
+                              [...copy.entries()].filter(([_, v]) => v).map(([k]) => k)
+                            )
+                        }}
+                      />
+                      <div>{projectName || 'untitled'}</div>
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <div className="filter-entry" style={{ marginLeft: 24 }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={onlyChanged}
+                onChange={() => setOnlyChanged(!onlyChanged)}
+              />
+              <div>Show only changed files</div>
+            </label>
+          </div>
+        </>
+      )}
     </div>
-    {expanded && <>
-      <div className='hbox' style={{ marginLeft: 14, maxHeight: 200, overflowY: 'auto' }}>
-        <div className='filter-list' role='list' data-testid='status-filters'>
-          {[...statusFilters.entries()].map(([status, value]) => {
-            return <div className='filter-entry' key={status} role='listitem'>
-              <label>
-                <input type='checkbox' checked={value} onChange={() => {
-                  const copy = new Map(statusFilters);
-                  copy.set(status, !copy.get(status));
-                  setStatusFilters(copy);
-                }}/>
-                <div>{status}</div>
-              </label>
-            </div>;
-          })}
-        </div>
-        <div className='filter-list' role='list' data-testid='project-filters'>
-          {[...projectFilters.entries()].map(([projectName, value]) => {
-            return <div className='filter-entry' key={projectName}  role='listitem'>
-              <label>
-                <input type='checkbox' checked={value} onChange={() => {
-                  const copy = new Map(projectFilters);
-                  copy.set(projectName, !copy.get(projectName));
-                  setProjectFilters(copy);
-                  const configFile = testModel?.config?.configFile;
-                  if (configFile)
-                    settings.setObject(configFile + ':projects', [...copy.entries()].filter(([_, v]) => v).map(([k]) => k));
-                }}/>
-                <div>{projectName || 'untitled'}</div>
-              </label>
-            </div>;
-          })}
-        </div>
-      </div>
-      <div className='filter-entry' style={{ marginLeft: 24 }}>
-        <label>
-          <input type='checkbox' checked={onlyChanged} onChange={() => setOnlyChanged(!onlyChanged)}/>
-          <div>Show only changed files</div>
-        </label>
-      </div>
-    </>}
-  </div>;
-};
+  )
+}

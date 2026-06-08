@@ -14,42 +14,39 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-import { mkdirIfNeeded } from '@utils/fileUtils';
+import { mkdirIfNeeded } from '@utils/fileUtils'
 
-import { projectUtils } from '../../runner';
+import { projectUtils } from '../../runner'
 
-import type { config, FullConfigInternal } from '../../common';
+import type { config, FullConfigInternal } from '../../common'
 
 export function seedProject(fullConfig: FullConfigInternal, projectName?: string) {
-  if (!projectName)
-    return projectUtils.findTopLevelProjects(fullConfig)[0];
-  const project = fullConfig.projects.find(p => p.project.name === projectName);
-  if (!project)
-    throw new Error(`Project ${projectName} not found`);
-  return project;
+  if (!projectName) return projectUtils.findTopLevelProjects(fullConfig)[0]
+  const project = fullConfig.projects.find((p) => p.project.name === projectName)
+  if (!project) throw new Error(`Project ${projectName} not found`)
+  return project
 }
 
 export async function findSeedFile(project: config.FullProjectInternal) {
-  const files = await projectUtils.collectFilesForProject(project);
-  return files.find(file => path.basename(file).includes('seed'));
+  const files = await projectUtils.collectFilesForProject(project)
+  return files.find((file) => path.basename(file).includes('seed'))
 }
 
 export function defaultSeedFile(project: config.FullProjectInternal) {
-  const testDir = project.project.testDir;
-  return path.resolve(testDir, 'seed.spec.ts');
+  const testDir = project.project.testDir
+  return path.resolve(testDir, 'seed.spec.ts')
 }
 
 export async function ensureSeedFile(project: config.FullProjectInternal) {
-  const seedFile = await findSeedFile(project);
-  if (seedFile)
-    return seedFile;
-  const seedFilePath = defaultSeedFile(project);
-  await mkdirIfNeeded(seedFilePath);
-  await fs.promises.writeFile(seedFilePath, seedFileContent);
-  return seedFilePath;
+  const seedFile = await findSeedFile(project)
+  if (seedFile) return seedFile
+  const seedFilePath = defaultSeedFile(project)
+  await mkdirIfNeeded(seedFilePath)
+  await fs.promises.writeFile(seedFilePath, seedFileContent)
+  return seedFilePath
 }
 
 export const seedFileContent = `import { test, expect } from '@playwright/test';
@@ -59,4 +56,4 @@ test.describe('Test group', () => {
     // generate code here.
   });
 });
-`;
+`

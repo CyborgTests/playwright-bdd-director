@@ -14,45 +14,49 @@
  * limitations under the License.
  */
 
-import path from 'path';
-import util from 'util';
+import path from 'path'
+import util from 'util'
 
-import { isWorkerProcess, setCurrentlyLoadingFileSuite } from '../globals';
-import { Suite } from './test';
-import { requireOrImport, startCollectingFileDeps, stopCollectingFileDeps } from '../transform/transform';
-import { filterStackTrace } from '../util';
+import { isWorkerProcess, setCurrentlyLoadingFileSuite } from '../globals'
+import { Suite } from './test'
+import {
+  requireOrImport,
+  startCollectingFileDeps,
+  stopCollectingFileDeps
+} from '../transform/transform'
+import { filterStackTrace } from '../util'
 
-import type { TestError } from '../../types/testReporter';
-import type { FullConfigInternal } from './config';
+import type { TestError } from '../../types/testReporter'
+import type { FullConfigInternal } from './config'
 
-export const defaultTimeout = 30000;
+export const defaultTimeout = 30000
 
 // To allow multiple loaders in the same process without clearing require cache,
 // we make these maps global.
-const cachedFileSuites = new Map<string, Suite>();
+const cachedFileSuites = new Map<string, Suite>()
 
-export async function loadTestFile(file: string, config: FullConfigInternal, testErrors?: TestError[]): Promise<Suite> {
-  if (cachedFileSuites.has(file))
-    return cachedFileSuites.get(file)!;
-  const suite = new Suite(path.relative(config.config.rootDir, file) || path.basename(file), 'file');
-  suite._requireFile = file;
-  suite.location = { file, line: 0, column: 0 };
-  suite._tags = [...config.config.tags];
+export async function loadTestFile(
+  file: string,
+  config: FullConfigInternal,
+  testErrors?: TestError[]
+): Promise<Suite> {
+  if (cachedFileSuites.has(file)) return cachedFileSuites.get(file)!
+  const suite = new Suite(path.relative(config.config.rootDir, file) || path.basename(file), 'file')
+  suite._requireFile = file
+  suite.location = { file, line: 0, column: 0 }
+  suite._tags = [...config.config.tags]
 
-  setCurrentlyLoadingFileSuite(suite);
-  if (!isWorkerProcess())
-    await startCollectingFileDeps();
+  setCurrentlyLoadingFileSuite(suite)
+  if (!isWorkerProcess()) await startCollectingFileDeps()
   try {
-    await requireOrImport(file);
-    cachedFileSuites.set(file, suite);
+    await requireOrImport(file)
+    cachedFileSuites.set(file, suite)
   } catch (e) {
-    if (!testErrors)
-      throw e;
-    testErrors.push(serializeLoadError(file, e));
+    if (!testErrors) throw e
+    testErrors.push(serializeLoadError(file, e))
   } finally {
-    setCurrentlyLoadingFileSuite(undefined);
-    if (!isWorkerProcess())
-      await stopCollectingFileDeps(file);
+    setCurrentlyLoadingFileSuite(undefined)
+    if (!isWorkerProcess()) await stopCollectingFileDeps(file)
   }
 
   {
@@ -62,33 +66,35 @@ export async function loadTestFile(file: string, config: FullConfigInternal, tes
     //   b) require of one file from another.
     // Try fixing (a) w/o regressing (b).
 
-    const files = new Set<string>();
-    suite.allTests().map(t => files.add(t.location.file));
+    const files = new Set<string>()
+    suite.allTests().map((t) => files.add(t.location.file))
     if (files.size === 1) {
       // All tests point to one file.
-      const mappedFile = files.values().next().value!;
+      const mappedFile = files.values().next().value!
       if (suite.location.file !== mappedFile) {
         // The file is different, check for a likely source map case.
         if (path.extname(mappedFile) !== path.extname(suite.location.file))
-          suite.location.file = mappedFile;
+          suite.location.file = mappedFile
       }
     }
   }
 
-  return suite;
+  return suite
 }
 
 function serializeLoadError(file: string, error: Error | any): TestError {
   if (error instanceof Error) {
-    const result: TestError = filterStackTrace(error);
+    const result: TestError = filterStackTrace(error)
     // Babel parse errors have location.
-    const loc = (error as any).loc;
-    result.location = loc ? {
-      file,
-      line: loc.line || 0,
-      column: loc.column || 0,
-    } : undefined;
-    return result;
+    const loc = (error as any).loc
+    result.location = loc
+      ? {
+          file,
+          line: loc.line || 0,
+          column: loc.column || 0
+        }
+      : undefined
+    return result
   }
-  return { value: util.inspect(error) };
+  return { value: util.inspect(error) }
 }

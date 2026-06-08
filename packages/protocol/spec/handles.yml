@@ -19,7 +19,6 @@ JSHandle:
     preview: string
 
   commands:
-
     dispose:
       internal: true
       flags:
@@ -76,7 +75,6 @@ JSHandle:
         value: SerializedValue
 
   events:
-
     previewUpdated:
       parameters:
         preview: string
@@ -87,7 +85,6 @@ ElementHandle:
   extends: JSHandle
 
   commands:
-
     evalOnSelector:
       title: Evaluate
       parameters:
@@ -147,19 +144,19 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: float?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: int?
         timeout: float
         trial: boolean?
@@ -186,19 +183,19 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: float?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         timeout: float
         trial: boolean?
         steps: int?
@@ -259,11 +256,11 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: float
         trial: boolean?
@@ -403,8 +400,8 @@ ElementHandle:
         type:
           type: enum?
           literals:
-          - png
-          - jpeg
+            - png
+            - jpeg
         quality: int?
         $mixin: CommonScreenshotOptions
       returns:
@@ -497,11 +494,11 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: float
         trial: boolean?
@@ -554,12 +551,12 @@ ElementHandle:
         state:
           type: enum
           literals:
-          - visible
-          - hidden
-          - stable
-          - enabled
-          - disabled
-          - editable
+            - visible
+            - hidden
+            - stable
+            - enabled
+            - disabled
+            - editable
         timeout: float
       flags:
         snapshot: true
@@ -574,10 +571,10 @@ ElementHandle:
         state:
           type: enum?
           literals:
-          - attached
-          - detached
-          - visible
-          - hidden
+            - attached
+            - detached
+            - visible
+            - hidden
       returns:
         element: ElementHandle?
       flags:

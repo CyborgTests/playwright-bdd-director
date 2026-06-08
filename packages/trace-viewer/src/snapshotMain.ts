@@ -14,23 +14,22 @@
   limitations under the License.
 */
 
-import { isHttpUrl } from '@isomorphic/urlMatch';
+import { isHttpUrl } from '@isomorphic/urlMatch'
 
-(async () => {
+;(async () => {
   if (!navigator.serviceWorker)
-    throw new Error(`Service workers are not supported.\nMake sure to serve the Trace Viewer (${window.location}) via HTTPS or localhost.`);
-  navigator.serviceWorker.register('sw.bundle.js');
+    throw new Error(
+      `Service workers are not supported.\nMake sure to serve the Trace Viewer (${window.location}) via HTTPS or localhost.`
+    )
+  navigator.serviceWorker.register('sw.bundle.js')
   if (!navigator.serviceWorker.controller)
-    await new Promise(f => navigator.serviceWorker.oncontrollerchange = f);
-  const traceUrl = new URL(location.href).searchParams.get('trace');
-  const params = new URLSearchParams();
-  if (traceUrl)
-    params.set('trace', traceUrl);
-  await fetch('contexts?' + params.toString());
-  const r = new URLSearchParams(location.search).get('r');
-  if (!r || !isHttpUrl(r, location.href))
-    return;
-  const iframe = document.querySelector('iframe');
-  if (iframe)
-    iframe.src = r;
-})();
+    await new Promise((f) => (navigator.serviceWorker.oncontrollerchange = f))
+  const traceUrl = new URL(location.href).searchParams.get('trace')
+  const params = new URLSearchParams()
+  if (traceUrl) params.set('trace', traceUrl)
+  await fetch('contexts?' + params.toString())
+  const r = new URLSearchParams(location.search).get('r')
+  if (!r || !isHttpUrl(r, location.href)) return
+  const iframe = document.querySelector('iframe')
+  if (iframe) iframe.src = r
+})()

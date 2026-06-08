@@ -14,104 +14,137 @@
  * limitations under the License.
  */
 
-import { ErrorMessage } from '@web/components/errorMessage';
-import * as React from 'react';
-import type { TraceModel, ErrorDescription } from '@isomorphic/trace/traceModel';
-import { PlaceholderPanel } from './placeholderPanel';
-import { renderAction } from './actionList';
-import type { Language } from '@isomorphic/locatorGenerators';
-import { CopyToClipboardTextButton } from './copyToClipboard';
-import { useAsyncMemo } from '@web/uiUtils';
-import { attachmentURL } from './attachmentsTab';
-import { MetadataWithCommitInfo } from '@testIsomorphic/types';
-import { useTraceModel } from './traceModelContext';
+import { ErrorMessage } from '@web/components/errorMessage'
+import * as React from 'react'
+import type { TraceModel, ErrorDescription } from '@isomorphic/trace/traceModel'
+import { PlaceholderPanel } from './placeholderPanel'
+import { renderAction } from './actionList'
+import type { Language } from '@isomorphic/locatorGenerators'
+import { CopyToClipboardTextButton } from './copyToClipboard'
+import { useAsyncMemo } from '@web/uiUtils'
+import { attachmentURL } from './attachmentsTab'
+import { MetadataWithCommitInfo } from '@testIsomorphic/types'
+import { useTraceModel } from './traceModelContext'
 
 const CopyPromptButton: React.FC<{ prompt: string }> = ({ prompt }) => {
   return (
     <CopyToClipboardTextButton
       value={prompt}
-      description='Copy prompt'
-      copiedDescription={<>Copied <span className='codicon codicon-copy' style={{ marginLeft: '5px' }}/></>}
+      description="Copy prompt"
+      copiedDescription={
+        <>
+          Copied <span className="codicon codicon-copy" style={{ marginLeft: '5px' }} />
+        </>
+      }
       style={{ width: '120px', justifyContent: 'center' }}
     />
-  );
-};
+  )
+}
 
 type ErrorsTabModel = {
-  errors: Map<string, ErrorDescription>;
-};
+  errors: Map<string, ErrorDescription>
+}
 
 export function useErrorsTabModel(model: TraceModel | undefined): ErrorsTabModel {
   return React.useMemo(() => {
-    if (!model)
-      return { errors: new Map() };
-    const errors = new Map<string, ErrorDescription>();
-    for (const error of model.errorDescriptors)
-      errors.set(error.message, error);
-    return { errors };
-  }, [model]);
+    if (!model) return { errors: new Map() }
+    const errors = new Map<string, ErrorDescription>()
+    for (const error of model.errorDescriptors) errors.set(error.message, error)
+    return { errors }
+  }, [model])
 }
 
-function ErrorView({ message, error, sdkLanguage, revealInSource }: { message: string, error: ErrorDescription, sdkLanguage: Language, revealInSource: (error: ErrorDescription) => void }) {
-  let location: string | undefined;
-  let longLocation: string | undefined;
-  const stackFrame = error.stack?.[0];
+function ErrorView({
+  message,
+  error,
+  sdkLanguage,
+  revealInSource
+}: {
+  message: string
+  error: ErrorDescription
+  sdkLanguage: Language
+  revealInSource: (error: ErrorDescription) => void
+}) {
+  let location: string | undefined
+  let longLocation: string | undefined
+  const stackFrame = error.stack?.[0]
   if (stackFrame) {
-    const file = stackFrame.file.replace(/.*[/\\](.*)/, '$1');
-    location = file + ':' + stackFrame.line;
-    longLocation = stackFrame.file + ':' + stackFrame.line;
+    const file = stackFrame.file.replace(/.*[/\\](.*)/, '$1')
+    location = file + ':' + stackFrame.line
+    longLocation = stackFrame.file + ':' + stackFrame.line
   }
 
-  return <div style={{ display: 'flex', flexDirection: 'column', overflowX: 'clip' }}>
-    <div className='hbox' style={{
-      alignItems: 'center',
-      padding: '5px 10px',
-      minHeight: 36,
-      fontWeight: 'bold',
-      color: 'var(--vscode-errorForeground)',
-      flex: 0,
-    }}>
-      {error.action && renderAction(error.action, { sdkLanguage })}
-      {location && <div className='action-location'>
-        @ <span title={longLocation} onClick={() => revealInSource(error)}>{location}</span>
-      </div>}
-    </div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', overflowX: 'clip' }}>
+      <div
+        className="hbox"
+        style={{
+          alignItems: 'center',
+          padding: '5px 10px',
+          minHeight: 36,
+          fontWeight: 'bold',
+          color: 'var(--vscode-errorForeground)',
+          flex: 0
+        }}
+      >
+        {error.action && renderAction(error.action, { sdkLanguage })}
+        {location && (
+          <div className="action-location">
+            @{' '}
+            <span title={longLocation} onClick={() => revealInSource(error)}>
+              {location}
+            </span>
+          </div>
+        )}
+      </div>
 
-    <ErrorMessage error={message} />
-  </div>;
+      <ErrorMessage error={message} />
+    </div>
+  )
 }
 
 export const ErrorsTab: React.FunctionComponent<{
-  errorsModel: ErrorsTabModel,
-  wallTime: number,
-  sdkLanguage: Language,
-  revealInSource: (error: ErrorDescription) => void,
-  testRunMetadata: MetadataWithCommitInfo | undefined,
+  errorsModel: ErrorsTabModel
+  wallTime: number
+  sdkLanguage: Language
+  revealInSource: (error: ErrorDescription) => void
+  testRunMetadata: MetadataWithCommitInfo | undefined
 }> = ({ errorsModel, sdkLanguage, revealInSource, wallTime, testRunMetadata }) => {
-  const model = useTraceModel();
+  const model = useTraceModel()
 
-  const prompt = useAsyncMemo(async () => {
-    const attachment = model?.attachments.find(a => a.name === 'error-context');
-    if (!attachment)
-      return undefined;
-    let text = await fetch(attachmentURL(model, attachment)).then(r => r.text());
-    if (!text)
-      return undefined;
-    if (testRunMetadata?.gitDiff)
-      text += '\n\n# Local changes\n\n```diff\n' + testRunMetadata.gitDiff + '\n```';
-    return text;
-  }, [model, testRunMetadata], undefined);
+  const prompt = useAsyncMemo(
+    async () => {
+      const attachment = model?.attachments.find((a) => a.name === 'error-context')
+      if (!attachment) return undefined
+      let text = await fetch(attachmentURL(model, attachment)).then((r) => r.text())
+      if (!text) return undefined
+      if (testRunMetadata?.gitDiff)
+        text += '\n\n# Local changes\n\n```diff\n' + testRunMetadata.gitDiff + '\n```'
+      return text
+    },
+    [model, testRunMetadata],
+    undefined
+  )
 
-  if (!errorsModel.errors.size)
-    return <PlaceholderPanel text='No errors' />;
+  if (!errorsModel.errors.size) return <PlaceholderPanel text="No errors" />
 
-  return <div className='fill' style={{ overflow: 'auto' }}>
-    <span style={{ position: 'absolute', right: '5px', top: '5px', zIndex: 1 }}>
-      {prompt && <CopyPromptButton prompt={prompt} />}
-    </span>
-    {[...errorsModel.errors.entries()].map(([message, error]) => {
-      const errorId = `error-${wallTime}-${message}`;
-      return <ErrorView key={errorId} message={message} error={error} revealInSource={revealInSource} sdkLanguage={sdkLanguage} />;
-    })}
-  </div>;
-};
+  return (
+    <div className="fill" style={{ overflow: 'auto' }}>
+      <span style={{ position: 'absolute', right: '5px', top: '5px', zIndex: 1 }}>
+        {prompt && <CopyPromptButton prompt={prompt} />}
+      </span>
+      {[...errorsModel.errors.entries()].map(([message, error]) => {
+        const errorId = `error-${wallTime}-${message}`
+        return (
+          <ErrorView
+            key={errorId}
+            message={message}
+            error={error}
+            revealInSource={revealInSource}
+            sdkLanguage={sdkLanguage}
+          />
+        )
+      })}
+    </div>
+  )
+}

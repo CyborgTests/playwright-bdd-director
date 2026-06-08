@@ -14,65 +14,65 @@
  * limitations under the License.
  */
 
-import { parseClientSideCallMetadata } from './traceUtils';
+import { parseClientSideCallMetadata } from './traceUtils'
 
-import { SnapshotStorage } from './snapshotStorage';
-import { TraceModernizer } from './traceModernizer';
+import { SnapshotStorage } from './snapshotStorage'
+import { TraceModernizer } from './traceModernizer'
 
-import type { ContextEntry } from './entries';
+import type { ContextEntry } from './entries'
 
 export interface TraceLoaderBackend {
-  entryNames(): Promise<string[]>;
-  hasEntry(entryName: string): Promise<boolean>;
-  readText(entryName: string): Promise<string | undefined>;
-  readBlob(entryName: string): Promise<Blob | undefined>;
-  isLive(): boolean;
+  entryNames(): Promise<string[]>
+  hasEntry(entryName: string): Promise<boolean>
+  readText(entryName: string): Promise<string | undefined>
+  readBlob(entryName: string): Promise<Blob | undefined>
+  isLive(): boolean
 }
 
 export class TraceLoader {
-  contextEntries: ContextEntry[] = [];
-  private _snapshotStorage: SnapshotStorage | undefined;
-  private _backend!: TraceLoaderBackend;
-  private _resourceToContentType = new Map<string, string>();
+  contextEntries: ContextEntry[] = []
+  private _snapshotStorage: SnapshotStorage | undefined
+  private _backend!: TraceLoaderBackend
+  private _resourceToContentType = new Map<string, string>()
 
-  constructor() {
-  }
+  constructor() {}
 
-  async load(backend: TraceLoaderBackend, traceFile?: string, unzipProgress?: (done: number, total: number) => void) {
-    this._backend = backend;
+  async load(
+    backend: TraceLoaderBackend,
+    traceFile?: string,
+    unzipProgress?: (done: number, total: number) => void
+  ) {
+    this._backend = backend
 
-    const prefix = traceFile?.match(/(.+)\.trace$/)?.[1];
-    const prefixes: string[] = [];
-    let hasSource = false;
+    const prefix = traceFile?.match(/(.+)\.trace$/)?.[1]
+    const prefixes: string[] = []
+    let hasSource = false
     for (const entryName of await this._backend.entryNames()) {
-      const match = entryName.match(/(.+)\.trace$/);
-      if (match && (!prefix || prefix  === match[1]))
-        prefixes.push(match[1] || '');
-      if (entryName.includes('src@'))
-        hasSource = true;
+      const match = entryName.match(/(.+)\.trace$/)
+      if (match && (!prefix || prefix === match[1])) prefixes.push(match[1] || '')
+      if (entryName.includes('src@')) hasSource = true
     }
-    if (!prefixes.length)
-      throw new Error('Cannot find .trace file');
+    if (!prefixes.length) throw new Error('Cannot find .trace file')
 
-    this._snapshotStorage = new SnapshotStorage();
+    this._snapshotStorage = new SnapshotStorage()
 
     // 3 * ordinals progress increments below.
-    const total = prefixes.length * 3;
-    let done = 0;
+    const total = prefixes.length * 3
+    let done = 0
     for (const prefix of prefixes) {
-      const contextEntry = createEmptyContext();
-      contextEntry.hasSource = hasSource;
-      const modernizer = new TraceModernizer(contextEntry, this._snapshotStorage);
+      const contextEntry = createEmptyContext()
+      contextEntry.hasSource = hasSource
+      const modernizer = new TraceModernizer(contextEntry, this._snapshotStorage)
 
-      const trace = await this._backend.readText(prefix + '.trace') || '';
-      modernizer.appendTrace(trace);
-      unzipProgress?.(++done, total);
+      const trace = (await this._backend.readText(prefix + '.trace')) || ''
+      modernizer.appendTrace(trace)
+      unzipProgress?.(++done, total)
 
-      const network = await this._backend.readText(prefix + '.network') || '';
-      modernizer.appendTrace(network);
-      unzipProgress?.(++done, total);
+      const network = (await this._backend.readText(prefix + '.network')) || ''
+      modernizer.appendTrace(network)
+      unzipProgress?.(++done, total)
 
-      contextEntry.actions = modernizer.actions().sort((a1, a2) => a1.startTime - a2.startTime);
+      contextEntry.actions = modernizer.actions().sort((a1, a2) => a1.startTime - a2.startTime)
 
       if (!backend.isLive()) {
         // Terminate actions w/o after event gracefully.
@@ -82,56 +82,60 @@ export class TraceLoader {
           if (!action.endTime && !action.error) {
             for (const a of contextEntry.actions) {
               if (a.parentId === action.callId && action.endTime < a.endTime)
-                action.endTime = a.endTime;
+                action.endTime = a.endTime
             }
           }
         }
       }
 
-      const stacks = await this._backend.readText(prefix + '.stacks');
+      const stacks = await this._backend.readText(prefix + '.stacks')
       if (stacks) {
-        const callMetadata = parseClientSideCallMetadata(JSON.parse(stacks));
+        const callMetadata = parseClientSideCallMetadata(JSON.parse(stacks))
         for (const action of contextEntry.actions)
-          action.stack = action.stack || callMetadata.get(action.callId);
+          action.stack = action.stack || callMetadata.get(action.callId)
       }
-      unzipProgress?.(++done, total);
+      unzipProgress?.(++done, total)
 
       for (const resource of contextEntry.resources) {
         if (resource.request.postData?._sha1)
-          this._resourceToContentType.set(resource.request.postData._sha1, stripEncodingFromContentType(resource.request.postData.mimeType));
+          this._resourceToContentType.set(
+            resource.request.postData._sha1,
+            stripEncodingFromContentType(resource.request.postData.mimeType)
+          )
         if (resource.response.content?._sha1)
-          this._resourceToContentType.set(resource.response.content._sha1, stripEncodingFromContentType(resource.response.content.mimeType));
+          this._resourceToContentType.set(
+            resource.response.content._sha1,
+            stripEncodingFromContentType(resource.response.content.mimeType)
+          )
       }
 
-      this.contextEntries.push(contextEntry);
+      this.contextEntries.push(contextEntry)
     }
 
-    this._snapshotStorage.finalize();
+    this._snapshotStorage.finalize()
   }
 
   async hasEntry(filename: string): Promise<boolean> {
-    return this._backend.hasEntry(filename);
+    return this._backend.hasEntry(filename)
   }
 
   async resourceForSha1(sha1: string): Promise<Blob | undefined> {
-    const blob = await this._backend.readBlob('resources/' + sha1);
-    const contentType = this._resourceToContentType.get(sha1);
+    const blob = await this._backend.readBlob('resources/' + sha1)
+    const contentType = this._resourceToContentType.get(sha1)
     // "x-unknown" in the har means "no content type".
-    if (!blob || contentType === undefined || contentType === 'x-unknown')
-      return blob;
-    return new Blob([blob], { type: contentType });
+    if (!blob || contentType === undefined || contentType === 'x-unknown') return blob
+    return new Blob([blob], { type: contentType })
   }
 
   storage(): SnapshotStorage {
-    return this._snapshotStorage!;
+    return this._snapshotStorage!
   }
 }
 
 function stripEncodingFromContentType(contentType: string) {
-  const charset = contentType.match(/^(.*);\s*charset=.*$/);
-  if (charset)
-    return charset[1];
-  return contentType;
+  const charset = contentType.match(/^(.*);\s*charset=.*$/)
+  if (charset) return charset[1]
+  return contentType
 }
 
 function createEmptyContext(): ContextEntry {
@@ -144,7 +148,7 @@ function createEmptyContext(): ContextEntry {
     options: {
       deviceScaleFactor: 1,
       isMobile: false,
-      viewport: { width: 1280, height: 800 },
+      viewport: { width: 1280, height: 800 }
     },
     pages: [],
     resources: [],
@@ -153,6 +157,6 @@ function createEmptyContext(): ContextEntry {
     errors: [],
     stdio: [],
     hasSource: false,
-    contextId: '',
-  };
+    contextId: ''
+  }
 }

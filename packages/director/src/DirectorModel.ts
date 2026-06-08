@@ -14,38 +14,38 @@
  * limitations under the License.
  */
 
-export type TestFileStatus = 'idle' | 'staged' | 'running' | 'passed' | 'failed';
+export type TestFileStatus = 'idle' | 'staged' | 'running' | 'passed' | 'failed'
 
 export interface TestFile {
-  name: string;
-  path: string;
-  content: string;
-  status: TestFileStatus;
-  isModified: boolean;
-  scenarios: Scenario[];
+  name: string
+  path: string
+  content: string
+  status: TestFileStatus
+  isModified: boolean
+  scenarios: Scenario[]
 }
 
 export interface Scenario {
-  name: string;
-  line: number;
-  steps: Step[];
+  name: string
+  line: number
+  steps: Step[]
 }
 
 export interface Step {
-  keyword: 'Given' | 'When' | 'Then' | 'And' | 'But';
-  text: string;
-  line: number;
+  keyword: 'Given' | 'When' | 'Then' | 'And' | 'But'
+  text: string
+  line: number
 }
 
 export interface DirectorOutputEntry {
-  type: 'info' | 'success' | 'error' | 'progress';
-  message: string;
-  timestamp: number;
+  type: 'info' | 'success' | 'error' | 'progress'
+  message: string
+  timestamp: number
 }
 
 export interface StageProgress {
-  file: string;
-  status: 'parsing' | 'generating' | 'compiling' | 'done' | 'error';
-  progress: number;
-  message: string;
+  file: string
+  status: 'parsing' | 'generating' | 'compiling' | 'done' | 'error'
+  progress: number
+  message: string
 }

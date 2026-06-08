@@ -14,45 +14,63 @@
  * limitations under the License.
  */
 
-import childProcess from 'child_process';
-import path from 'path';
+import childProcess from 'child_process'
+import path from 'path'
 
-import { cc } from '../common';
+import { cc } from '../common'
 
-export async function detectChangedTestFiles(baseCommit: string, configDir: string): Promise<Set<string>> {
+export async function detectChangedTestFiles(
+  baseCommit: string,
+  configDir: string
+): Promise<Set<string>> {
   function gitFileList(args: string[]) {
     try {
-      return childProcess.execFileSync(
-          'git', args,
-          { encoding: 'utf-8', stdio: 'pipe', cwd: configDir }
-      ).split('\n').filter(Boolean);
+      return childProcess
+        .execFileSync('git', args, { encoding: 'utf-8', stdio: 'pipe', cwd: configDir })
+        .split('\n')
+        .filter(Boolean)
     } catch (_error) {
-      const error = _error as childProcess.SpawnSyncReturns<string>;
+      const error = _error as childProcess.SpawnSyncReturns<string>
 
-      const unknownRevision = error.output.some(line => line?.includes('unknown revision'));
+      const unknownRevision = error.output.some((line) => line?.includes('unknown revision'))
       if (unknownRevision) {
-        const isShallowClone = childProcess.execFileSync('git', ['rev-parse', '--is-shallow-repository'], { encoding: 'utf-8',  stdio: 'pipe', cwd: configDir }).trim() === 'true';
+        const isShallowClone =
+          childProcess
+            .execFileSync('git', ['rev-parse', '--is-shallow-repository'], {
+              encoding: 'utf-8',
+              stdio: 'pipe',
+              cwd: configDir
+            })
+            .trim() === 'true'
         if (isShallowClone) {
-          throw new Error([
-            `The repository is a shallow clone and does not have '${baseCommit}' available locally.`,
-            `Note that GitHub Actions checkout is shallow by default: https://github.com/actions/checkout`
-          ].join('\n'));
+          throw new Error(
+            [
+              `The repository is a shallow clone and does not have '${baseCommit}' available locally.`,
+              `Note that GitHub Actions checkout is shallow by default: https://github.com/actions/checkout`
+            ].join('\n')
+          )
         }
       }
 
-      throw new Error([
-        `Cannot detect changed files for --only-changed mode:`,
-        `git ${args.join(' ')}`,
-        '',
-        ...error.output,
-      ].join('\n'));
+      throw new Error(
+        [
+          `Cannot detect changed files for --only-changed mode:`,
+          `git ${args.join(' ')}`,
+          '',
+          ...error.output
+        ].join('\n')
+      )
     }
   }
 
-  const untrackedFiles = gitFileList(['ls-files', '--others', '--exclude-standard']).map(file => path.join(configDir, file));
+  const untrackedFiles = gitFileList(['ls-files', '--others', '--exclude-standard']).map((file) =>
+    path.join(configDir, file)
+  )
 
-  const [gitRoot] = gitFileList(['rev-parse', '--show-toplevel']);
-  const trackedFilesWithChanges = gitFileList(['diff', baseCommit, '--name-only']).map(file => path.join(gitRoot, file));
+  const [gitRoot] = gitFileList(['rev-parse', '--show-toplevel'])
+  const trackedFilesWithChanges = gitFileList(['diff', baseCommit, '--name-only']).map((file) =>
+    path.join(gitRoot, file)
+  )
 
-  return new Set(cc.affectedTestFiles([...untrackedFiles, ...trackedFilesWithChanges]));
+  return new Set(cc.affectedTestFiles([...untrackedFiles, ...trackedFilesWithChanges]))
 }

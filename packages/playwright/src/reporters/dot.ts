@@ -14,83 +14,88 @@
  * limitations under the License.
  */
 
-import { markErrorsAsReported, TerminalReporter } from './base';
+import { markErrorsAsReported, TerminalReporter } from './base'
 
-import type { FullResult, Suite, TestCase, TestError, TestResult } from '../../types/testReporter';
+import type { FullResult, Suite, TestCase, TestError, TestResult } from '../../types/testReporter'
 
 class DotReporter extends TerminalReporter {
-  private _counter = 0;
+  private _counter = 0
 
   override onBegin(suite: Suite) {
-    super.onBegin(suite);
-    this.writeLine(this.generateStartingMessage());
+    super.onBegin(suite)
+    this.writeLine(this.generateStartingMessage())
   }
 
   override onStdOut(chunk: string | Buffer, test?: TestCase, result?: TestResult) {
-    super.onStdOut(chunk, test, result);
-    if (!this.config.quiet)
-      this.screen.stdout.write(chunk);
+    super.onStdOut(chunk, test, result)
+    if (!this.config.quiet) this.screen.stdout.write(chunk)
   }
 
   override onStdErr(chunk: string | Buffer, test?: TestCase, result?: TestResult) {
-    super.onStdErr(chunk, test, result);
-    if (!this.config.quiet)
-      this.screen.stderr.write(chunk);
+    super.onStdErr(chunk, test, result)
+    if (!this.config.quiet) this.screen.stderr.write(chunk)
   }
 
   override onTestEnd(test: TestCase, result: TestResult) {
-    super.onTestEnd(test, result);
+    super.onTestEnd(test, result)
     if (this._counter === 80) {
-      this.screen.stdout.write('\n');
-      this._counter = 0;
+      this.screen.stdout.write('\n')
+      this._counter = 0
     }
-    ++this._counter;
+    ++this._counter
     if (result.status === 'skipped') {
-      this.screen.stdout.write(this.screen.colors.yellow('°'));
-      return;
+      this.screen.stdout.write(this.screen.colors.yellow('°'))
+      return
     }
     if (this.willRetry(test)) {
-      this.screen.stdout.write(this.screen.colors.gray('×'));
-      return;
+      this.screen.stdout.write(this.screen.colors.gray('×'))
+      return
     }
     switch (test.outcome()) {
-      case 'expected': this.screen.stdout.write(this.screen.colors.green('·')); break;
-      case 'unexpected': this.screen.stdout.write(this.screen.colors.red(result.status === 'timedOut' ? 'T' : 'F')); break;
-      case 'flaky': this.screen.stdout.write(this.screen.colors.yellow('±')); break;
+      case 'expected':
+        this.screen.stdout.write(this.screen.colors.green('·'))
+        break
+      case 'unexpected':
+        this.screen.stdout.write(this.screen.colors.red(result.status === 'timedOut' ? 'T' : 'F'))
+        break
+      case 'flaky':
+        this.screen.stdout.write(this.screen.colors.yellow('±'))
+        break
     }
   }
 
   override onError(error: TestError): void {
-    super.onError(error);
-    this.writeLine('\n' + this.formatError(error).message);
-    this._counter = 0;
+    super.onError(error)
+    this.writeLine('\n' + this.formatError(error).message)
+    this._counter = 0
   }
 
   async onTestPaused(test: TestCase, result: TestResult) {
     // Without TTY, user cannot interrupt the pause. Let's skip it.
-    if (!process.stdin.isTTY && !process.env.PW_TEST_DEBUG_REPORTERS)
-      return;
+    if (!process.stdin.isTTY && !process.env.PW_TEST_DEBUG_REPORTERS) return
 
-    this.screen.stdout.write('\n');
+    this.screen.stdout.write('\n')
     if (test.outcome() === 'unexpected') {
-      this.writeLine(this.screen.colors.red(this.formatTestHeader(test, { indent: '  ' })));
-      this.writeLine(this.formatResultErrors(test, result));
-      markErrorsAsReported(result);
-      this.writeLine(this.screen.colors.yellow('    Paused on error. Press Ctrl+C to end.') + '\n');
+      this.writeLine(this.screen.colors.red(this.formatTestHeader(test, { indent: '  ' })))
+      this.writeLine(this.formatResultErrors(test, result))
+      markErrorsAsReported(result)
+      this.writeLine(this.screen.colors.yellow('    Paused on error. Press Ctrl+C to end.') + '\n')
     } else {
-      this.writeLine(this.screen.colors.yellow(this.formatTestHeader(test, { indent: '  ' })));
-      this.writeLine(this.screen.colors.yellow('    Paused at test end. Press Ctrl+C to end.') + '\n');
+      this.writeLine(this.screen.colors.yellow(this.formatTestHeader(test, { indent: '  ' })))
+      this.writeLine(
+        this.screen.colors.yellow('    Paused at test end. Press Ctrl+C to end.') + '\n'
+      )
     }
-    this._counter = 0;
+    this._counter = 0
 
-    await new Promise<void>(() => {});
+    await new Promise<void>(() => {})
   }
 
   override async onEnd(result: FullResult) {
-    await super.onEnd(result);
-    this.screen.stdout.write('\n');
-    this.epilogue(true);
+    await super.onEnd(result)
+    this.screen.stdout.write('\n')
+    this.epilogue(true)
   }
 }
 
-export default DotReporter;
+export default DotReporter

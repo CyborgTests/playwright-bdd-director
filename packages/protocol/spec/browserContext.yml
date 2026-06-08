@@ -25,7 +25,6 @@ BrowserContext:
         $mixin: ContextOptions
 
   commands:
-
     addCookies:
       title: Add cookies
       group: configuration
@@ -212,13 +211,13 @@ BrowserContext:
         mode:
           type: enum?
           literals:
-          - inspecting
-          - recording
+            - inspecting
+            - recording
         recorderMode:
           type: enum?
           literals:
-          - default
-          - api
+            - default
+            - api
         pauseOnNextStatement: boolean?
         testIdAttributeName: string?
         launchOptions: json?
@@ -267,12 +266,12 @@ BrowserContext:
         event:
           type: enum
           literals:
-          - console
-          - dialog
-          - request
-          - response
-          - requestFinished
-          - requestFailed
+            - console
+            - dialog
+            - request
+            - response
+            - requestFinished
+            - requestFailed
         enabled: boolean
 
     clockFastForward:
@@ -349,7 +348,6 @@ BrowserContext:
         value: boolean
 
   events:
-
     bindingCall:
       parameters:
         binding: BindingCall
@@ -422,9 +420,9 @@ BrowserContext:
         event:
           type: enum
           literals:
-          - actionAdded
-          - actionUpdated
-          - signalAdded
+            - actionAdded
+            - actionUpdated
+            - signalAdded
         data: json
         page: Page
         code: string

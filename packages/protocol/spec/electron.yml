@@ -15,7 +15,6 @@ Electron:
   type: interface
 
   commands:
-
     launch:
       title: Launch electron
       parameters:
@@ -32,17 +31,17 @@ Electron:
         acceptDownloads:
           type: enum?
           literals:
-          - accept
-          - deny
-          - internal-browser-default
+            - accept
+            - deny
+            - internal-browser-default
         bypassCSP: boolean?
         colorScheme:
           type: enum?
           literals:
-          - dark
-          - light
-          - no-preference
-          - no-override
+            - dark
+            - light
+            - no-preference
+            - no-override
         extraHTTPHeaders:
           type: array?
           items: NameValue
@@ -86,7 +85,6 @@ Electron:
       returns:
         electronApplication: ElectronApplication
 
-
 ElectronApplication:
   type: interface
 
@@ -96,7 +94,6 @@ ElectronApplication:
     context: BrowserContext
 
   commands:
-
     browserWindow:
       internal: true
       parameters:
@@ -128,7 +125,7 @@ ElectronApplication:
         event:
           type: enum
           literals:
-          - console
+            - console
         enabled: boolean
 
   events:
@@ -136,5 +133,3 @@ ElectronApplication:
     console:
       parameters:
         $mixin: ConsoleMessage
-
-

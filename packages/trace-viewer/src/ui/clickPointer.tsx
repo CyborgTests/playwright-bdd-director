@@ -29,7 +29,7 @@ export function ClickPointer({ point }: { point: { x: number; y: number } }) {
         alignItems: 'center',
         justifyContent: 'center',
         left: `${point.x}px`,
-        top: `${point.y}px`,
+        top: `${point.y}px`
       }}
     >
       <div
@@ -39,10 +39,10 @@ export function ClickPointer({ point }: { point: { x: number; y: number } }) {
           marginTop: '-3.5px',
           userSelect: 'none'
         }}
-        title='Click positions on screenshots are inaccurate.'
+        title="Click positions on screenshots are inaccurate."
       >
         ⚠
       </div>
     </div>
-  );
+  )
 }

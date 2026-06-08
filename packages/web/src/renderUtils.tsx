@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-import { kWebLinkRe } from './uiUtils';
+import { kWebLinkRe } from './uiUtils'
 
 export function linkifyText(description: string) {
-  const result = [];
-  let currentIndex = 0;
-  let match;
+  const result = []
+  let currentIndex = 0
+  let match
 
   while ((match = kWebLinkRe.exec(description)) !== null) {
-    const stringBeforeMatch = description.substring(currentIndex, match.index);
-    if (stringBeforeMatch)
-      result.push(stringBeforeMatch);
+    const stringBeforeMatch = description.substring(currentIndex, match.index)
+    if (stringBeforeMatch) result.push(stringBeforeMatch)
 
-    const value = match[0];
-    result.push(renderLink(value));
-    currentIndex = match.index + value.length;
+    const value = match[0]
+    result.push(renderLink(value))
+    currentIndex = match.index + value.length
   }
-  const stringAfterMatches = description.substring(currentIndex);
-  if (stringAfterMatches)
-    result.push(stringAfterMatches);
+  const stringAfterMatches = description.substring(currentIndex)
+  if (stringAfterMatches) result.push(stringAfterMatches)
 
-  return result;
+  return result
 }
 
 function renderLink(text: string) {
-  let link = text;
-  if (link.startsWith('www.'))
-    link = 'https://' + link;
+  let link = text
+  if (link.startsWith('www.')) link = 'https://' + link
 
-  return <a href={link} target='_blank' rel='noopener noreferrer'>{text}</a>;
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer">
+      {text}
+    </a>
+  )
 }

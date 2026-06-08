@@ -22,12 +22,12 @@ SerializedValue:
     v:
       type: enum?
       literals:
-      - null
-      - undefined
-      - NaN
-      - Infinity
-      - -Infinity
-      - "-0"
+        - null
+        - undefined
+        - NaN
+        - Infinity
+        - -Infinity
+        - '-0'
     # String representation of the Date.
     d: string?
     # String representation of the URL.
@@ -42,17 +42,17 @@ SerializedValue:
         k:
           type: enum
           literals:
-          - i8
-          - ui8
-          - ui8c
-          - i16
-          - ui16
-          - i32
-          - ui32
-          - f32
-          - f64
-          - bi64
-          - bui64
+            - i8
+            - ui8
+            - ui8c
+            - i16
+            - ui16
+            - i32
+            - ui32
+            - f32
+            - f64
+            - bi64
+            - bui64
     # Serialized Error object.
     e:
       type: object?

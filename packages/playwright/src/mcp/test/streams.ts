@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-import { Writable } from 'stream';
+import { Writable } from 'stream'
 
-import { stripAnsiEscapes } from '../../util';
+import { stripAnsiEscapes } from '../../util'
 
 export class StringWriteStream extends Writable {
-  private _output: string[];
-  private _prefix: string;
+  private _output: string[]
+  private _prefix: string
 
   constructor(output: string[], stdio: 'stdout' | 'stderr') {
-    super();
-    this._output = output;
-    this._prefix = stdio === 'stdout' ? '' : '[err] ';
+    super()
+    this._output = output
+    this._prefix = stdio === 'stdout' ? '' : '[err] '
   }
 
   override _write(chunk: any, encoding: any, callback: any) {
-    let text = stripAnsiEscapes(chunk.toString());
-    if (text.endsWith('\n'))
-      text = text.slice(0, -1);
-    if (text)
-      this._output.push(this._prefix + text);
-    callback();
+    let text = stripAnsiEscapes(chunk.toString())
+    if (text.endsWith('\n')) text = text.slice(0, -1)
+    if (text) this._output.push(this._prefix + text)
+    callback()
   }
 }

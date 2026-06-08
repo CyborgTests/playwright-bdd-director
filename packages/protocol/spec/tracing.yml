@@ -16,7 +16,6 @@ Tracing:
   type: interface
 
   commands:
-
     tracingStart:
       title: Start tracing
       group: configuration
@@ -56,9 +55,9 @@ Tracing:
         mode:
           type: enum
           literals:
-          - archive
-          - discard
-          - entries
+            - archive
+            - discard
+            - entries
       returns:
         # The artifact may be missing if the browser closes while tracing is being stopped.
         # Or it can be missing if client-side compression is taking place.
@@ -87,8 +86,8 @@ Tracing:
         mode:
           type: enum
           literals:
-          - archive
-          - entries
+            - archive
+            - entries
       returns:
         # Present when mode is 'archive'.
         artifact: Artifact?

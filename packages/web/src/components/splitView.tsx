@@ -14,23 +14,23 @@
   limitations under the License.
 */
 
-import { clsx, useMeasure, useSetting } from '../uiUtils';
-import './splitView.css';
-import * as React from 'react';
+import { clsx, useMeasure, useSetting } from '../uiUtils'
+import './splitView.css'
+import * as React from 'react'
 
 export type SplitViewProps = {
-  sidebarSize: number;
-  sidebarHidden?: boolean;
-  sidebarIsFirst?: boolean;
-  orientation?: 'vertical' | 'horizontal';
-  minSidebarSize?: number;
-  settingName?: string;
+  sidebarSize: number
+  sidebarHidden?: boolean
+  sidebarIsFirst?: boolean
+  orientation?: 'vertical' | 'horizontal'
+  minSidebarSize?: number
+  settingName?: string
 
-  sidebar: React.ReactNode;
-  main: React.ReactNode;
-};
+  sidebar: React.ReactNode
+  main: React.ReactNode
+}
 
-const kMinSize = 50;
+const kMinSize = 50
 
 export const SplitView: React.FC<SplitViewProps> = ({
   sidebarSize,
@@ -40,72 +40,104 @@ export const SplitView: React.FC<SplitViewProps> = ({
   minSidebarSize = kMinSize,
   settingName,
   sidebar,
-  main,
+  main
 }) => {
-  const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio;
-  const [hSize, setHSize] = useSetting<number>(settingName ? settingName + '.' + orientation + ':size' : undefined, defaultSize);
-  const [vSize, setVSize] = useSetting<number>(settingName ? settingName + '.' + orientation + ':size' : undefined, defaultSize);
+  const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio
+  const [hSize, setHSize] = useSetting<number>(
+    settingName ? settingName + '.' + orientation + ':size' : undefined,
+    defaultSize
+  )
+  const [vSize, setVSize] = useSetting<number>(
+    settingName ? settingName + '.' + orientation + ':size' : undefined,
+    defaultSize
+  )
 
-  const [resizing, setResizing] = React.useState<{ offset: number, size: number } | null>(null);
-  const [measure, ref] = useMeasure<HTMLDivElement>();
+  const [resizing, setResizing] = React.useState<{ offset: number; size: number } | null>(null)
+  const [measure, ref] = useMeasure<HTMLDivElement>()
 
-  let size: number;
+  let size: number
   if (orientation === 'vertical') {
-    size = vSize / window.devicePixelRatio;
-    if (measure && measure.height < size)
-      size = measure.height - 10;
+    size = vSize / window.devicePixelRatio
+    if (measure && measure.height < size) size = measure.height - 10
   } else {
-    size = hSize / window.devicePixelRatio;
-    if (measure && measure.width < size)
-      size = measure.width - 10;
+    size = hSize / window.devicePixelRatio
+    if (measure && measure.width < size) size = measure.width - 10
   }
 
-  document.body.style.userSelect = resizing ? 'none' : 'inherit';
-  let resizerStyle: any = {};
+  document.body.style.userSelect = resizing ? 'none' : 'inherit'
+  let resizerStyle: any = {}
   if (orientation === 'vertical') {
     if (sidebarIsFirst)
-      resizerStyle = { top: resizing ? 0 : size - 4, bottom: resizing ? 0 : undefined, height: resizing ? 'initial' : 8 };
+      resizerStyle = {
+        top: resizing ? 0 : size - 4,
+        bottom: resizing ? 0 : undefined,
+        height: resizing ? 'initial' : 8
+      }
     else
-      resizerStyle = { bottom: resizing ? 0 : size - 4, top: resizing ? 0 : undefined, height: resizing ? 'initial' : 8 };
+      resizerStyle = {
+        bottom: resizing ? 0 : size - 4,
+        top: resizing ? 0 : undefined,
+        height: resizing ? 'initial' : 8
+      }
   } else {
     if (sidebarIsFirst)
-      resizerStyle = { left: resizing ? 0 : size - 4, right: resizing ? 0 : undefined, width: resizing ? 'initial' : 8 };
+      resizerStyle = {
+        left: resizing ? 0 : size - 4,
+        right: resizing ? 0 : undefined,
+        width: resizing ? 'initial' : 8
+      }
     else
-      resizerStyle = { right: resizing ? 0 : size - 4, left: resizing ? 0 : undefined, width: resizing ? 'initial' : 8 };
+      resizerStyle = {
+        right: resizing ? 0 : size - 4,
+        left: resizing ? 0 : undefined,
+        width: resizing ? 'initial' : 8
+      }
   }
 
-  return <div className={clsx('split-view', orientation, sidebarIsFirst && 'sidebar-first')} ref={ref}>
-    <div className='split-view-main'>{main}</div>
-    {!sidebarHidden && <div style={{ flexBasis: size }} className='split-view-sidebar'>{sidebar}</div>}
-    {!sidebarHidden && <div
-      style={resizerStyle}
-      className='split-view-resizer'
-      onMouseDown={(event: React.MouseEvent) => setResizing({ offset: orientation === 'vertical' ? event.clientY : event.clientX, size })}
-      onMouseUp={() => setResizing(null)}
-      onMouseMove={(event: React.MouseEvent) => {
-        if (!event.buttons) {
-          setResizing(null);
-        } else if (resizing) {
-          const offset = orientation === 'vertical' ? event.clientY : event.clientX;
-          const delta = offset - resizing.offset;
-          const newSize = sidebarIsFirst ? resizing.size + delta : resizing.size - delta;
+  return (
+    <div className={clsx('split-view', orientation, sidebarIsFirst && 'sidebar-first')} ref={ref}>
+      <div className="split-view-main">{main}</div>
+      {!sidebarHidden && (
+        <div style={{ flexBasis: size }} className="split-view-sidebar">
+          {sidebar}
+        </div>
+      )}
+      {!sidebarHidden && (
+        <div
+          style={resizerStyle}
+          className="split-view-resizer"
+          onMouseDown={(event: React.MouseEvent) =>
+            setResizing({
+              offset: orientation === 'vertical' ? event.clientY : event.clientX,
+              size
+            })
+          }
+          onMouseUp={() => setResizing(null)}
+          onMouseMove={(event: React.MouseEvent) => {
+            if (!event.buttons) {
+              setResizing(null)
+            } else if (resizing) {
+              const offset = orientation === 'vertical' ? event.clientY : event.clientX
+              const delta = offset - resizing.offset
+              const newSize = sidebarIsFirst ? resizing.size + delta : resizing.size - delta
 
-          const splitView = (event.target as HTMLElement).parentElement!;
-          const rect = splitView.getBoundingClientRect();
-          const size = Math.min(Math.max(minSidebarSize, newSize), (orientation === 'vertical' ? rect.height : rect.width) - minSidebarSize);
-          if (orientation === 'vertical')
-            setVSize(size * window.devicePixelRatio);
-          else
-            setHSize(size * window.devicePixelRatio);
-        }
-      }}
-      onDoubleClick={(event: React.MouseEvent) => {
-        const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio;
-        if (orientation === 'vertical')
-          setVSize(defaultSize);
-        else
-          setHSize(defaultSize);
-      }}
-    ></div>}
-  </div>;
-};
+              const splitView = (event.target as HTMLElement).parentElement!
+              const rect = splitView.getBoundingClientRect()
+              const size = Math.min(
+                Math.max(minSidebarSize, newSize),
+                (orientation === 'vertical' ? rect.height : rect.width) - minSidebarSize
+              )
+              if (orientation === 'vertical') setVSize(size * window.devicePixelRatio)
+              else setHSize(size * window.devicePixelRatio)
+            }
+          }}
+          onDoubleClick={(event: React.MouseEvent) => {
+            const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio
+            if (orientation === 'vertical') setVSize(defaultSize)
+            else setHSize(defaultSize)
+          }}
+        ></div>
+      )}
+    </div>
+  )
+}

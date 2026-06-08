@@ -14,38 +14,47 @@
  * limitations under the License.
  */
 
-import { cc, configLoader, FullConfigInternal, ipc, poolBuilder, ProcessRunner, testLoader, transform } from '../common';
+import {
+  cc,
+  configLoader,
+  FullConfigInternal,
+  ipc,
+  poolBuilder,
+  ProcessRunner,
+  testLoader,
+  transform
+} from '../common'
 
-import type { TestError } from '../../types/testReporter';
+import type { TestError } from '../../types/testReporter'
 
 export class LoaderMain extends ProcessRunner {
-  private _serializedConfig: ipc.SerializedConfig;
-  private _configPromise: Promise<FullConfigInternal> | undefined;
-  private _poolBuilder = poolBuilder.PoolBuilder.createForLoader();
+  private _serializedConfig: ipc.SerializedConfig
+  private _configPromise: Promise<FullConfigInternal> | undefined
+  private _poolBuilder = poolBuilder.PoolBuilder.createForLoader()
 
   constructor(serializedConfig: ipc.SerializedConfig) {
-    super();
-    this._serializedConfig = serializedConfig;
+    super()
+    this._serializedConfig = serializedConfig
   }
 
   private _config(): Promise<FullConfigInternal> {
     if (!this._configPromise)
-      this._configPromise = configLoader.deserializeConfig(this._serializedConfig);
-    return this._configPromise;
+      this._configPromise = configLoader.deserializeConfig(this._serializedConfig)
+    return this._configPromise
   }
 
   async loadTestFile(params: { file: string }) {
-    const testErrors: TestError[] = [];
-    const config = await this._config();
-    const fileSuite = await testLoader.loadTestFile(params.file, config, testErrors);
-    this._poolBuilder.buildPools(fileSuite);
-    return { fileSuite: fileSuite._deepSerialize(), testErrors };
+    const testErrors: TestError[] = []
+    const config = await this._config()
+    const fileSuite = await testLoader.loadTestFile(params.file, config, testErrors)
+    this._poolBuilder.buildPools(fileSuite)
+    return { fileSuite: fileSuite._deepSerialize(), testErrors }
   }
 
   async getCompilationCacheFromLoader() {
-    await transform.incorporateCompilationCache();
-    return cc.serializeCompilationCache();
+    await transform.incorporateCompilationCache()
+    return cc.serializeCompilationCache()
   }
 }
 
-export const create = (config: ipc.SerializedConfig) => new LoaderMain(config);
+export const create = (config: ipc.SerializedConfig) => new LoaderMain(config)

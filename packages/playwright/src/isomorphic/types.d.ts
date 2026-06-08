@@ -15,35 +15,35 @@
  */
 
 export type GitCommitInfo = {
-  shortHash: string;
-  hash: string;
-  subject: string;
-  body: string;
+  shortHash: string
+  hash: string
+  subject: string
+  body: string
   author: {
-    name: string;
-    email: string;
-    time: number;
-  };
-  committer: {
-    name: string;
+    name: string
     email: string
-    time: number;
-  };
-  branch: string;
-};
+    time: number
+  }
+  committer: {
+    name: string
+    email: string
+    time: number
+  }
+  branch: string
+}
 
 export type CIInfo = {
-  commitHref: string;
-  prHref?: string;
-  prTitle?: string;
-  prBaseHash?: string;
-  buildHref?: string;
-  commitHash?: string;
-  branch?: string;
-};
+  commitHref: string
+  prHref?: string
+  prTitle?: string
+  prBaseHash?: string
+  buildHref?: string
+  commitHash?: string
+  branch?: string
+}
 
 export type MetadataWithCommitInfo = {
-  ci?: CIInfo;
-  gitCommit?: GitCommitInfo;
-  gitDiff?: string;
-};
+  ci?: CIInfo
+  gitCommit?: GitCommitInfo
+  gitDiff?: string
+}

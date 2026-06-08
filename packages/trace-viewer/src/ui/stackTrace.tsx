@@ -14,37 +14,36 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import './stackTrace.css';
-import { ListView } from '@web/components/listView';
-import type { StackFrame } from '@protocol/channels';
+import * as React from 'react'
+import './stackTrace.css'
+import { ListView } from '@web/components/listView'
+import type { StackFrame } from '@protocol/channels'
 
-const StackFrameListView = ListView<StackFrame>;
+const StackFrameListView = ListView<StackFrame>
 
 export const StackTraceView: React.FunctionComponent<{
-  stack: StackFrame[] | undefined,
-  selectedFrame: number,
+  stack: StackFrame[] | undefined
+  selectedFrame: number
   setSelectedFrame: (index: number) => void
 }> = ({ stack, setSelectedFrame, selectedFrame }) => {
-  const frames = stack || [];
-  return <StackFrameListView
-    name='stack-trace'
-    ariaLabel='Stack trace'
-    items={frames}
-    selectedItem={frames[selectedFrame]}
-    render={frame => {
-      const pathSep = frame.file[1] === ':' ? '\\' : '/';
-      return <>
-        <span className='stack-trace-frame-function'>
-          {frame.function || '(anonymous)'}
-        </span>
-        <span className='stack-trace-frame-location'>
-          {frame.file.split(pathSep).pop()}
-        </span>
-        <span className='stack-trace-frame-line'>
-          {':' + frame.line}
-        </span>
-      </>;
-    }}
-    onSelected={frame => setSelectedFrame(frames.indexOf(frame))} />;
-};
+  const frames = stack || []
+  return (
+    <StackFrameListView
+      name="stack-trace"
+      ariaLabel="Stack trace"
+      items={frames}
+      selectedItem={frames[selectedFrame]}
+      render={(frame) => {
+        const pathSep = frame.file[1] === ':' ? '\\' : '/'
+        return (
+          <>
+            <span className="stack-trace-frame-function">{frame.function || '(anonymous)'}</span>
+            <span className="stack-trace-frame-location">{frame.file.split(pathSep).pop()}</span>
+            <span className="stack-trace-frame-line">{':' + frame.line}</span>
+          </>
+        )
+      }}
+      onSelected={(frame) => setSelectedFrame(frames.indexOf(frame))}
+    />
+  )
+}

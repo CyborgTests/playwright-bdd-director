@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
+import * as React from 'react'
 
 export const PlaceholderPanel: React.FunctionComponent<{
-  text: string,
+  text: string
 }> = ({ text }) => {
-  return <div className='fill' style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 24,
-    fontWeight: 'bold',
-    opacity: 0.5,
-  }}>{text}</div>;
-};
+  return (
+    <div
+      className="fill"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 24,
+        fontWeight: 'bold',
+        opacity: 0.5
+      }}
+    >
+      {text}
+    </div>
+  )
+}

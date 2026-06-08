@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-import { expectTypes, formatMatcherMessage, printReceivedStringContainExpectedResult, printReceivedStringContainExpectedSubstring } from './matcherHint';
+import {
+  expectTypes,
+  formatMatcherMessage,
+  printReceivedStringContainExpectedResult,
+  printReceivedStringContainExpectedSubstring
+} from './matcherHint'
 
-import type { MatcherResult } from './matcherHint';
-import type { Page, Locator } from 'playwright-core';
-import type { ExpectResult } from 'playwright-core/lib/client/frame';
-import type { ExpectMatcherStateInternal } from './matchers';
+import type { MatcherResult } from './matcherHint'
+import type { Page, Locator } from 'playwright-core'
+import type { ExpectResult } from 'playwright-core/lib/client/frame'
+import type { ExpectMatcherStateInternal } from './matchers'
 
 export async function toMatchText(
   this: ExpectMatcherStateInternal,
@@ -28,22 +33,34 @@ export async function toMatchText(
   receiverType: 'Locator' | 'Page',
   query: (isNot: boolean, timeout: number) => Promise<ExpectResult>,
   expected: string | RegExp,
-  options: { timeout?: number, matchSubstring?: boolean } = {},
+  options: { timeout?: number; matchSubstring?: boolean } = {}
 ): Promise<MatcherResult<string | RegExp, string>> {
-  expectTypes(receiver, [receiverType], matcherName);
-  const locator = receiverType === 'Locator' ? receiver as Locator : undefined;
+  expectTypes(receiver, [receiverType], matcherName)
+  const locator = receiverType === 'Locator' ? (receiver as Locator) : undefined
 
-  if (
-    !(typeof expected === 'string') &&
-    !(expected && typeof expected.test === 'function')
-  ) {
-    const errorMessage = `Error: ${this.utils.EXPECTED_COLOR('expected')} value must be a string or regular expression\n${this.utils.printWithType('Expected', expected, this.utils.printExpected)}`;
-    throw new Error(formatMatcherMessage(this.utils, { promise: this.promise, isNot: this.isNot, locator: locator?.toString(), matcherName, expectation: 'expected', errorMessage }));
+  if (!(typeof expected === 'string') && !(expected && typeof expected.test === 'function')) {
+    const errorMessage = `Error: ${this.utils.EXPECTED_COLOR('expected')} value must be a string or regular expression\n${this.utils.printWithType('Expected', expected, this.utils.printExpected)}`
+    throw new Error(
+      formatMatcherMessage(this.utils, {
+        promise: this.promise,
+        isNot: this.isNot,
+        locator: locator?.toString(),
+        matcherName,
+        expectation: 'expected',
+        errorMessage
+      })
+    )
   }
 
-  const timeout = options.timeout ?? this.timeout;
+  const timeout = options.timeout ?? this.timeout
 
-  const { matches: pass, received, log, timedOut, errorMessage } = await query(!!this.isNot, timeout);
+  const {
+    matches: pass,
+    received,
+    log,
+    timedOut,
+    errorMessage
+  } = await query(!!this.isNot, timeout)
 
   if (pass === !this.isNot) {
     return {
@@ -51,35 +68,52 @@ export async function toMatchText(
       message: () => '',
       pass,
       expected
-    };
+    }
   }
 
-  const expectedSuffix = typeof expected === 'string' ? (options.matchSubstring ? ' substring' : '') : ' pattern';
-  const receivedSuffix = typeof expected === 'string' ? (options.matchSubstring ? ' string' : '') : ' string';
-  const receivedValue = received?.value as string | undefined;
-  const receivedString = receivedValue || '';
-  let printedReceived: string | undefined;
-  let printedExpected: string | undefined;
-  let printedDiff: string | undefined;
+  const expectedSuffix =
+    typeof expected === 'string' ? (options.matchSubstring ? ' substring' : '') : ' pattern'
+  const receivedSuffix =
+    typeof expected === 'string' ? (options.matchSubstring ? ' string' : '') : ' string'
+  const receivedValue = received?.value as string | undefined
+  const receivedString = receivedValue || ''
+  let printedReceived: string | undefined
+  let printedExpected: string | undefined
+  let printedDiff: string | undefined
   if (pass) {
     if (typeof expected === 'string') {
-      printedExpected = `Expected${expectedSuffix}: not ${this.utils.printExpected(expected)}`;
+      printedExpected = `Expected${expectedSuffix}: not ${this.utils.printExpected(expected)}`
       if (!errorMessage) {
-        const formattedReceived = printReceivedStringContainExpectedSubstring(this.utils, receivedString, receivedString.indexOf(expected), expected.length);
-        printedReceived = `Received${receivedSuffix}: ${formattedReceived}`;
+        const formattedReceived = printReceivedStringContainExpectedSubstring(
+          this.utils,
+          receivedString,
+          receivedString.indexOf(expected),
+          expected.length
+        )
+        printedReceived = `Received${receivedSuffix}: ${formattedReceived}`
       }
     } else {
-      printedExpected = `Expected${expectedSuffix}: not ${this.utils.printExpected(expected)}`;
+      printedExpected = `Expected${expectedSuffix}: not ${this.utils.printExpected(expected)}`
       if (!errorMessage) {
-        const formattedReceived = printReceivedStringContainExpectedResult(this.utils, receivedString, typeof expected.exec === 'function' ? expected.exec(receivedString) : null);
-        printedReceived = `Received${receivedSuffix}: ${formattedReceived}`;
+        const formattedReceived = printReceivedStringContainExpectedResult(
+          this.utils,
+          receivedString,
+          typeof expected.exec === 'function' ? expected.exec(receivedString) : null
+        )
+        printedReceived = `Received${receivedSuffix}: ${formattedReceived}`
       }
     }
   } else {
     if (errorMessage)
-      printedExpected = `Expected${expectedSuffix}: ${this.utils.printExpected(expected)}`;
+      printedExpected = `Expected${expectedSuffix}: ${this.utils.printExpected(expected)}`
     else
-      printedDiff = this.utils.printDiffOrStringify(expected, receivedString, `Expected${expectedSuffix}`, `Received${receivedSuffix}`, false);
+      printedDiff = this.utils.printDiffOrStringify(
+        expected,
+        receivedString,
+        `Expected${expectedSuffix}`,
+        `Received${receivedSuffix}`,
+        false
+      )
   }
 
   const message = () => {
@@ -95,9 +129,9 @@ export async function toMatchText(
       printedReceived,
       printedDiff,
       log,
-      errorMessage,
-    });
-  };
+      errorMessage
+    })
+  }
 
   return {
     name: matcherName,
@@ -107,6 +141,6 @@ export async function toMatchText(
     actual: receivedValue,
     log,
     timeout: timedOut ? timeout : undefined,
-    ariaSnapshot: received?.ariaSnapshot,
-  };
+    ariaSnapshot: received?.ariaSnapshot
+  }
 }

@@ -14,151 +14,149 @@
  * limitations under the License.
  */
 
-import type { Entry as ResourceSnapshot } from '@trace/har';
+import type { Entry as ResourceSnapshot } from '@trace/har'
 
 type SerializedValue = {
-  n?: number,
-  b?: boolean,
-  s?: string,
-  v?: 'null' | 'undefined' | 'NaN' | 'Infinity' | '-Infinity' | '-0',
-  d?: string,
-  u?: string,
+  n?: number
+  b?: boolean
+  s?: string
+  v?: 'null' | 'undefined' | 'NaN' | 'Infinity' | '-Infinity' | '-0'
+  d?: string
+  u?: string
   r?: {
-    p: string,
-    f: string,
-  },
-  a?: SerializedValue[],
+    p: string
+    f: string
+  }
+  a?: SerializedValue[]
   o?: {
-    k: string,
-    v: SerializedValue,
-  }[],
-  h?: number,
-  id?: number,
-  ref?: number,
-};
+    k: string
+    v: SerializedValue
+  }[]
+  h?: number
+  id?: number
+  ref?: number
+}
 
 type Point = {
-  x: number,
-  y: number,
-};
+  x: number
+  y: number
+}
 
 type StackFrame = {
-  file: string,
-  line: number,
-  column: number,
-  function?: string,
-};
+  file: string
+  line: number
+  column: number
+  function?: string
+}
 
 type SerializedError = {
   error?: {
-    message: string,
-    name: string,
-    stack?: string,
-  },
-  value?: SerializedValue,
-};
+    message: string
+    name: string
+    stack?: string
+  }
+  value?: SerializedValue
+}
 
 type CallMetadata = {
-  id: string;
-  startTime: number;
-  endTime: number;
-  pauseStartTime?: number;
-  pauseEndTime?: number;
-  type: string;
-  method: string;
-  params: any;
-  apiName?: string;
-  internal?: boolean;
-  isServerSide?: boolean;
-  wallTime?: number;
-  location?: { file: string, line?: number, column?: number };
-  log: string[];
-  afterSnapshot?: string;
-  snapshots: { title: string, snapshotName: string }[];
-  error?: SerializedError;
-  result?: any;
-  point?: Point;
-  objectId?: string;
-  pageId?: string;
-  frameId?: string;
-};
+  id: string
+  startTime: number
+  endTime: number
+  pauseStartTime?: number
+  pauseEndTime?: number
+  type: string
+  method: string
+  params: any
+  apiName?: string
+  internal?: boolean
+  isServerSide?: boolean
+  wallTime?: number
+  location?: { file: string; line?: number; column?: number }
+  log: string[]
+  afterSnapshot?: string
+  snapshots: { title: string; snapshotName: string }[]
+  error?: SerializedError
+  result?: any
+  point?: Point
+  objectId?: string
+  pageId?: string
+  frameId?: string
+}
 
 export type NodeSnapshot =
-  string |
-  [ [number, number] ] |
-  [ string ] |
-  [ string, { [attr: string]: string }, ...any ];
-
+  | string
+  | [[number, number]]
+  | [string]
+  | [string, { [attr: string]: string }, ...any]
 
 export type ResourceOverride = {
-  url: string,
-  sha1?: string,
+  url: string
+  sha1?: string
   ref?: number
-};
+}
 
 export type FrameSnapshot = {
   // There was no callId in the original, we are intentionally regressing it.
-  callId: string;
-  snapshotName?: string,
-  pageId: string,
-  frameId: string,
-  frameUrl: string,
-  timestamp: number,
-  collectionTime: number,
-  doctype?: string,
-  html: NodeSnapshot,
-  resourceOverrides: ResourceOverride[],
-  viewport: { width: number, height: number },
-  isMainFrame: boolean,
-};
-
+  callId: string
+  snapshotName?: string
+  pageId: string
+  frameId: string
+  frameUrl: string
+  timestamp: number
+  collectionTime: number
+  doctype?: string
+  html: NodeSnapshot
+  resourceOverrides: ResourceOverride[]
+  viewport: { width: number; height: number }
+  isMainFrame: boolean
+}
 
 export type BrowserContextEventOptions = {
-  viewport?: { width: number, height: number },
-  deviceScaleFactor?: number,
-  isMobile?: boolean,
-  userAgent?: string,
-};
+  viewport?: { width: number; height: number }
+  deviceScaleFactor?: number
+  isMobile?: boolean
+  userAgent?: string
+}
 
 export type ContextCreatedTraceEvent = {
-  version: number,
-  type: 'context-options',
-  browserName: string,
-  platform: string,
-  wallTime: number,
-  title?: string,
-  options: BrowserContextEventOptions,
-  sdkLanguage?: 'javascript' | 'python' | 'java' | 'csharp',
-  testIdAttributeName?: string,
-};
+  version: number
+  type: 'context-options'
+  browserName: string
+  platform: string
+  wallTime: number
+  title?: string
+  options: BrowserContextEventOptions
+  sdkLanguage?: 'javascript' | 'python' | 'java' | 'csharp'
+  testIdAttributeName?: string
+}
 
 export type ScreencastFrameTraceEvent = {
-  type: 'screencast-frame',
-  pageId: string,
-  sha1: string,
-  width: number,
-  height: number,
-  timestamp: number,
-};
+  type: 'screencast-frame'
+  pageId: string
+  sha1: string
+  width: number
+  height: number
+  timestamp: number
+}
 
 export type ActionTraceEvent = {
-  type: 'action' | 'event',
-  metadata: CallMetadata & { stack?: StackFrame[] },
-};
+  type: 'action' | 'event'
+  metadata: CallMetadata & { stack?: StackFrame[] }
+}
 
 export type ResourceSnapshotTraceEvent = {
-  type: 'resource-snapshot',
-  snapshot: ResourceSnapshot,
-};
+  type: 'resource-snapshot'
+  snapshot: ResourceSnapshot
+}
 
 export type FrameSnapshotTraceEvent = {
-  type: 'frame-snapshot',
-  snapshot: FrameSnapshot,
-};
+  type: 'frame-snapshot'
+  snapshot: FrameSnapshot
+}
 
 export type TraceEvent =
-    ContextCreatedTraceEvent |
-    ScreencastFrameTraceEvent |
-    ActionTraceEvent |
-    ResourceSnapshotTraceEvent |
-    FrameSnapshotTraceEvent;
+  | ContextCreatedTraceEvent
+  | ScreencastFrameTraceEvent
+  | ActionTraceEvent
+  | ResourceSnapshotTraceEvent
+  | FrameSnapshotTraceEvent

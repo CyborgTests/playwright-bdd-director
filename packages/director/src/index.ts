@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-export { DirectorPanel } from './DirectorPanel';
-export { FileExplorer } from './FileExplorer';
-export { DirectorEditor } from './DirectorEditor';
-export { DirectorOutput } from './DirectorOutput';
-export { saveFile, connectWs, getFiles } from './wsClient';
-export type { 
-  TestFile, 
-  TestFileStatus, 
-  Scenario, 
-  Step, 
-  DirectorOutputEntry, 
-  StageProgress 
-} from './DirectorModel';
+export { DirectorEditor } from './DirectorEditor'
+export type {
+  DirectorOutputEntry,
+  Scenario,
+  StageProgress,
+  Step,
+  TestFile,
+  TestFileStatus
+} from './DirectorModel'
+export { DirectorOutput } from './DirectorOutput'
+export { DirectorPanel } from './DirectorPanel'
+export { FileExplorer } from './FileExplorer'
+export { connectWs, getFiles, saveFile } from './wsClient'

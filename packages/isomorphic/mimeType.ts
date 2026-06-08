@@ -15,37 +15,36 @@
  */
 
 export function isJsonMimeType(mimeType: string) {
-  return !!mimeType.match(/^(application\/json|application\/.*?\+json|text\/(x-)?json)(;\s*charset=.*)?$/);
+  return !!mimeType.match(
+    /^(application\/json|application\/.*?\+json|text\/(x-)?json)(;\s*charset=.*)?$/
+  )
 }
 
 export function isXmlMimeType(mimeType: string) {
-  return !!mimeType.match(/^(application\/xml|application\/.*?\+xml|text\/xml)(;\s*charset=.*)?$/);
+  return !!mimeType.match(/^(application\/xml|application\/.*?\+xml|text\/xml)(;\s*charset=.*)?$/)
 }
 
 export function isTextualMimeType(mimeType: string) {
-  return !!mimeType.match(/^(text\/.*?|application\/(json|(x-)?javascript|xml.*?|ecmascript|graphql|x-www-form-urlencoded)|image\/svg(\+xml)?|application\/.*?(\+json|\+xml))(;\s*charset=.*)?$/);
+  return !!mimeType.match(
+    /^(text\/.*?|application\/(json|(x-)?javascript|xml.*?|ecmascript|graphql|x-www-form-urlencoded)|image\/svg(\+xml)?|application\/.*?(\+json|\+xml))(;\s*charset=.*)?$/
+  )
 }
 export function getMimeTypeForPath(path: string): string | null {
-  const dotIndex = path.lastIndexOf('.');
-  if (dotIndex === -1)
-    return null;
-  const extension = path.substring(dotIndex + 1);
-  return types.get(extension) || null;
+  const dotIndex = path.lastIndexOf('.')
+  if (dotIndex === -1) return null
+  const extension = path.substring(dotIndex + 1)
+  return types.get(extension) || null
 }
 
 export function getExtensionForMimeType(contentType: string | undefined): string {
-  const subtype = (contentType ?? '').split(';')[0].split('/')[1]?.trim().toLowerCase() ?? '';
-  if (!subtype)
-    return 'bin';
+  const subtype = (contentType ?? '').split(';')[0].split('/')[1]?.trim().toLowerCase() ?? ''
+  if (!subtype) return 'bin'
   // image/svg+xml → xml, application/ld+json → json
-  const tail = subtype.includes('+') ? subtype.split('+').pop()! : subtype;
-  if (tail === 'plain')
-    return 'txt';
-  if (tail === 'javascript' || tail === 'ecmascript')
-    return 'js';
-  if (tail === 'jpeg')
-    return 'jpg';
-  return tail.replace(/[^a-z0-9]/g, '') || 'bin';
+  const tail = subtype.includes('+') ? subtype.split('+').pop()! : subtype
+  if (tail === 'plain') return 'txt'
+  if (tail === 'javascript' || tail === 'ecmascript') return 'js'
+  if (tail === 'jpeg') return 'jpg'
+  return tail.replace(/[^a-z0-9]/g, '') || 'bin'
 }
 
 const types: Map<string, string> = new Map([
@@ -462,4 +461,4 @@ const types: Map<string, string> = new Map([
   ['mov', 'video/quicktime'],
   ['qt', 'video/quicktime'],
   ['webm', 'video/webm']
-]);
+])

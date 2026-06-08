@@ -14,50 +14,47 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { clsx } from '@web/uiUtils';
-import { Toolbar } from '@web/components/toolbar';
-import { ToolbarButton } from '@web/components/toolbarButton';
-import type { DirectorOutputEntry, StageProgress } from './DirectorModel';
+import './DirectorOutput.css'
 
-import './DirectorOutput.css';
+import { Toolbar } from '@web/components/toolbar'
+import { ToolbarButton } from '@web/components/toolbarButton'
+import { clsx } from '@web/uiUtils'
+import React from 'react'
+
+import type { DirectorOutputEntry, StageProgress } from './DirectorModel'
 
 export interface DirectorOutputProps {
-  entries: DirectorOutputEntry[];
-  progress?: StageProgress;
-  onClear: () => void;
+  entries: DirectorOutputEntry[]
+  progress?: StageProgress
+  onClear: () => void
 }
 
-export const DirectorOutput: React.FC<DirectorOutputProps> = ({
-  entries,
-  progress,
-  onClear,
-}) => {
-  const outputRef = React.useRef<HTMLDivElement>(null);
+export const DirectorOutput: React.FC<DirectorOutputProps> = ({ entries, progress, onClear }) => {
+  const outputRef = React.useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom
   React.useEffect(() => {
     if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      outputRef.current.scrollTop = outputRef.current.scrollHeight
     }
-  }, [entries]);
+  }, [entries])
 
   const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
-    });
-  };
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
 
   return (
     <div className="director-output">
-      <Toolbar noShadow={true} className='director-section-toolbar'>
+      <Toolbar noShadow={true} className="director-section-toolbar">
         <span className="director-output-title">Output</span>
         <div className="director-spacer" />
-        
+
         {/* Progress indicator */}
         {progress && (
           <div className="director-progress">
@@ -66,30 +63,20 @@ export const DirectorOutput: React.FC<DirectorOutputProps> = ({
               {progress.status}
             </span>
             <div className="director-progress-bar">
-              <div 
-                className="director-progress-fill" 
-                style={{ width: `${progress.progress}%` }}
-              />
+              <div className="director-progress-fill" style={{ width: `${progress.progress}%` }} />
             </div>
           </div>
         )}
-        
-        <ToolbarButton
-          icon="clear-all"
-          title="Clear output"
-          onClick={onClear}
-        />
+
+        <ToolbarButton icon="clear-all" title="Clear output" onClick={onClear} />
       </Toolbar>
-      
+
       <div ref={outputRef} className="director-output-content">
         {entries.length === 0 ? (
           <div className="director-output-empty">No output yet...</div>
         ) : (
           entries.map((entry, i) => (
-            <div 
-              key={i} 
-              className={clsx('director-output-line', `type-${entry.type}`)}
-            >
+            <div key={i} className={clsx('director-output-line', `type-${entry.type}`)}>
               <span className="director-output-time">{formatTime(entry.timestamp)}</span>
               <span className="director-output-message">{entry.message}</span>
             </div>
@@ -97,5 +84,5 @@ export const DirectorOutput: React.FC<DirectorOutputProps> = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}

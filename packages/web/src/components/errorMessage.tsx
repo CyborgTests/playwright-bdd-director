@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-import { ansi2html } from '../ansi2html';
-import * as React from 'react';
-import './errorMessage.css';
+import { ansi2html } from '../ansi2html'
+import * as React from 'react'
+import './errorMessage.css'
 
 export const ErrorMessage: React.FC<{
-  error: string;
+  error: string
 }> = ({ error }) => {
-  const html = React.useMemo(() => ansi2html(error, { bg: 'var(--vscode-editor-background)', fg: 'var(--vscode-editor-foreground)' }), [error]);
-  return <div className='error-message' dangerouslySetInnerHTML={{ __html: html || '' }}></div>;
-};
+  const html = React.useMemo(
+    () =>
+      ansi2html(error, {
+        bg: 'var(--vscode-editor-background)',
+        fg: 'var(--vscode-editor-foreground)'
+      }),
+    [error]
+  )
+  return <div className="error-message" dangerouslySetInnerHTML={{ __html: html || '' }}></div>
+}

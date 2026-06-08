@@ -14,11 +14,11 @@
   limitations under the License.
 */
 
-import * as React from 'react';
-import type { TraceModel } from '@isomorphic/trace/traceModel';
+import * as React from 'react'
+import type { TraceModel } from '@isomorphic/trace/traceModel'
 
-export const TraceModelContext = React.createContext<TraceModel | undefined>(undefined);
+export const TraceModelContext = React.createContext<TraceModel | undefined>(undefined)
 
 export const useTraceModel = () => {
-  return React.useContext(TraceModelContext);
-};
+  return React.useContext(TraceModelContext)
+}

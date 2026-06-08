@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import type { ReporterV2 } from './reporterV2';
+import type { ReporterV2 } from './reporterV2'
 
 class EmptyReporter implements ReporterV2 {
   version(): 'v2' {
-    return 'v2';
+    return 'v2'
   }
 
   printsToStdio() {
-    return false;
+    return false
   }
 }
 
-export default EmptyReporter;
+export default EmptyReporter

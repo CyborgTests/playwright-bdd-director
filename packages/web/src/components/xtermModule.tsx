@@ -14,14 +14,14 @@
   limitations under the License.
 */
 
-import '@xterm/xterm/css/xterm.css';
+import '@xterm/xterm/css/xterm.css'
 
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
 
 export type XtermModule = {
-  Terminal: typeof Terminal;
-  FitAddon: typeof FitAddon;
-};
+  Terminal: typeof Terminal
+  FitAddon: typeof FitAddon
+}
 
-export default { Terminal, FitAddon };
+export default { Terminal, FitAddon }

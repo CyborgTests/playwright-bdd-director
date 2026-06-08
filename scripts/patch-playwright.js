@@ -1,22 +1,24 @@
-const fs = require('fs');
-const path = require('path');
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef, no-console */
+const fs = require('fs')
+const path = require('path')
 
-const playwrightTestPath = path.resolve(__dirname, '../node_modules/playwright/lib/program.js');
+const playwrightTestPath = path.resolve(__dirname, '../node_modules/playwright/lib/program.js')
 
 if (!fs.existsSync(playwrightTestPath)) {
-  console.error('Playwright not found at', playwrightTestPath);
-  process.exit(1);
+  console.error('Playwright not found at', playwrightTestPath)
+  process.exit(1)
 }
 
-let content = fs.readFileSync(playwrightTestPath, 'utf-8');
+let content = fs.readFileSync(playwrightTestPath, 'utf-8')
 
 // Remove old patch if exists
 if (content.includes('// DIRECTOR PATCH')) {
-  const startIdx = content.indexOf('// DIRECTOR PATCH');
-  const endIdx = content.indexOf('// END DIRECTOR PATCH');
+  const startIdx = content.indexOf('// DIRECTOR PATCH')
+  const endIdx = content.indexOf('// END DIRECTOR PATCH')
   if (endIdx !== -1) {
-    content = content.slice(0, startIdx) + content.slice(endIdx + '// END DIRECTOR PATCH\n\n'.length);
-    console.log('✅ Removed old patch');
+    content =
+      content.slice(0, startIdx) + content.slice(endIdx + '// END DIRECTOR PATCH\n\n'.length)
+    console.log('✅ Removed old patch')
   }
 }
 
@@ -126,8 +128,8 @@ wss.on('connection', (ws) => {
 });
 // END DIRECTOR PATCH
 
-`;
+`
 
-const newContent = patch + content;
-fs.writeFileSync(playwrightTestPath, newContent);
-console.log('✅ Playwright patched successfully!');
+const newContent = patch + content
+fs.writeFileSync(playwrightTestPath, newContent)
+console.log('✅ Playwright patched successfully!')

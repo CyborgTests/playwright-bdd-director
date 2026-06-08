@@ -15,5 +15,5 @@
  */
 
 export function artifactsFolderName(workerIndex: number) {
-  return `.playwright-artifacts-${workerIndex}`;
+  return `.playwright-artifacts-${workerIndex}`
 }

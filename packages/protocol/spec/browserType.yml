@@ -20,7 +20,6 @@ BrowserType:
     name: string
 
   commands:
-
     launch:
       title: Launch browser
       parameters:

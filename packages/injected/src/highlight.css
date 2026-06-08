@@ -16,7 +16,7 @@
 
 :host {
   font-size: 13px;
-  font-family: system-ui, "Ubuntu", "Droid Sans", sans-serif;
+  font-family: system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
   color: #333;
   color-scheme: light;
 }
@@ -30,7 +30,7 @@ x-pw-tooltip {
   backdrop-filter: blur(5px);
   background-color: white;
   border-radius: 6px;
-  box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,.3);
+  box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.3);
   display: none;
   font-size: 12.8px;
   font-weight: normal;
@@ -64,7 +64,7 @@ x-pw-dialog {
   background-color: white;
   pointer-events: auto;
   border-radius: 6px;
-  box-shadow: 0 0.5rem 1.2rem rgba(0,0,0,.3);
+  box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   position: absolute;
@@ -137,14 +137,19 @@ x-pw-title {
   z-index: 3;
 }
 
-x-pw-user-overlays, x-pw-user-overlay {
+x-pw-user-overlays,
+x-pw-user-overlay {
   position: absolute;
   inset: 0;
 }
 
 @keyframes pw-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 x-pw-separator {
@@ -310,12 +315,16 @@ x-pw-overlay x-pw-tool-item {
 }
 
 textarea.text-editor {
-  font-family: system-ui,Ubuntu,Droid Sans,sans-serif;
+  font-family:
+    system-ui,
+    Ubuntu,
+    Droid Sans,
+    sans-serif;
   flex: auto;
   border: none;
   margin: 6px 10px;
   color: #333;
-  outline: 1px solid transparent!important;
+  outline: 1px solid transparent !important;
   resize: none;
   padding: 0;
   font-size: 13px;

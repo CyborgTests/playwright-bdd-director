@@ -19,7 +19,6 @@ APIRequestContext:
     tracing: Tracing
 
   commands:
-
     fetch:
       title: '{method} "{url}"'
       parameters:

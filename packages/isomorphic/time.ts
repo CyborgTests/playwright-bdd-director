@@ -20,21 +20,21 @@
 
 /* eslint-disable no-restricted-globals */
 
-let _timeOrigin = performance.timeOrigin;
-let _timeShift = 0;
+let _timeOrigin = performance.timeOrigin
+let _timeShift = 0
 
 export function setTimeOrigin(origin: number) {
-  _timeOrigin = origin;
-  _timeShift = performance.timeOrigin - origin;
+  _timeOrigin = origin
+  _timeShift = performance.timeOrigin - origin
 }
 
 export function timeOrigin(): number {
-  return _timeOrigin;
+  return _timeOrigin
 }
 
 export function monotonicTime(): number {
-  return Math.floor((performance.now() + _timeShift) * 1000) / 1000;
+  return Math.floor((performance.now() + _timeShift) * 1000) / 1000
 }
 
-export const DEFAULT_PLAYWRIGHT_TIMEOUT = 30_000;
-export const DEFAULT_PLAYWRIGHT_LAUNCH_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+export const DEFAULT_PLAYWRIGHT_TIMEOUT = 30_000
+export const DEFAULT_PLAYWRIGHT_LAUNCH_TIMEOUT = 3 * 60 * 1000 // 3 minutes

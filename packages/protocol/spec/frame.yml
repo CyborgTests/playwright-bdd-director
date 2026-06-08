@@ -24,7 +24,6 @@ Frame:
       items: LifecycleEvent
 
   commands:
-
     evalOnSelector:
       title: Evaluate
       parameters:
@@ -132,19 +131,19 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: float?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: int?
         timeout: float
         trial: boolean?
@@ -231,19 +230,19 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: float?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         timeout: float
         trial: boolean?
         steps: int?
@@ -380,11 +379,11 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: float
         trial: boolean?
@@ -640,11 +639,11 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: float
         trial: boolean?
@@ -737,10 +736,10 @@ Frame:
         state:
           type: enum?
           literals:
-          - attached
-          - detached
-          - visible
-          - hidden
+            - attached
+            - detached
+            - visible
+            - hidden
         omitReturnValue: boolean?
       returns:
         element: ElementHandle?
@@ -756,8 +755,8 @@ Frame:
         pseudo:
           type: enum?
           literals:
-          - before
-          - after
+            - before
+            - after
         expectedText:
           type: array?
           items: ExpectedTextValue
@@ -783,7 +782,6 @@ Frame:
         pause: true
 
   events:
-
     loadstate:
       parameters:
         add: LifecycleEvent?

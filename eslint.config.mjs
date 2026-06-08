@@ -43,7 +43,18 @@ export default tseslint.config(
       'playwright-report/**',
       '.claude/**',
       'dist/**',
-      'build/**'
+      'build/**',
+      // Forked Playwright packages (ignore)
+      'packages/injected/**',
+      'packages/isomorphic/**',
+      'packages/playwright/**',
+      'packages/playwright-core/**',
+      'packages/protocol/**',
+      'packages/trace/**',
+      'packages/trace-viewer/**',
+      'packages/web/**',
+      'packages/*/node_modules/**',
+      'packages/*/dist/**'
     ]
   }
 )

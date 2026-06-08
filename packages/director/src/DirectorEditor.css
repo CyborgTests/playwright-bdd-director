@@ -145,14 +145,12 @@
   background: var(--vscode-inputValidation-errorBackground, #5a1d1d) !important;
 }
 
-
 .director-editor-filename {
   font-size: 13px;
   font-weight: 500;
   color: var(--vscode-titleBar-activeForeground, #cccccc);
   margin-left: 8px;
 }
-
 
 .director-spacer {
   flex: 1;
@@ -184,8 +182,6 @@
   background: var(--vscode-toolbar-activeBackground, #094771);
   color: var(--vscode-button-foreground, #ffffff);
 }
-
-
 
 .director-editor-content {
   flex: 1;
@@ -304,4 +300,3 @@
   background: var(--vscode-sideBar-background, #252526);
   font-weight: 600;
 }
-

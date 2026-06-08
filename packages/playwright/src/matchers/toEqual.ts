@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import { isRegExp } from '@isomorphic/rtti';
+import { isRegExp } from '@isomorphic/rtti'
 
-import { expectTypes, formatMatcherMessage } from './matcherHint';
+import { expectTypes, formatMatcherMessage } from './matcherHint'
 
-import type { MatcherResult } from './matcherHint';
-import type { Locator } from 'playwright-core';
-import type { ExpectResult } from 'playwright-core/lib/client/frame';
-import type { ExpectMatcherStateInternal } from './matchers';
+import type { MatcherResult } from './matcherHint'
+import type { Locator } from 'playwright-core'
+import type { ExpectResult } from 'playwright-core/lib/client/frame'
+import type { ExpectMatcherStateInternal } from './matchers'
 
 // Omit colon and one or more spaces, so can call getLabelPrinter.
-const EXPECTED_LABEL = 'Expected';
-const RECEIVED_LABEL = 'Received';
+const EXPECTED_LABEL = 'Expected'
+const RECEIVED_LABEL = 'Received'
 
 export async function toEqual<T>(
   this: ExpectMatcherStateInternal,
@@ -34,14 +34,20 @@ export async function toEqual<T>(
   receiverType: 'Locator',
   query: (isNot: boolean, timeout: number) => Promise<ExpectResult>,
   expected: T,
-  options: { timeout?: number, contains?: boolean } = {},
+  options: { timeout?: number; contains?: boolean } = {}
 ): Promise<MatcherResult<any, any>> {
-  expectTypes(locator, [receiverType], matcherName);
+  expectTypes(locator, [receiverType], matcherName)
 
-  const timeout = options.timeout ?? this.timeout;
+  const timeout = options.timeout ?? this.timeout
 
-  const { matches: pass, received, log, timedOut, errorMessage } = await query(!!this.isNot, timeout);
-  const receivedValue = received?.value;
+  const {
+    matches: pass,
+    received,
+    log,
+    timedOut,
+    errorMessage
+  } = await query(!!this.isNot, timeout)
+  const receivedValue = received?.value
 
   if (pass === !this.isNot) {
     return {
@@ -49,40 +55,39 @@ export async function toEqual<T>(
       message: () => '',
       pass,
       expected
-    };
+    }
   }
 
-  let printedReceived: string | undefined;
-  let printedExpected: string | undefined;
-  let printedDiff: string | undefined;
+  let printedReceived: string | undefined
+  let printedExpected: string | undefined
+  let printedDiff: string | undefined
   if (pass) {
-    printedExpected = `Expected: not ${this.utils.printExpected(expected)}`;
-    printedReceived = errorMessage ? '' : `Received: ${this.utils.printReceived(receivedValue)}`;
+    printedExpected = `Expected: not ${this.utils.printExpected(expected)}`
+    printedReceived = errorMessage ? '' : `Received: ${this.utils.printReceived(receivedValue)}`
   } else if (errorMessage) {
-    printedExpected = `Expected: ${this.utils.printExpected(expected)}`;
+    printedExpected = `Expected: ${this.utils.printExpected(expected)}`
   } else if (Array.isArray(expected) && Array.isArray(receivedValue)) {
     const normalizedExpected = expected.map((exp, index) => {
-      const rec = receivedValue[index];
-      if (isRegExp(exp))
-        return exp.test(rec) ? rec : exp;
+      const rec = receivedValue[index]
+      if (isRegExp(exp)) return exp.test(rec) ? rec : exp
 
-      return exp;
-    });
+      return exp
+    })
     printedDiff = this.utils.printDiffOrStringify(
-        normalizedExpected,
-        receivedValue,
-        EXPECTED_LABEL,
-        RECEIVED_LABEL,
-        false,
-    );
+      normalizedExpected,
+      receivedValue,
+      EXPECTED_LABEL,
+      RECEIVED_LABEL,
+      false
+    )
   } else {
     printedDiff = this.utils.printDiffOrStringify(
-        expected,
-        receivedValue,
-        EXPECTED_LABEL,
-        RECEIVED_LABEL,
-        false,
-    );
+      expected,
+      receivedValue,
+      EXPECTED_LABEL,
+      RECEIVED_LABEL,
+      false
+    )
   }
   const message = () => {
     return formatMatcherMessage(this.utils, {
@@ -97,20 +102,21 @@ export async function toEqual<T>(
       printedReceived,
       printedDiff,
       errorMessage,
-      log,
-    });
-  };
+      log
+    })
+  }
 
   // Passing the actual and expected objects so that a custom reporter
   // could access them, for example in order to display a custom visual diff,
   // or create a different error message
   return {
     actual: receivedValue,
-    expected, message,
+    expected,
+    message,
     name: matcherName,
     pass,
     log,
     timeout: timedOut ? timeout : undefined,
-    ariaSnapshot: received?.ariaSnapshot,
-  };
+    ariaSnapshot: received?.ariaSnapshot
+  }
 }

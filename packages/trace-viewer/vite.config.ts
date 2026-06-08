@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-import path from 'path';
+import path from 'path'
 
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-import { bundle } from './bundle';
+import { bundle } from './bundle'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '',
-  plugins: [
-    react(),
-    bundle()
-  ],
+  plugins: [react(), bundle()],
   server: {
-    open: '/uiMode.html?ws=5600',
+    open: '/uiMode.html?ws=5600'
   },
   define: {
     'process.env': {},
-    '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
   },
   resolve: {
     alias: {
@@ -43,8 +40,8 @@ export default defineConfig({
       '@protocol': path.resolve(__dirname, '../protocol/src'),
       '@testIsomorphic': path.resolve(__dirname, '../playwright/src/isomorphic'),
       '@trace': path.resolve(__dirname, '../trace/src'),
-      '@web': path.resolve(__dirname, '../web/src'),
-    },
+      '@web': path.resolve(__dirname, '../web/src')
+    }
   },
   builder: {},
   environments: {
@@ -56,15 +53,15 @@ export default defineConfig({
           input: {
             index: path.resolve(__dirname, 'index.html'),
             uiMode: path.resolve(__dirname, 'uiMode.html'),
-            snapshot: path.resolve(__dirname, 'snapshot.html'),
+            snapshot: path.resolve(__dirname, 'snapshot.html')
           },
           output: {
             entryFileNames: () => '[name].[hash].js',
             assetFileNames: () => '[name].[hash][extname]',
-            manualChunks: undefined,
-          },
-        },
-      },
+            manualChunks: undefined
+          }
+        }
+      }
     },
     sw: {
       consumer: 'client',
@@ -73,15 +70,15 @@ export default defineConfig({
         emptyOutDir: false,
         rollupOptions: {
           input: {
-            sw: path.resolve(__dirname, 'src/sw-main.ts'),
+            sw: path.resolve(__dirname, 'src/sw-main.ts')
           },
           output: {
             entryFileNames: () => 'sw.bundle.js',
             assetFileNames: () => 'sw.[hash][extname]',
-            manualChunks: undefined,
-          },
-        },
-      },
-    },
-  },
-});
+            manualChunks: undefined
+          }
+        }
+      }
+    }
+  }
+})

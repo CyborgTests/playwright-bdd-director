@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-export type SelectorRoot = Element | ShadowRoot | Document;
+export type SelectorRoot = Element | ShadowRoot | Document
 
 export interface SelectorEngine {
-  queryAll(root: SelectorRoot, selector: string | any): Element[];
+  queryAll(root: SelectorRoot, selector: string | any): Element[]
 }

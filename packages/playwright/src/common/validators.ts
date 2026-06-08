@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import { validate } from '@isomorphic/jsonSchema';
+import { validate } from '@isomorphic/jsonSchema'
 
-import type { JsonSchema } from '@isomorphic/jsonSchema';
-import type { TestDetailsAnnotation } from '../../types/test';
-import type { Location } from '../../types/testReporter';
+import type { JsonSchema } from '@isomorphic/jsonSchema'
+import type { TestDetailsAnnotation } from '../../types/test'
+import type { Location } from '../../types/testReporter'
 
 const testAnnotationSchema: JsonSchema = {
   type: 'object',
   properties: {
     type: { type: 'string' },
-    description: { type: 'string' },
+    description: { type: 'string' }
   },
-  required: ['type'],
-};
+  required: ['type']
+}
 
 const testDetailsSchema: JsonSchema = {
   type: 'object',
@@ -35,39 +35,44 @@ const testDetailsSchema: JsonSchema = {
     tag: {
       oneOf: [
         { type: 'string', pattern: '^@', patternError: "Tag must start with '@'" },
-        { type: 'array', items: { type: 'string', pattern: '^@', patternError: "Tag must start with '@'" } },
+        {
+          type: 'array',
+          items: { type: 'string', pattern: '^@', patternError: "Tag must start with '@'" }
+        }
       ]
     },
     annotation: {
-      oneOf: [
-        testAnnotationSchema,
-        { type: 'array', items: testAnnotationSchema },
-      ]
-    },
-  },
-};
+      oneOf: [testAnnotationSchema, { type: 'array', items: testAnnotationSchema }]
+    }
+  }
+}
 
 type ValidTestDetails = {
-  tags: string[];
-  annotations: (TestDetailsAnnotation & { location: Location })[];
-  location: Location;
-};
+  tags: string[]
+  annotations: (TestDetailsAnnotation & { location: Location })[]
+  location: Location
+}
 
 export function validateTestDetails(details: unknown, location: Location): ValidTestDetails {
-  const errors = validate(details, testDetailsSchema, 'details');
-  if (errors.length)
-    throw new Error(errors.join('\n'));
+  const errors = validate(details, testDetailsSchema, 'details')
+  if (errors.length) throw new Error(errors.join('\n'))
 
-  const obj = details as Record<string, unknown>;
-  const tag = obj.tag;
-  const tags: string[] = tag === undefined ? [] : typeof tag === 'string' ? [tag] : tag as string[];
+  const obj = details as Record<string, unknown>
+  const tag = obj.tag
+  const tags: string[] =
+    tag === undefined ? [] : typeof tag === 'string' ? [tag] : (tag as string[])
 
-  const annotation = obj.annotation;
-  const annotations: TestDetailsAnnotation[] = annotation === undefined ? [] : Array.isArray(annotation) ? annotation : [annotation as TestDetailsAnnotation];
+  const annotation = obj.annotation
+  const annotations: TestDetailsAnnotation[] =
+    annotation === undefined
+      ? []
+      : Array.isArray(annotation)
+        ? annotation
+        : [annotation as TestDetailsAnnotation]
 
   return {
-    annotations: annotations.map(a => ({ ...a, location })),
+    annotations: annotations.map((a) => ({ ...a, location })),
     tags,
-    location,
-  };
+    location
+  }
 }

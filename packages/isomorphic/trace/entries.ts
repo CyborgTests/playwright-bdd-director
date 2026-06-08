@@ -14,47 +14,47 @@
  * limitations under the License.
  */
 
-import type { Language } from '../locatorGenerators';
-import type { ResourceSnapshot } from '@trace/snapshot';
-import type * as trace from '@trace/trace';
+import type { Language } from '../locatorGenerators'
+import type { ResourceSnapshot } from '@trace/snapshot'
+import type * as trace from '@trace/trace'
 
 // *Entry structures are used to pass the trace between the sw and the page.
 
 export type ContextEntry = {
-  origin: 'testRunner'|'library';
-  startTime: number;
-  endTime: number;
-  browserName: string;
-  channel?: string;
-  platform?: string;
-  playwrightVersion?: string;
-  wallTime: number;
-  sdkLanguage?: Language;
-  testIdAttributeName?: string;
-  title?: string;
-  options: trace.BrowserContextEventOptions;
-  pages: PageEntry[];
-  resources: ResourceSnapshot[];
-  actions: ActionEntry[];
-  events: (trace.EventTraceEvent | trace.ConsoleMessageTraceEvent)[];
-  stdio: trace.StdioTraceEvent[];
-  errors: trace.ErrorTraceEvent[];
-  hasSource: boolean;
-  contextId: string;
-  testTimeout?: number;
-};
+  origin: 'testRunner' | 'library'
+  startTime: number
+  endTime: number
+  browserName: string
+  channel?: string
+  platform?: string
+  playwrightVersion?: string
+  wallTime: number
+  sdkLanguage?: Language
+  testIdAttributeName?: string
+  title?: string
+  options: trace.BrowserContextEventOptions
+  pages: PageEntry[]
+  resources: ResourceSnapshot[]
+  actions: ActionEntry[]
+  events: (trace.EventTraceEvent | trace.ConsoleMessageTraceEvent)[]
+  stdio: trace.StdioTraceEvent[]
+  errors: trace.ErrorTraceEvent[]
+  hasSource: boolean
+  contextId: string
+  testTimeout?: number
+}
 
 export type PageEntry = {
-  pageId: string,
+  pageId: string
   screencastFrames: {
-    sha1: string,
-    timestamp: number,
-    frameSwapWallTime?: number,
-    width: number,
-    height: number,
-  }[];
-};
+    sha1: string
+    timestamp: number
+    frameSwapWallTime?: number
+    width: number
+    height: number
+  }[]
+}
 
 export type ActionEntry = trace.ActionTraceEvent & {
-  log: { time: number, message: string }[];
-};
+  log: { time: number; message: string }[]
+}

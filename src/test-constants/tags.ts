@@ -32,6 +32,6 @@ export const TAG = {
    * Test suite / functional area
    */
   SUITE: {
-    AUTH: '@auth',
+    AUTH: '@auth'
   }
 } as const

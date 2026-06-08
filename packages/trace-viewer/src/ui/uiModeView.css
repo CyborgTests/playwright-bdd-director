@@ -102,7 +102,7 @@
   color: var(--vscode-testing-iconFailed);
 }
 
-.ui-mode-sidebar input[type=search] {
+.ui-mode-sidebar input[type='search'] {
   flex: auto;
   padding: 0 5px;
   line-height: 24px;

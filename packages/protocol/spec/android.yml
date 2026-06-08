@@ -16,7 +16,6 @@ Android:
   type: interface
 
   commands:
-
     devices:
       internal: true
       parameters:
@@ -61,7 +60,7 @@ AndroidDevice:
         state:
           type: enum?
           literals:
-          - gone
+            - gone
         timeout: float
 
     fill:
@@ -93,10 +92,10 @@ AndroidDevice:
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         speed: float?
         timeout: float
 
@@ -129,10 +128,10 @@ AndroidDevice:
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         percent: float
         speed: float?
         timeout: float
@@ -144,10 +143,10 @@ AndroidDevice:
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         percent: float
         speed: float?
         timeout: float

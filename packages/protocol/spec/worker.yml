@@ -19,7 +19,6 @@ Worker:
     url: string
 
   commands:
-
     disconnect:
       title: Disconnect from worker
       parameters:
@@ -51,11 +50,10 @@ Worker:
         event:
           type: enum
           literals:
-          - console
+            - console
         enabled: boolean
 
   events:
-
     console:
       parameters:
         $mixin: ConsoleMessage

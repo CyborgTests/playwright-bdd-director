@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-export * as cc from '../transform/compilationCache';
-export * as config from './config';
-export * as configLoader from './configLoader';
-export * as fixtures from './fixtures';
-export * as ipc from './ipc';
-export * as poolBuilder from './poolBuilder';
-export * as processRunner from './process';
-export * as suiteUtils from './suiteUtils';
-export * as test from './test';
-export * as testLoader from './testLoader';
-export * as testType from './testType';
-export * as transform from '../transform/transform';
-export { FullConfigInternal, builtInReporters } from './config';
-export { ProcessRunner, startProcessRunner } from './process';
-export { defineConfig } from './configLoader';
-export { mergeTests } from './testType';
-export type { ConfigLocation } from './config';
+export * as cc from '../transform/compilationCache'
+export * as config from './config'
+export * as configLoader from './configLoader'
+export * as fixtures from './fixtures'
+export * as ipc from './ipc'
+export * as poolBuilder from './poolBuilder'
+export * as processRunner from './process'
+export * as suiteUtils from './suiteUtils'
+export * as test from './test'
+export * as testLoader from './testLoader'
+export * as testType from './testType'
+export * as transform from '../transform/transform'
+export { FullConfigInternal, builtInReporters } from './config'
+export { ProcessRunner, startProcessRunner } from './process'
+export { defineConfig } from './configLoader'
+export { mergeTests } from './testType'
+export type { ConfigLocation } from './config'

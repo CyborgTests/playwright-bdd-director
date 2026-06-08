@@ -26,9 +26,9 @@ SetNetworkCookie:
     sameSite:
       type: enum?
       literals:
-      - Strict
-      - Lax
-      - None
+        - Strict
+        - Lax
+        - None
     partitionKey: string?
     _crHasCrossSiteAncestor: boolean?
 
@@ -45,9 +45,9 @@ NetworkCookie:
     sameSite:
       type: enum
       literals:
-      - Strict
-      - Lax
-      - None
+        - Strict
+        - Lax
+        - None
     partitionKey: string?
     _crHasCrossSiteAncestor: boolean?
 
@@ -68,7 +68,6 @@ Request:
     redirectedFrom: Request?
 
   commands:
-
     response:
       internal: true
       returns:
@@ -88,7 +87,6 @@ Route:
     request: Request
 
   commands:
-
     redirectNavigationRequest:
       internal: true
       parameters:
@@ -135,7 +133,6 @@ WebSocketRoute:
       items: string
 
   commands:
-
     connect:
       title: Connect WebSocket to server
       group: route
@@ -172,7 +169,6 @@ WebSocketRoute:
         wasClean: boolean
 
   events:
-
     messageFromPage:
       parameters:
         message: string
@@ -221,9 +217,7 @@ Response:
     timing: ResourceTiming
     fromServiceWorker: boolean
 
-
   commands:
-
     body:
       title: Get response body
       group: getter

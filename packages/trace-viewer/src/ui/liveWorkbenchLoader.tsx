@@ -14,47 +14,45 @@
   limitations under the License.
 */
 
-import * as React from 'react';
-import { TraceModel } from '@isomorphic/trace/traceModel';
-import './workbenchLoader.css';
-import { Workbench } from './workbench';
+import * as React from 'react'
+import { TraceModel } from '@isomorphic/trace/traceModel'
+import './workbenchLoader.css'
+import { Workbench } from './workbench'
 
-import type { ContextEntry } from '@isomorphic/trace/entries';
+import type { ContextEntry } from '@isomorphic/trace/entries'
 
 export const LiveWorkbenchLoader: React.FC<{ traceJson: string }> = ({ traceJson }) => {
-  const [model, setModel] = React.useState<TraceModel | undefined>(undefined);
-  const [counter, setCounter] = React.useState(0);
-  const pollTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const [model, setModel] = React.useState<TraceModel | undefined>(undefined)
+  const [counter, setCounter] = React.useState(0)
+  const pollTimer = React.useRef<NodeJS.Timeout | null>(null)
 
   React.useEffect(() => {
-    if (pollTimer.current)
-      clearTimeout(pollTimer.current);
+    if (pollTimer.current) clearTimeout(pollTimer.current)
 
     // Start polling running test.
     pollTimer.current = setTimeout(async () => {
       try {
-        const model = await loadSingleTraceFile(traceJson);
-        setModel(model);
+        const model = await loadSingleTraceFile(traceJson)
+        setModel(model)
       } catch {
-        const model = new TraceModel('', []);
-        setModel(model);
+        const model = new TraceModel('', [])
+        setModel(model)
       } finally {
-        setCounter(counter + 1);
+        setCounter(counter + 1)
       }
-    }, 500);
+    }, 500)
     return () => {
-      if (pollTimer.current)
-        clearTimeout(pollTimer.current);
-    };
-  }, [traceJson, counter]);
+      if (pollTimer.current) clearTimeout(pollTimer.current)
+    }
+  }, [traceJson, counter])
 
-  return <Workbench isLive={true} model={model} />;
-};
+  return <Workbench isLive={true} model={model} />
+}
 
 async function loadSingleTraceFile(traceJson: string): Promise<TraceModel> {
-  const params = new URLSearchParams();
-  params.set('trace', traceJson);
-  const response = await fetch(`contexts?${params.toString()}`);
-  const contextEntries = await response.json() as ContextEntry[];
-  return new TraceModel(traceJson, contextEntries);
+  const params = new URLSearchParams()
+  params.set('trace', traceJson)
+  const response = await fetch(`contexts?${params.toString()}`)
+  const contextEntries = (await response.json()) as ContextEntry[]
+  return new TraceModel(traceJson, contextEntries)
 }

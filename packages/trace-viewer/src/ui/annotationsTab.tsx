@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import './annotationsTab.css';
-import { PlaceholderPanel } from './placeholderPanel';
-import { linkifyText } from '@web/renderUtils';
-import type { TestAnnotation } from '@playwright/test';
+import * as React from 'react'
+import './annotationsTab.css'
+import { PlaceholderPanel } from './placeholderPanel'
+import { linkifyText } from '@web/renderUtils'
+import type { TestAnnotation } from '@playwright/test'
 
 export const AnnotationsTab: React.FunctionComponent<{
-  annotations: TestAnnotation[],
+  annotations: TestAnnotation[]
 }> = ({ annotations }) => {
+  if (!annotations.length) return <PlaceholderPanel text="No annotations" />
 
-  if (!annotations.length)
-    return <PlaceholderPanel text='No annotations' />;
-
-  return <div className='annotations-tab'>
-    {annotations.map((annotation, i) => {
-      return <div className='annotation-item' key={`annotation-${i}`}>
-        <span style={{ fontWeight: 'bold' }}>{annotation.type}</span>
-        {annotation.description && <span>: {linkifyText(annotation.description)}</span>}
-      </div>;
-    })}
-  </div>;
-};
+  return (
+    <div className="annotations-tab">
+      {annotations.map((annotation, i) => {
+        return (
+          <div className="annotation-item" key={`annotation-${i}`}>
+            <span style={{ fontWeight: 'bold' }}>{annotation.type}</span>
+            {annotation.description && <span>: {linkifyText(annotation.description)}</span>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}

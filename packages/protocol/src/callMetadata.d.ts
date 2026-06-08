@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-import type { SerializedError } from './channels';
+import type { SerializedError } from './channels'
 
 export type CallMetadata = {
-  id: string;
-  startTime: number;
-  endTime: number;
-  pauseStartTime?: number;
-  pauseEndTime?: number;
-  type: string;
-  method: string;
-  params: any;
-  title?: string;
+  id: string
+  startTime: number
+  endTime: number
+  pauseStartTime?: number
+  pauseEndTime?: number
+  type: string
+  method: string
+  params: any
+  title?: string
   // Client is making an internal call that should not show up in
   // the inspector or trace.
-  internal?: boolean;
+  internal?: boolean
   // Test runner step id.
-  stepId?: string;
-  location?: { file: string, line?: number, column?: number };
-  log: string[];
-  error?: SerializedError;
-  result?: any;
-  objectId?: string;
-  pageId?: string;
-  frameId?: string;
-};
+  stepId?: string
+  location?: { file: string; line?: number; column?: number }
+  log: string[]
+  error?: SerializedError
+  result?: any
+  objectId?: string
+  pageId?: string
+  frameId?: string
+}

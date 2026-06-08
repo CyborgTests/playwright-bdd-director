@@ -14,65 +14,81 @@
  * limitations under the License.
  */
 
-import { ProcessHost } from './processHost';
-import { cc, FullConfigInternal, ipc, poolBuilder, test as testNs, testLoader, transform } from '../common';
+import { ProcessHost } from './processHost'
+import {
+  cc,
+  FullConfigInternal,
+  ipc,
+  poolBuilder,
+  test as testNs,
+  testLoader,
+  transform
+} from '../common'
 
-import type { TestError } from '../../types/testReporter';
-
+import type { TestError } from '../../types/testReporter'
 
 export class InProcessLoaderHost {
-  private _config: FullConfigInternal;
-  private _poolBuilder: poolBuilder.PoolBuilder;
+  private _config: FullConfigInternal
+  private _poolBuilder: poolBuilder.PoolBuilder
 
   constructor(config: FullConfigInternal) {
-    this._config = config;
-    this._poolBuilder = poolBuilder.PoolBuilder.createForLoader();
+    this._config = config
+    this._poolBuilder = poolBuilder.PoolBuilder.createForLoader()
   }
 
   async start(errors: TestError[]) {
-    return true;
+    return true
   }
 
   async loadTestFile(file: string, testErrors: TestError[]): Promise<testNs.Suite> {
-    const result = await testLoader.loadTestFile(file, this._config, testErrors);
-    this._poolBuilder.buildPools(result, testErrors);
-    return result;
+    const result = await testLoader.loadTestFile(file, this._config, testErrors)
+    this._poolBuilder.buildPools(result, testErrors)
+    return result
   }
 
   async stop() {
-    await transform.incorporateCompilationCache();
+    await transform.incorporateCompilationCache()
   }
 }
 
 export class OutOfProcessLoaderHost {
-  private _config: FullConfigInternal;
-  private _processHost: ProcessHost;
+  private _config: FullConfigInternal
+  private _processHost: ProcessHost
 
   constructor(config: FullConfigInternal) {
-    this._config = config;
-    this._processHost = new ProcessHost(require.resolve('../loader/loaderProcessEntry.js'), 'loader', {});
+    this._config = config
+    this._processHost = new ProcessHost(
+      require.resolve('../loader/loaderProcessEntry.js'),
+      'loader',
+      {}
+    )
   }
 
   async start(errors: TestError[]) {
-    const startError = await this._processHost.startRunner(ipc.serializeConfig(this._config, false));
+    const startError = await this._processHost.startRunner(ipc.serializeConfig(this._config, false))
     if (startError) {
       errors.push({
-        message: `Test loader process failed to start with code "${startError.code}" and signal "${startError.signal}"`,
-      });
-      return false;
+        message: `Test loader process failed to start with code "${startError.code}" and signal "${startError.signal}"`
+      })
+      return false
     }
-    return true;
+    return true
   }
 
   async loadTestFile(file: string, testErrors: TestError[]): Promise<testNs.Suite> {
-    const result = await this._processHost.sendMessage({ method: 'loadTestFile', params: { file } }) as any;
-    testErrors.push(...result.testErrors);
-    return testNs.Suite._deepParse(result.fileSuite);
+    const result = (await this._processHost.sendMessage({
+      method: 'loadTestFile',
+      params: { file }
+    })) as any
+    testErrors.push(...result.testErrors)
+    return testNs.Suite._deepParse(result.fileSuite)
   }
 
   async stop() {
-    const result = await this._processHost.sendMessage({ method: 'getCompilationCacheFromLoader' }) as any;
-    cc.addToCompilationCache(result);
-    await this._processHost.stop();
+    const result = (await this._processHost.sendMessage({
+      method: 'getCompilationCacheFromLoader'
+    })) as any
+    cc.addToCompilationCache(result)
+    await this._processHost.stop()
   }
 }

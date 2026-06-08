@@ -14,72 +14,88 @@
  * limitations under the License.
  */
 
-import * as babel from '@babel/core';
-import traverseFunction from '@babel/traverse';
+import * as babel from '@babel/core'
+import traverseFunction from '@babel/traverse'
 
-import type { BabelFileResult, NodePath, PluginObj, TransformOptions } from '@babel/core';
-import type { TemplateBuilder } from '@babel/template';
-import type { ImportDeclaration, TSExportAssignment } from '@babel/types';
+import type { BabelFileResult, NodePath, PluginObj, TransformOptions } from '@babel/core'
+import type { TemplateBuilder } from '@babel/template'
+import type { ImportDeclaration, TSExportAssignment } from '@babel/types'
 
-export { codeFrameColumns } from '@babel/code-frame';
-export { declare } from '@babel/helper-plugin-utils';
-export { types } from '@babel/core';
-export const traverse = traverseFunction;
+export { codeFrameColumns } from '@babel/code-frame'
+export { declare } from '@babel/helper-plugin-utils'
+export { types } from '@babel/core'
+export const traverse = traverseFunction
 
-export type { NodePath, PluginObj, types as T } from '@babel/core';
-export type { BabelAPI } from '@babel/helper-plugin-utils';
+export type { NodePath, PluginObj, types as T } from '@babel/core'
+export type { BabelAPI } from '@babel/helper-plugin-utils'
 
-export type BabelPlugin = [string, any?];
-export type BabelTransformFunction = (code: string, filename: string, isModule: boolean, pluginsPrefix: BabelPlugin[], pluginsSuffix: BabelPlugin[], jsxImportSource?: string) => BabelFileResult | null;
+export type BabelPlugin = [string, any?]
+export type BabelTransformFunction = (
+  code: string,
+  filename: string,
+  isModule: boolean,
+  pluginsPrefix: BabelPlugin[],
+  pluginsSuffix: BabelPlugin[],
+  jsxImportSource?: string
+) => BabelFileResult | null
 
-function babelTransformOptions(isTypeScript: boolean, isModule: boolean, pluginsPrologue: [string, any?][], pluginsEpilogue: [string, any?][], jsxImportSource?: string): TransformOptions {
+function babelTransformOptions(
+  isTypeScript: boolean,
+  isModule: boolean,
+  pluginsPrologue: [string, any?][],
+  pluginsEpilogue: [string, any?][],
+  jsxImportSource?: string
+): TransformOptions {
   const plugins = [
-    [require('@babel/plugin-syntax-import-attributes'), { deprecatedAssertSyntax: true }],
-  ];
+    [require('@babel/plugin-syntax-import-attributes'), { deprecatedAssertSyntax: true }]
+  ]
 
   if (isTypeScript) {
     plugins.push(
-        [require('@babel/plugin-proposal-decorators'), { version: '2023-05' }],
-        [require('@babel/plugin-transform-explicit-resource-management')],
-        [require('@babel/plugin-transform-class-properties')],
-        [require('@babel/plugin-transform-class-static-block')],
-        [require('@babel/plugin-transform-numeric-separator')],
-        [require('@babel/plugin-transform-logical-assignment-operators')],
-        [require('@babel/plugin-transform-nullish-coalescing-operator')],
-        [require('@babel/plugin-transform-optional-chaining')],
-        [require('@babel/plugin-transform-private-methods')],
-        [require('@babel/plugin-syntax-json-strings')],
-        [require('@babel/plugin-syntax-optional-catch-binding')],
-        [require('@babel/plugin-syntax-async-generators')],
-        [require('@babel/plugin-syntax-object-rest-spread')],
-        [require('@babel/plugin-transform-export-namespace-from')],
-        [
-          // From https://github.com/G-Rath/babel-plugin-replace-ts-export-assignment/blob/8dfdca32c8aa428574b0cae341444fc5822f2dc6/src/index.ts
-          (
-            { template }: { template: TemplateBuilder<TSExportAssignment> }
-          ): PluginObj => ({
-            name: 'replace-ts-export-assignment',
-            visitor: {
-              TSExportAssignment(path: NodePath<TSExportAssignment>) {
-                path.replaceWith(template('module.exports = ASSIGNMENT;')({
+      [require('@babel/plugin-proposal-decorators'), { version: '2023-05' }],
+      [require('@babel/plugin-transform-explicit-resource-management')],
+      [require('@babel/plugin-transform-class-properties')],
+      [require('@babel/plugin-transform-class-static-block')],
+      [require('@babel/plugin-transform-numeric-separator')],
+      [require('@babel/plugin-transform-logical-assignment-operators')],
+      [require('@babel/plugin-transform-nullish-coalescing-operator')],
+      [require('@babel/plugin-transform-optional-chaining')],
+      [require('@babel/plugin-transform-private-methods')],
+      [require('@babel/plugin-syntax-json-strings')],
+      [require('@babel/plugin-syntax-optional-catch-binding')],
+      [require('@babel/plugin-syntax-async-generators')],
+      [require('@babel/plugin-syntax-object-rest-spread')],
+      [require('@babel/plugin-transform-export-namespace-from')],
+      [
+        // From https://github.com/G-Rath/babel-plugin-replace-ts-export-assignment/blob/8dfdca32c8aa428574b0cae341444fc5822f2dc6/src/index.ts
+        ({ template }: { template: TemplateBuilder<TSExportAssignment> }): PluginObj => ({
+          name: 'replace-ts-export-assignment',
+          visitor: {
+            TSExportAssignment(path: NodePath<TSExportAssignment>) {
+              path.replaceWith(
+                template('module.exports = ASSIGNMENT;')({
                   ASSIGNMENT: path.node.expression
-                }));
-              }
+                })
+              )
             }
-          })
-        ]
-    );
+          }
+        })
+      ]
+    )
   }
 
   // Support JSX/TSX at all times, regardless of the file extension.
-  plugins.push([require('@babel/plugin-transform-react-jsx'), {
-    throwIfNamespace: false,
-    runtime: 'automatic',
-    ...(jsxImportSource ? { importSource: jsxImportSource } : {}),
-  }]);
+  plugins.push([
+    require('@babel/plugin-transform-react-jsx'),
+    {
+      throwIfNamespace: false,
+      runtime: 'automatic',
+      ...(jsxImportSource ? { importSource: jsxImportSource } : {})
+    }
+  ])
 
   if (!isModule) {
-    plugins.push([require('@babel/plugin-transform-modules-commonjs')]);
+    plugins.push([require('@babel/plugin-transform-modules-commonjs')])
     // Note: we used to include '@babel/plugin-transform-dynamic-import' to convert async imports
     // into require(), so that pirates can intercept them. With the ESM loader enabled by default,
     // there is no need for this.
@@ -88,12 +104,11 @@ function babelTransformOptions(isTypeScript: boolean, isModule: boolean, plugins
         name: 'css-to-identity-obj-proxy',
         visitor: {
           ImportDeclaration(path: NodePath<ImportDeclaration>) {
-            if (path.node.source.value.match(/\.(css|less|scss)$/))
-              path.remove();
+            if (path.node.source.value.match(/\.(css|less|scss)$/)) path.remove()
           }
         }
       })
-    ]);
+    ])
   }
 
   return {
@@ -103,42 +118,59 @@ function babelTransformOptions(isTypeScript: boolean, isModule: boolean, plugins
     assumptions: {
       // Without this, babel defines a top level function that
       // breaks playwright evaluates.
-      setPublicClassFields: true,
+      setPublicClassFields: true
     },
-    presets: isTypeScript ? [
-      [require('@babel/preset-typescript'), { onlyRemoveTypeImports: false }],
-    ] : [],
+    presets: isTypeScript
+      ? [[require('@babel/preset-typescript'), { onlyRemoveTypeImports: false }]]
+      : [],
     plugins: [
       ...pluginsPrologue.map(([name, options]) => [require(name), options]),
       ...plugins,
-      ...pluginsEpilogue.map(([name, options]) => [require(name), options]),
+      ...pluginsEpilogue.map(([name, options]) => [require(name), options])
     ],
     compact: false,
-    sourceMaps: 'both',
-  };
+    sourceMaps: 'both'
+  }
 }
 
-let isTransforming = false;
+let isTransforming = false
 
 function isTypeScript(filename: string) {
-  return filename.endsWith('.ts') || filename.endsWith('.tsx') || filename.endsWith('.mts') || filename.endsWith('.cts');
+  return (
+    filename.endsWith('.ts') ||
+    filename.endsWith('.tsx') ||
+    filename.endsWith('.mts') ||
+    filename.endsWith('.cts')
+  )
 }
 
-export function babelTransform(code: string, filename: string, isModule: boolean, pluginsPrologue: [string, any?][], pluginsEpilogue: [string, any?][], jsxImportSource?: string): BabelFileResult | null {
-  if (isTransforming)
-    return null;
+export function babelTransform(
+  code: string,
+  filename: string,
+  isModule: boolean,
+  pluginsPrologue: [string, any?][],
+  pluginsEpilogue: [string, any?][],
+  jsxImportSource?: string
+): BabelFileResult | null {
+  if (isTransforming) return null
 
   // Prevent reentry while requiring plugins lazily.
-  isTransforming = true;
+  isTransforming = true
   try {
-    const options = babelTransformOptions(isTypeScript(filename), isModule, pluginsPrologue, pluginsEpilogue, jsxImportSource);
-    return babel.transform(code, { filename, ...options });
+    const options = babelTransformOptions(
+      isTypeScript(filename),
+      isModule,
+      pluginsPrologue,
+      pluginsEpilogue,
+      jsxImportSource
+    )
+    return babel.transform(code, { filename, ...options })
   } finally {
-    isTransforming = false;
+    isTransforming = false
   }
 }
 
 export function babelParse(code: string, filename: string, isModule: boolean): babel.ParseResult {
-  const options = babelTransformOptions(isTypeScript(filename), isModule, [], []);
-  return babel.parse(code, { filename, ...options })!;
+  const options = babelTransformOptions(isTypeScript(filename), isModule, [], [])
+  return babel.parse(code, { filename, ...options })!
 }

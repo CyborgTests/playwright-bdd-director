@@ -14,41 +14,50 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import './settingsView.css';
+import * as React from 'react'
+import './settingsView.css'
 
 export type Setting<Value extends string = string> = {
-  name: string;
-  title?: string;
-  count?: number;
-} & ({
-  type: 'check',
-  value: boolean;
-  set: (value: boolean) => void;
-} | {
-  type: 'select',
-  options: Array<{ label: string, value: Value }>;
-  value: Value;
-  set: (value: Value) => void;
-});
+  name: string
+  title?: string
+  count?: number
+} & (
+  | {
+      type: 'check'
+      value: boolean
+      set: (value: boolean) => void
+    }
+  | {
+      type: 'select'
+      options: Array<{ label: string; value: Value }>
+      value: Value
+      set: (value: Value) => void
+    }
+)
 
-export const SettingsView = <Value extends string>(
-  { settings }: { settings: Setting<Value>[] }
-) => {
+export const SettingsView = <Value extends string>({
+  settings
+}: {
+  settings: Setting<Value>[]
+}) => {
   return (
-    <div className='vbox settings-view'>
-      {settings.map(setting => {
-        const labelId = `setting-${setting.name.replaceAll(/\s+/g, '-')}`;
+    <div className="vbox settings-view">
+      {settings.map((setting) => {
+        const labelId = `setting-${setting.name.replaceAll(/\s+/g, '-')}`
 
         return (
-          <div key={setting.name} className={`setting setting-${setting.type}`} title={setting.title}>
+          <div
+            key={setting.name}
+            className={`setting setting-${setting.type}`}
+            title={setting.title}
+          >
             {renderSetting(setting, labelId)}
           </div>
-        );
+        )
       })}
     </div>
-  );
-};
+  )
+}
 
 const renderSetting = <Value extends string>(setting: Setting<Value>, labelId: string) => {
   switch (setting.type) {
@@ -56,28 +65,38 @@ const renderSetting = <Value extends string>(setting: Setting<Value>, labelId: s
       return (
         <>
           <input
-            type='checkbox'
+            type="checkbox"
             id={labelId}
             checked={setting.value}
             onChange={() => setting.set(!setting.value)}
           />
-          <label htmlFor={labelId}>{setting.name}{!!setting.count && <span className='setting-counter'>{setting.count}</span>}</label>
+          <label htmlFor={labelId}>
+            {setting.name}
+            {!!setting.count && <span className="setting-counter">{setting.count}</span>}
+          </label>
         </>
-      );
+      )
     case 'select':
       return (
         <>
-          <label htmlFor={labelId}>{setting.name}:{!!setting.count && <span className='setting-counter'>{setting.count}</span>}</label>
-          <select id={labelId} value={setting.value} onChange={e => setting.set(e.target.value as Value)}>
-            {setting.options.map(option => (
+          <label htmlFor={labelId}>
+            {setting.name}:
+            {!!setting.count && <span className="setting-counter">{setting.count}</span>}
+          </label>
+          <select
+            id={labelId}
+            value={setting.value}
+            onChange={(e) => setting.set(e.target.value as Value)}
+          >
+            {setting.options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
         </>
-      );
+      )
     default:
-      return null;
+      return null
   }
-};
+}

@@ -14,39 +14,48 @@
   limitations under the License.
 */
 
-import './codeMirrorWrapper.css';
-import * as React from 'react';
-import type { CodeMirror } from './codeMirrorModule';
-import { ansi2html } from '../ansi2html';
-import { useMeasure, kWebLinkRe } from '../uiUtils';
+import './codeMirrorWrapper.css'
+import * as React from 'react'
+import type { CodeMirror } from './codeMirrorModule'
+import { ansi2html } from '../ansi2html'
+import { useMeasure, kWebLinkRe } from '../uiUtils'
 
 export type SourceHighlight = {
-  line: number;
-  column?: number;
-  type: 'running' | 'paused' | 'error' | 'subtle-error';
-  message?: string;
-};
+  line: number
+  column?: number
+  type: 'running' | 'paused' | 'error' | 'subtle-error'
+  message?: string
+}
 
-type CodeMirrorHighlighter = 'javascript' | 'python' | 'java' | 'csharp' | 'jsonl' | 'html' | 'css' | 'markdown' | 'yaml';
+type CodeMirrorHighlighter =
+  | 'javascript'
+  | 'python'
+  | 'java'
+  | 'csharp'
+  | 'jsonl'
+  | 'html'
+  | 'css'
+  | 'markdown'
+  | 'yaml'
 
-export const lineHeight = 20;
+export const lineHeight = 20
 
 export interface SourceProps {
-  text: string;
-  highlighter?: CodeMirrorHighlighter;
-  mimeType?: string;
-  linkify?: boolean;
-  readOnly?: boolean;
+  text: string
+  highlighter?: CodeMirrorHighlighter
+  mimeType?: string
+  linkify?: boolean
+  readOnly?: boolean
   // 1-based
-  highlight?: SourceHighlight[];
-  revealLine?: number;
-  lineNumbers?: boolean;
-  isFocused?: boolean;
-  focusOnChange?: boolean;
-  wrapLines?: boolean;
-  onChange?: (text: string) => void;
-  dataTestId?: string;
-  placeholder?: string;
+  highlight?: SourceHighlight[]
+  revealLine?: number
+  lineNumbers?: boolean
+  isFocused?: boolean
+  focusOnChange?: boolean
+  wrapLines?: boolean
+  onChange?: (text: string) => void
+  dataTestId?: string
+  placeholder?: string
 }
 
 export const CodeMirrorWrapper: React.FC<SourceProps> = ({
@@ -63,42 +72,48 @@ export const CodeMirrorWrapper: React.FC<SourceProps> = ({
   wrapLines,
   onChange,
   dataTestId,
-  placeholder,
+  placeholder
 }) => {
-  const [measure, codemirrorElement] = useMeasure<HTMLDivElement>();
-  const [modulePromise] = React.useState<Promise<CodeMirror>>(import('./codeMirrorModule').then(m => m.default));
+  const [measure, codemirrorElement] = useMeasure<HTMLDivElement>()
+  const [modulePromise] = React.useState<Promise<CodeMirror>>(
+    import('./codeMirrorModule').then((m) => m.default)
+  )
   const codemirrorRef = React.useRef<{
-    cm: CodeMirror.Editor,
-    highlight?: SourceHighlight[],
-    widgets?: CodeMirror.LineWidget[],
-    markers?: CodeMirror.TextMarker[],
-  } | null>(null);
-  const [codemirror, setCodemirror] = React.useState<CodeMirror.Editor>();
+    cm: CodeMirror.Editor
+    highlight?: SourceHighlight[]
+    widgets?: CodeMirror.LineWidget[]
+    markers?: CodeMirror.TextMarker[]
+  } | null>(null)
+  const [codemirror, setCodemirror] = React.useState<CodeMirror.Editor>()
 
   React.useEffect(() => {
-    (async () => {
+    ;(async () => {
       // Always load the module first.
-      const CodeMirror = await modulePromise;
-      defineCustomMode(CodeMirror);
+      const CodeMirror = await modulePromise
+      defineCustomMode(CodeMirror)
 
-      const element = codemirrorElement.current;
-      if (!element)
-        return;
+      const element = codemirrorElement.current
+      if (!element) return
 
-      const mode = highlighterToMode(highlighter) || mimeTypeToMode(mimeType) || (linkify ? 'text/linkified' : '');
+      const mode =
+        highlighterToMode(highlighter) ||
+        mimeTypeToMode(mimeType) ||
+        (linkify ? 'text/linkified' : '')
 
-      if (codemirrorRef.current
-        && mode === codemirrorRef.current.cm.getOption('mode')
-        && !!readOnly === codemirrorRef.current.cm.getOption('readOnly')
-        && lineNumbers === codemirrorRef.current.cm.getOption('lineNumbers')
-        && wrapLines === codemirrorRef.current.cm.getOption('lineWrapping')
-        && placeholder === codemirrorRef.current.cm.getOption('placeholder')) {
+      if (
+        codemirrorRef.current &&
+        mode === codemirrorRef.current.cm.getOption('mode') &&
+        !!readOnly === codemirrorRef.current.cm.getOption('readOnly') &&
+        lineNumbers === codemirrorRef.current.cm.getOption('lineNumbers') &&
+        wrapLines === codemirrorRef.current.cm.getOption('lineWrapping') &&
+        placeholder === codemirrorRef.current.cm.getOption('placeholder')
+      ) {
         // No need to re-create codemirror.
-        return;
+        return
       }
 
       // Either configuration is different or we don't have a codemirror yet.
-      codemirrorRef.current?.cm?.getWrapperElement().remove();
+      codemirrorRef.current?.cm?.getWrapperElement().remove()
       const cm = CodeMirror(element, {
         value: '',
         mode,
@@ -112,147 +127,163 @@ export const CodeMirrorWrapper: React.FC<SourceProps> = ({
           'Ctrl-F': 'findPersistent',
           'Cmd-F': 'findPersistent'
         }
-      });
-      codemirrorRef.current = { cm };
-      if (isFocused)
-        cm.focus();
-      setCodemirror(cm);
-      return cm;
-    })();
-  }, [modulePromise, codemirror, codemirrorElement, highlighter, mimeType, linkify, lineNumbers, wrapLines, readOnly, isFocused, placeholder]);
+      })
+      codemirrorRef.current = { cm }
+      if (isFocused) cm.focus()
+      setCodemirror(cm)
+      return cm
+    })()
+  }, [
+    modulePromise,
+    codemirror,
+    codemirrorElement,
+    highlighter,
+    mimeType,
+    linkify,
+    lineNumbers,
+    wrapLines,
+    readOnly,
+    isFocused,
+    placeholder
+  ])
 
   React.useEffect(() => {
-    if (codemirrorRef.current)
-      codemirrorRef.current.cm.setSize(measure.width, measure.height);
-  }, [measure]);
+    if (codemirrorRef.current) codemirrorRef.current.cm.setSize(measure.width, measure.height)
+  }, [measure])
 
   React.useLayoutEffect(() => {
-    if (!codemirror)
-      return;
+    if (!codemirror) return
 
-    let valueChanged = false;
+    let valueChanged = false
     if (codemirror.getValue() !== text) {
-      codemirror.setValue(text);
-      valueChanged = true;
+      codemirror.setValue(text)
+      valueChanged = true
       if (focusOnChange) {
-        codemirror.execCommand('selectAll');
-        codemirror.focus();
+        codemirror.execCommand('selectAll')
+        codemirror.focus()
       }
     }
 
-    if (valueChanged || JSON.stringify(highlight) !== JSON.stringify(codemirrorRef.current!.highlight)) {
+    if (
+      valueChanged ||
+      JSON.stringify(highlight) !== JSON.stringify(codemirrorRef.current!.highlight)
+    ) {
       // Line highlight.
       for (const h of codemirrorRef.current!.highlight || [])
-        codemirror.removeLineClass(h.line - 1, 'wrap');
+        codemirror.removeLineClass(h.line - 1, 'wrap')
       for (const h of highlight || [])
-        codemirror.addLineClass(h.line - 1, 'wrap', `source-line-${h.type}`);
+        codemirror.addLineClass(h.line - 1, 'wrap', `source-line-${h.type}`)
 
       // Error widgets.
-      for (const w of codemirrorRef.current!.widgets || [])
-        codemirror.removeLineWidget(w);
-      for (const m of codemirrorRef.current!.markers || [])
-        m.clear();
-      const widgets: CodeMirror.LineWidget[] = [];
-      const markers: CodeMirror.TextMarker[] = [];
+      for (const w of codemirrorRef.current!.widgets || []) codemirror.removeLineWidget(w)
+      for (const m of codemirrorRef.current!.markers || []) m.clear()
+      const widgets: CodeMirror.LineWidget[] = []
+      const markers: CodeMirror.TextMarker[] = []
       for (const h of highlight || []) {
-        if (h.type !== 'subtle-error' && h.type !== 'error')
-          continue;
+        if (h.type !== 'subtle-error' && h.type !== 'error') continue
 
-        const line = codemirrorRef.current?.cm.getLine(h.line - 1);
+        const line = codemirrorRef.current?.cm.getLine(h.line - 1)
         if (line) {
-          const attributes: Record<string, string> = {};
-          attributes['title'] = h.message || '';
-          markers.push(codemirror.markText(
+          const attributes: Record<string, string> = {}
+          attributes['title'] = h.message || ''
+          markers.push(
+            codemirror.markText(
               { line: h.line - 1, ch: 0 },
               { line: h.line - 1, ch: h.column || line.length },
-              { className: 'source-line-error-underline', attributes }));
+              { className: 'source-line-error-underline', attributes }
+            )
+          )
         }
 
         if (h.type === 'error') {
-          const errorWidgetElement = document.createElement('div');
-          errorWidgetElement.innerHTML = ansi2html(h.message || '', { bg: 'var(--vscode-inputValidation-errorBackground)', fg: 'var(--vscode-editor-foreground)' });
-          errorWidgetElement.className = 'source-line-error-widget';
-          widgets.push(codemirror.addLineWidget(h.line, errorWidgetElement, { above: true, coverGutter: false }));
+          const errorWidgetElement = document.createElement('div')
+          errorWidgetElement.innerHTML = ansi2html(h.message || '', {
+            bg: 'var(--vscode-inputValidation-errorBackground)',
+            fg: 'var(--vscode-editor-foreground)'
+          })
+          errorWidgetElement.className = 'source-line-error-widget'
+          widgets.push(
+            codemirror.addLineWidget(h.line, errorWidgetElement, {
+              above: true,
+              coverGutter: false
+            })
+          )
         }
       }
 
       // Error markers.
-      codemirrorRef.current!.highlight = highlight;
-      codemirrorRef.current!.widgets = widgets;
-      codemirrorRef.current!.markers = markers;
+      codemirrorRef.current!.highlight = highlight
+      codemirrorRef.current!.widgets = widgets
+      codemirrorRef.current!.markers = markers
     }
 
     // Line-less locations have line = 0, but they mean to reveal the file.
     if (typeof revealLine === 'number' && codemirrorRef.current!.cm.lineCount() >= revealLine)
-      codemirror.scrollIntoView({ line: Math.max(0, revealLine - 1), ch: 0 }, 50);
+      codemirror.scrollIntoView({ line: Math.max(0, revealLine - 1), ch: 0 }, 50)
 
-    let changeListener: () => void | undefined;
+    let changeListener: () => void | undefined
     if (onChange) {
-      changeListener = () => onChange(codemirror.getValue());
-      codemirror.on('change', changeListener);
+      changeListener = () => onChange(codemirror.getValue())
+      codemirror.on('change', changeListener)
     }
 
     return () => {
-      if (changeListener)
-        codemirror.off('change', changeListener);
-    };
-  }, [codemirror, text, highlight, revealLine, focusOnChange, onChange]);
+      if (changeListener) codemirror.off('change', changeListener)
+    }
+  }, [codemirror, text, highlight, revealLine, focusOnChange, onChange])
 
-  return <div data-testid={dataTestId} className='cm-wrapper' ref={codemirrorElement} onClick={onCodeMirrorClick}></div>;
-};
+  return (
+    <div
+      data-testid={dataTestId}
+      className="cm-wrapper"
+      ref={codemirrorElement}
+      onClick={onCodeMirrorClick}
+    ></div>
+  )
+}
 
 function onCodeMirrorClick(event: React.MouseEvent) {
-  if (!(event.target instanceof HTMLElement))
-    return;
-  let url: string | undefined;
+  if (!(event.target instanceof HTMLElement)) return
+  let url: string | undefined
   if (event.target.classList.contains('cm-linkified')) {
     // 'text/linkified' custom mode
-    url = event.target.textContent!;
-  } else if (event.target.classList.contains('cm-link') && event.target.nextElementSibling?.classList.contains('cm-url')) {
+    url = event.target.textContent!
+  } else if (
+    event.target.classList.contains('cm-link') &&
+    event.target.nextElementSibling?.classList.contains('cm-url')
+  ) {
     // 'markdown' mode
-    url = event.target.nextElementSibling.textContent!.slice(1, -1);
+    url = event.target.nextElementSibling.textContent!.slice(1, -1)
   }
   if (url) {
-    event.preventDefault();
-    event.stopPropagation();
-    window.open(url, '_blank');
+    event.preventDefault()
+    event.stopPropagation()
+    window.open(url, '_blank')
   }
 }
 
-let customModeDefined = false;
+let customModeDefined = false
 function defineCustomMode(cm: CodeMirror) {
-  if (customModeDefined)
-    return;
-  customModeDefined = true;
-  (cm as any).defineSimpleMode('text/linkified', {
-    start: [
-      { regex: kWebLinkRe, token: 'linkified' },
-    ],
-  });
+  if (customModeDefined) return
+  customModeDefined = true
+  ;(cm as any).defineSimpleMode('text/linkified', {
+    start: [{ regex: kWebLinkRe, token: 'linkified' }]
+  })
 }
 
 function mimeTypeToMode(mimeType: string | undefined): string | undefined {
-  if (!mimeType)
-    return;
-  if (mimeType.includes('javascript') || mimeType.includes('json'))
-    return 'javascript';
-  if (mimeType.includes('python'))
-    return 'python';
-  if (mimeType.includes('csharp'))
-    return 'text/x-csharp';
-  if (mimeType.includes('java'))
-    return 'text/x-java';
-  if (mimeType.includes('markdown'))
-    return 'markdown';
-  if (mimeType.includes('html') || mimeType.includes('svg'))
-    return 'htmlmixed';
-  if (mimeType.includes('css'))
-    return 'css';
+  if (!mimeType) return
+  if (mimeType.includes('javascript') || mimeType.includes('json')) return 'javascript'
+  if (mimeType.includes('python')) return 'python'
+  if (mimeType.includes('csharp')) return 'text/x-csharp'
+  if (mimeType.includes('java')) return 'text/x-java'
+  if (mimeType.includes('markdown')) return 'markdown'
+  if (mimeType.includes('html') || mimeType.includes('svg')) return 'htmlmixed'
+  if (mimeType.includes('css')) return 'css'
 }
 
 function highlighterToMode(highlighter: CodeMirrorHighlighter | undefined): string | undefined {
-  if (!highlighter)
-    return;
+  if (!highlighter) return
   return {
     javascript: 'javascript',
     jsonl: 'javascript',
@@ -262,6 +293,6 @@ function highlighterToMode(highlighter: CodeMirrorHighlighter | undefined): stri
     markdown: 'markdown',
     html: 'htmlmixed',
     css: 'css',
-    yaml: 'yaml',
-  }[highlighter];
+    yaml: 'yaml'
+  }[highlighter]
 }

@@ -49,17 +49,23 @@
   flex: none;
   min-width: 200px;
   max-width: 80%;
-  box-shadow: 0 12px 28px 0 rgba(0,0,0,.2), 0 2px 4px 0 rgba(0,0,0,.1);
+  box-shadow:
+    0 12px 28px 0 rgba(0, 0, 0, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
 
-a.codicon-cloud-download:hover{
-  background-color: var(--vscode-list-inactiveSelectionBackground)
+a.codicon-cloud-download:hover {
+  background-color: var(--vscode-list-inactiveSelectionBackground);
 }
 
 .yellow-flash {
   animation: yellowflash-bg 2s;
 }
 @keyframes yellowflash-bg {
-  from { background: var(--vscode-peekViewEditor-matchHighlightBackground); }
-  to   { background: transparent; }
+  from {
+    background: var(--vscode-peekViewEditor-matchHighlightBackground);
+  }
+  to {
+    background: transparent;
+  }
 }

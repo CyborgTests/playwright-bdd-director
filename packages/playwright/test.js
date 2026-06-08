@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-const pwt = require('./lib/index');
-const playwright = require('./index');
+const pwt = require('./lib/index')
+const playwright = require('./index')
 const combinedExports = {
   ...playwright,
-  ...pwt,
-};
+  ...pwt
+}
 
-module.exports = Object.assign(combinedExports.test, combinedExports);
+module.exports = Object.assign(combinedExports.test, combinedExports)

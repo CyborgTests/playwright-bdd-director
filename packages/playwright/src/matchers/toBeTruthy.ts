@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { expectTypes, formatMatcherMessage } from './matcherHint';
+import { expectTypes, formatMatcherMessage } from './matcherHint'
 
-import type { MatcherResult } from './matcherHint';
-import type { Locator } from 'playwright-core';
-import type { ExpectResult } from 'playwright-core/lib/client/frame';
-import type { ExpectMatcherStateInternal } from './matchers';
+import type { MatcherResult } from './matcherHint'
+import type { Locator } from 'playwright-core'
+import type { ExpectResult } from 'playwright-core/lib/client/frame'
+import type { ExpectMatcherStateInternal } from './matchers'
 
 export async function toBeTruthy(
   this: ExpectMatcherStateInternal,
@@ -29,14 +29,20 @@ export async function toBeTruthy(
   expected: string,
   arg: string,
   query: (isNot: boolean, timeout: number) => Promise<ExpectResult>,
-  options: { timeout?: number } = {},
+  options: { timeout?: number } = {}
 ): Promise<MatcherResult<any, any>> {
-  expectTypes(locator, [receiverType], matcherName);
+  expectTypes(locator, [receiverType], matcherName)
 
-  const timeout = options.timeout ?? this.timeout;
+  const timeout = options.timeout ?? this.timeout
 
-  const { matches: pass, log, timedOut, received, errorMessage } = await query(!!this.isNot, timeout);
-  const receivedValue = received?.value;
+  const {
+    matches: pass,
+    log,
+    timedOut,
+    received,
+    errorMessage
+  } = await query(!!this.isNot, timeout)
+  const receivedValue = received?.value
 
   if (pass === !this.isNot) {
     return {
@@ -44,17 +50,17 @@ export async function toBeTruthy(
       message: () => '',
       pass,
       expected
-    };
+    }
   }
 
-  let printedReceived: string | undefined;
-  let printedExpected: string | undefined;
+  let printedReceived: string | undefined
+  let printedExpected: string | undefined
   if (pass) {
-    printedExpected = `Expected: not ${expected}`;
-    printedReceived = errorMessage ? '' : `Received: ${expected}`;
+    printedExpected = `Expected: not ${expected}`
+    printedReceived = errorMessage ? '' : `Received: ${expected}`
   } else {
-    printedExpected = `Expected: ${expected}`;
-    printedReceived = errorMessage ? '' : `Received: ${receivedValue}`;
+    printedExpected = `Expected: ${expected}`
+    printedReceived = errorMessage ? '' : `Received: ${receivedValue}`
   }
   const message = () => {
     return formatMatcherMessage(this.utils, {
@@ -68,9 +74,9 @@ export async function toBeTruthy(
       printedExpected,
       printedReceived,
       errorMessage,
-      log,
-    });
-  };
+      log
+    })
+  }
 
   return {
     message,
@@ -80,6 +86,6 @@ export async function toBeTruthy(
     expected,
     log,
     timeout: timedOut ? timeout : undefined,
-    ariaSnapshot: received?.ariaSnapshot,
-  };
+    ariaSnapshot: received?.ariaSnapshot
+  }
 }

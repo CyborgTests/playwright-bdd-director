@@ -14,137 +14,177 @@
   limitations under the License.
 */
 
-import './filmStrip.css';
-import type { Boundaries, Size } from './geometry';
-import * as React from 'react';
-import { useMeasure, upperBound } from '@web/uiUtils';
-import type { PageEntry } from '@isomorphic/trace/entries';
-import type { ActionTraceEventInContext } from '@isomorphic/trace/traceModel';
-import { renderAction } from './actionList';
-import type { Language } from '@isomorphic/locatorGenerators';
-import { useTraceModel } from './traceModelContext';
+import './filmStrip.css'
+import type { Boundaries, Size } from './geometry'
+import * as React from 'react'
+import { useMeasure, upperBound } from '@web/uiUtils'
+import type { PageEntry } from '@isomorphic/trace/entries'
+import type { ActionTraceEventInContext } from '@isomorphic/trace/traceModel'
+import { renderAction } from './actionList'
+import type { Language } from '@isomorphic/locatorGenerators'
+import { useTraceModel } from './traceModelContext'
 
 export type FilmStripPreviewPoint = {
-  x: number;
-  clientY: number;
-  action?: ActionTraceEventInContext;
-  sdkLanguage: Language;
-};
+  x: number
+  clientY: number
+  action?: ActionTraceEventInContext
+  sdkLanguage: Language
+}
 
-const tileSize = { width: 200, height: 45 };
-const frameMargin = 2.5;
-const rowHeight = tileSize.height + frameMargin * 2;
+const tileSize = { width: 200, height: 45 }
+const frameMargin = 2.5
+const rowHeight = tileSize.height + frameMargin * 2
 
 export const FilmStrip: React.FunctionComponent<{
-  boundaries: Boundaries,
-  previewPoint?: FilmStripPreviewPoint,
+  boundaries: Boundaries
+  previewPoint?: FilmStripPreviewPoint
 }> = ({ boundaries, previewPoint }) => {
-  const model = useTraceModel();
-  const [measure, ref] = useMeasure<HTMLDivElement>();
-  const lanesRef = React.useRef<HTMLDivElement>(null);
+  const model = useTraceModel()
+  const [measure, ref] = useMeasure<HTMLDivElement>()
+  const lanesRef = React.useRef<HTMLDivElement>(null)
 
-  let pageIndex = 0;
+  let pageIndex = 0
   if (lanesRef.current && previewPoint) {
-    const bounds = lanesRef.current.getBoundingClientRect();
-    pageIndex = ((previewPoint.clientY - bounds.top + lanesRef.current.scrollTop) / rowHeight) | 0;
+    const bounds = lanesRef.current.getBoundingClientRect()
+    pageIndex = ((previewPoint.clientY - bounds.top + lanesRef.current.scrollTop) / rowHeight) | 0
   }
 
-  const screencastFrames = model?.pages?.[pageIndex]?.screencastFrames;
-  let previewImage = undefined;
-  let previewSize = undefined;
+  const screencastFrames = model?.pages?.[pageIndex]?.screencastFrames
+  let previewImage = undefined
+  let previewSize = undefined
   if (previewPoint !== undefined && screencastFrames && screencastFrames.length) {
-    const previewTime = boundaries.minimum + (boundaries.maximum - boundaries.minimum) * previewPoint.x / measure.width;
-    previewImage = screencastFrames[upperBound(screencastFrames, previewTime, timeComparator) - 1];
+    const previewTime =
+      boundaries.minimum +
+      ((boundaries.maximum - boundaries.minimum) * previewPoint.x) / measure.width
+    previewImage = screencastFrames[upperBound(screencastFrames, previewTime, timeComparator) - 1]
     const fitInto = {
       width: Math.min(800, (window.innerWidth / 2) | 0),
-      height: Math.min(800, (window.innerHeight / 2) | 0),
-    };
-    previewSize = previewImage ? inscribe({ width: previewImage.width, height: previewImage.height }, fitInto) : undefined;
+      height: Math.min(800, (window.innerHeight / 2) | 0)
+    }
+    previewSize = previewImage
+      ? inscribe({ width: previewImage.width, height: previewImage.height }, fitInto)
+      : undefined
   }
 
-  return <div className='film-strip' ref={ref}>
-    <div className='film-strip-lanes' ref={lanesRef}>{
-      model?.pages.map((page, index) => page.screencastFrames.length ? <FilmStripLane
-        boundaries={boundaries}
-        page={page}
-        width={measure.width}
-        key={index}
-      /> : null)
-    }</div>
-    {model && previewPoint?.x !== undefined &&
-      <div className='film-strip-hover' style={{
-        top: measure.bottom + 5,
-        left: Math.min(previewPoint!.x, measure.width - (previewSize ? previewSize.width : 0) - 10),
-      }}>
-        {previewImage && previewSize && <div style={{ width: previewSize.width, height: previewSize.height }}>
-          <img src={model.createRelativeUrl(`sha1/${previewImage.sha1}`)} width={previewSize.width} height={previewSize.height} />
-        </div>}
-        {previewPoint.action && <div className='film-strip-hover-title'>{renderAction(previewPoint.action, previewPoint)}</div>}
+  return (
+    <div className="film-strip" ref={ref}>
+      <div className="film-strip-lanes" ref={lanesRef}>
+        {model?.pages.map((page, index) =>
+          page.screencastFrames.length ? (
+            <FilmStripLane boundaries={boundaries} page={page} width={measure.width} key={index} />
+          ) : null
+        )}
       </div>
-    }
-  </div>;
-};
+      {model && previewPoint?.x !== undefined && (
+        <div
+          className="film-strip-hover"
+          style={{
+            top: measure.bottom + 5,
+            left: Math.min(
+              previewPoint!.x,
+              measure.width - (previewSize ? previewSize.width : 0) - 10
+            )
+          }}
+        >
+          {previewImage && previewSize && (
+            <div style={{ width: previewSize.width, height: previewSize.height }}>
+              <img
+                src={model.createRelativeUrl(`sha1/${previewImage.sha1}`)}
+                width={previewSize.width}
+                height={previewSize.height}
+              />
+            </div>
+          )}
+          {previewPoint.action && (
+            <div className="film-strip-hover-title">
+              {renderAction(previewPoint.action, previewPoint)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const FilmStripLane: React.FunctionComponent<{
-  boundaries: Boundaries,
-  page: PageEntry,
-  width: number,
+  boundaries: Boundaries
+  page: PageEntry
+  width: number
 }> = ({ boundaries, page, width }) => {
-  const model = useTraceModel();
-  const viewportSize = { width: 0, height: 0 };
-  const screencastFrames = page.screencastFrames;
+  const model = useTraceModel()
+  const viewportSize = { width: 0, height: 0 }
+  const screencastFrames = page.screencastFrames
   for (const frame of screencastFrames) {
-    viewportSize.width = Math.max(viewportSize.width, frame.width);
-    viewportSize.height = Math.max(viewportSize.height, frame.height);
+    viewportSize.width = Math.max(viewportSize.width, frame.width)
+    viewportSize.height = Math.max(viewportSize.height, frame.height)
   }
-  const frameSize = inscribe(viewportSize!, tileSize);
-  const startTime = screencastFrames[0].timestamp;
-  const endTime = screencastFrames[screencastFrames.length - 1].timestamp;
+  const frameSize = inscribe(viewportSize!, tileSize)
+  const startTime = screencastFrames[0].timestamp
+  const endTime = screencastFrames[screencastFrames.length - 1].timestamp
 
-  const boundariesDuration = boundaries.maximum - boundaries.minimum;
-  const gapLeft = (startTime - boundaries.minimum) / boundariesDuration * width;
-  const gapRight = (boundaries.maximum - endTime) / boundariesDuration * width;
-  const effectiveWidth = (endTime - startTime) / boundariesDuration * width;
-  const frameCount = (effectiveWidth / (frameSize.width + 2 * frameMargin)) | 0;
-  const frameDuration = (endTime - startTime) / frameCount;
+  const boundariesDuration = boundaries.maximum - boundaries.minimum
+  const gapLeft = ((startTime - boundaries.minimum) / boundariesDuration) * width
+  const gapRight = ((boundaries.maximum - endTime) / boundariesDuration) * width
+  const effectiveWidth = ((endTime - startTime) / boundariesDuration) * width
+  const frameCount = (effectiveWidth / (frameSize.width + 2 * frameMargin)) | 0
+  const frameDuration = (endTime - startTime) / frameCount
 
-  const frames: React.JSX.Element[] = [];
+  const frames: React.JSX.Element[] = []
   for (let i = 0; startTime && frameDuration && i < frameCount; ++i) {
-    const time = startTime + frameDuration * i;
-    const index = upperBound(screencastFrames, time, timeComparator) - 1;
-    frames.push(<div className='film-strip-frame' key={i} style={{
-      width: frameSize.width,
-      height: frameSize.height,
-      backgroundImage: `url(${model?.createRelativeUrl('sha1/' + screencastFrames[index].sha1)})`,
-      backgroundSize: `${frameSize.width}px ${frameSize.height}px`,
-      margin: frameMargin,
-      marginRight: frameMargin,
-    }} />);
+    const time = startTime + frameDuration * i
+    const index = upperBound(screencastFrames, time, timeComparator) - 1
+    frames.push(
+      <div
+        className="film-strip-frame"
+        key={i}
+        style={{
+          width: frameSize.width,
+          height: frameSize.height,
+          backgroundImage: `url(${model?.createRelativeUrl('sha1/' + screencastFrames[index].sha1)})`,
+          backgroundSize: `${frameSize.width}px ${frameSize.height}px`,
+          margin: frameMargin,
+          marginRight: frameMargin
+        }}
+      />
+    )
   }
   // Always append last frame to show endgame.
-  frames.push(<div className='film-strip-frame' key={frames.length} style={{
-    width: frameSize.width,
-    height: frameSize.height,
-    backgroundImage: `url(${model?.createRelativeUrl('sha1/' + screencastFrames[screencastFrames.length - 1].sha1)})`,
-    backgroundSize: `${frameSize.width}px ${frameSize.height}px`,
-    margin: frameMargin,
-    marginRight: frameMargin,
-  }} />);
+  frames.push(
+    <div
+      className="film-strip-frame"
+      key={frames.length}
+      style={{
+        width: frameSize.width,
+        height: frameSize.height,
+        backgroundImage: `url(${model?.createRelativeUrl('sha1/' + screencastFrames[screencastFrames.length - 1].sha1)})`,
+        backgroundSize: `${frameSize.width}px ${frameSize.height}px`,
+        margin: frameMargin,
+        marginRight: frameMargin
+      }}
+    />
+  )
 
-  return <div className='film-strip-lane' style={{
-    marginLeft: gapLeft + 'px',
-    marginRight: gapRight + 'px',
-  }}>{frames}</div>;
-};
+  return (
+    <div
+      className="film-strip-lane"
+      style={{
+        marginLeft: gapLeft + 'px',
+        marginRight: gapRight + 'px'
+      }}
+    >
+      {frames}
+    </div>
+  )
+}
 
 function timeComparator(time: number, frame: { timestamp: number }): number {
-  return time - frame.timestamp;
+  return time - frame.timestamp
 }
 
 function inscribe(object: Size, area: Size): Size {
-  const scale = Math.max(object.width / area.width, object.height / area.height);
+  const scale = Math.max(object.width / area.width, object.height / area.height)
   return {
-    width: object.width / scale | 0,
-    height: object.height / scale | 0
-  };
+    width: (object.width / scale) | 0,
+    height: (object.height / scale) | 0
+  }
 }

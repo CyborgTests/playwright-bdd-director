@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { CallMetadata } from './callMetadata';
+import type { CallMetadata } from './callMetadata'
 
 // Most server operations are run inside a Progress instance, which is conceptually
 // similar to a cancellation token.
@@ -31,13 +31,13 @@ import type { CallMetadata } from './callMetadata';
 //     In this case, it is important that awaited method has no side effects, for example
 //     it is a read-only browser protocol call.
 export interface Progress {
-  timeout: number;
-  deadline: number;
-  disableTimeout(): void;
-  log(message: string): void;
-  race<T>(promise: Promise<T> | Promise<T>[]): Promise<T>;
-  wait(timeout: number): Promise<void>; // timeout = 0 here means "wait 0 ms", not forever.
-  signal: AbortSignal;
-  metadata: CallMetadata;
-  setAllowConcurrentOrNestedRaces(allow: boolean): void;
+  timeout: number
+  deadline: number
+  disableTimeout(): void
+  log(message: string): void
+  race<T>(promise: Promise<T> | Promise<T>[]): Promise<T>
+  wait(timeout: number): Promise<void> // timeout = 0 here means "wait 0 ms", not forever.
+  signal: AbortSignal
+  metadata: CallMetadata
+  setAllowConcurrentOrNestedRaces(allow: boolean): void
 }

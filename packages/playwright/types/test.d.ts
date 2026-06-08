@@ -15,39 +15,63 @@
  * limitations under the License.
  */
 
-import type { APIRequestContext, Browser, BrowserContext, BrowserContextOptions, Page, LaunchOptions, ViewportSize, Geolocation, HTTPCredentials, Locator, APIResponse, PageScreenshotOptions } from 'playwright-core';
-export * from 'playwright-core';
+import type {
+  APIRequestContext,
+  Browser,
+  BrowserContext,
+  BrowserContextOptions,
+  Page,
+  LaunchOptions,
+  ViewportSize,
+  Geolocation,
+  HTTPCredentials,
+  Locator,
+  APIResponse,
+  PageScreenshotOptions
+} from 'playwright-core'
+export * from 'playwright-core'
 
-export type BlobReporterOptions = { outputDir?: string, fileName?: string };
-export type ListReporterOptions = { printSteps?: boolean, printFailuresInline?: boolean };
-export type JUnitReporterOptions = { outputFile?: string, stripANSIControlSequences?: boolean, includeProjectInTestName?: boolean, includeRetries?: boolean };
-export type JsonReporterOptions = { outputFile?: string };
+export type BlobReporterOptions = { outputDir?: string; fileName?: string }
+export type ListReporterOptions = { printSteps?: boolean; printFailuresInline?: boolean }
+export type JUnitReporterOptions = {
+  outputFile?: string
+  stripANSIControlSequences?: boolean
+  includeProjectInTestName?: boolean
+  includeRetries?: boolean
+}
+export type JsonReporterOptions = { outputFile?: string }
 export type HtmlReporterOptions = {
-  outputFolder?: string;
-  open?: 'always' | 'never' | 'on-failure';
-  host?: string;
-  port?: number;
-  attachmentsBaseURL?: string;
-  title?: string;
-  noSnippets?: boolean;
-  noCopyPrompt?: boolean;
-  doNotInlineAssets?: boolean;
-};
+  outputFolder?: string
+  open?: 'always' | 'never' | 'on-failure'
+  host?: string
+  port?: number
+  attachmentsBaseURL?: string
+  title?: string
+  noSnippets?: boolean
+  noCopyPrompt?: boolean
+  doNotInlineAssets?: boolean
+}
 
 export type ReporterDescription = Readonly<
-  ['blob'] | ['blob', BlobReporterOptions] |
-  ['dot'] |
-  ['line'] |
-  ['list'] | ['list', ListReporterOptions] |
-  ['github'] |
-  ['junit'] | ['junit', JUnitReporterOptions] |
-  ['json'] | ['json', JsonReporterOptions] |
-  ['html'] | ['html', HtmlReporterOptions] |
-  ['null'] |
-  [string] | [string, any]
->;
+  | ['blob']
+  | ['blob', BlobReporterOptions]
+  | ['dot']
+  | ['line']
+  | ['list']
+  | ['list', ListReporterOptions]
+  | ['github']
+  | ['junit']
+  | ['junit', JUnitReporterOptions]
+  | ['json']
+  | ['json', JsonReporterOptions]
+  | ['html']
+  | ['html', HtmlReporterOptions]
+  | ['null']
+  | [string]
+  | [string, any]
+>
 
-type UseOptions<TestArgs, WorkerArgs> = Partial<WorkerArgs> & Partial<TestArgs>;
+type UseOptions<TestArgs, WorkerArgs> = Partial<WorkerArgs> & Partial<TestArgs>
 
 /**
  * Playwright Test supports running multiple test projects at the same time. This is useful for running tests in
@@ -128,7 +152,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.use](https://playwright.dev/docs/api/class-testconfig#test-config-use) to change this option for
    * all projects.
    */
-  use?: UseOptions<TestArgs, WorkerArgs>;
+  use?: UseOptions<TestArgs, WorkerArgs>
   /**
    * Launch a development web server (or multiple) before running tests in this project. See
    * [testConfig.webServer](https://playwright.dev/docs/api/class-testconfig#test-config-web-server) for the shape of
@@ -176,7 +200,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  webServer?: TestConfigWebServer | TestConfigWebServer[];
+  webServer?: TestConfigWebServer | TestConfigWebServer[]
   /**
    * List of projects that need to run before any test in this project runs. Dependencies can be useful for configuring
    * the global setup actions in a way that every action is in a form of a test. Passing `--no-deps` argument ignores
@@ -217,7 +241,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  dependencies?: Array<string>;
+  dependencies?: Array<string>
 
   /**
    * Configuration for the `expect` assertion library.
@@ -229,7 +253,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
     /**
      * Default timeout for async expect matchers in milliseconds, defaults to 5000ms.
      */
-    timeout?: number;
+    timeout?: number
 
     /**
      * Configuration for the
@@ -242,57 +266,57 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
        * `1` (lax). `"pixelmatch"` comparator computes color difference in
        * [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
        */
-      threshold?: number;
+      threshold?: number
 
       /**
        * an acceptable amount of pixels that could be different, unset by default.
        */
-      maxDiffPixels?: number;
+      maxDiffPixels?: number
 
       /**
        * an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by
        * default.
        */
-      maxDiffPixelRatio?: number;
+      maxDiffPixelRatio?: number
 
       /**
        * See [`animations`](https://playwright.dev/docs/api/class-page#page-screenshot-option-animations) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"disabled"`.
        */
-      animations?: "allow"|"disabled";
+      animations?: 'allow' | 'disabled'
 
       /**
        * See [`caret`](https://playwright.dev/docs/api/class-page#page-screenshot-option-caret) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"hide"`.
        */
-      caret?: "hide"|"initial";
+      caret?: 'hide' | 'initial'
 
       /**
        * See [`scale`](https://playwright.dev/docs/api/class-page#page-screenshot-option-scale) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"css"`.
        */
-      scale?: "css"|"device";
+      scale?: 'css' | 'device'
 
       /**
        * See [`style`](https://playwright.dev/docs/api/class-page#page-screenshot-option-style) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
        */
-      stylePath?: string|Array<string>;
+      stylePath?: string | Array<string>
 
       /**
        * A template controlling location of the screenshots. See
        * [testProject.snapshotPathTemplate](https://playwright.dev/docs/api/class-testproject#test-project-snapshot-path-template)
        * for details.
        */
-      pathTemplate?: string;
+      pathTemplate?: string
 
       /**
        * Default timeout for
        * [expect(page).toHaveScreenshot(name[, options])](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-screenshot-1)
        * in milliseconds, defaults to the global expect timeout. Setting to `0` disables the timeout.
        */
-      timeout?: number;
-    };
+      timeout?: number
+    }
 
     /**
      * Configuration for the
@@ -305,15 +329,15 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
        * [testProject.snapshotPathTemplate](https://playwright.dev/docs/api/class-testproject#test-project-snapshot-path-template)
        * for details.
        */
-      pathTemplate?: string;
+      pathTemplate?: string
 
       /**
        * Controls how children of the snapshot root are matched against the actual accessibility tree. This is equivalent to
        * adding a `/children` property at the top of every aria snapshot template. Individual snapshots can override this by
        * including an explicit `/children` property.
        */
-      children?: "contain"|"equal"|"deep-equal";
-    };
+      children?: 'contain' | 'equal' | 'deep-equal'
+    }
 
     /**
      * Configuration for the
@@ -326,19 +350,19 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
        * `1` (lax). `"pixelmatch"` comparator computes color difference in
        * [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
        */
-      threshold?: number;
+      threshold?: number
 
       /**
        * an acceptable amount of pixels that could be different, unset by default.
        */
-      maxDiffPixels?: number;
+      maxDiffPixels?: number
 
       /**
        * an acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by
        * default.
        */
-      maxDiffPixelRatio?: number;
-    };
+      maxDiffPixelRatio?: number
+    }
 
     /**
      * Configuration for the [expect(value).toPass()](https://playwright.dev/docs/test-assertions) method.
@@ -347,14 +371,14 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
       /**
        * timeout for toPass method in milliseconds.
        */
-      timeout?: number;
+      timeout?: number
 
       /**
        * probe intervals for toPass method in milliseconds.
        */
-      intervals?: Array<number>;
-    };
-  };
+      intervals?: Array<number>
+    }
+  }
 
   /**
    * Playwright Test runs tests in parallel. In order to achieve that, it runs several worker processes that run at the
@@ -363,7 +387,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    *
    * You can configure entire test project to concurrently run all tests in all files using this option.
    */
-  fullyParallel?: boolean;
+  fullyParallel?: boolean
 
   /**
    * Filter to only run tests with a title matching one of the patterns. For example, passing `grep: /cart/` should only
@@ -374,7 +398,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    *
    * `grep` option is also useful for [tagging tests](https://playwright.dev/docs/test-annotations#tag-tests).
    */
-  grep?: RegExp|Array<RegExp>;
+  grep?: RegExp | Array<RegExp>
 
   /**
    * Filter to only run tests with a title **not** matching any of the patterns. This is the opposite of
@@ -383,7 +407,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    *
    * `grepInvert` option is also useful for [tagging tests](https://playwright.dev/docs/test-annotations#tag-tests).
    */
-  grepInvert?: RegExp|Array<RegExp>;
+  grepInvert?: RegExp | Array<RegExp>
 
   /**
    * Whether to skip snapshot expectations, such as `expect(value).toMatchSnapshot()` and `await
@@ -418,12 +442,12 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  ignoreSnapshots?: boolean;
+  ignoreSnapshots?: boolean
 
   /**
    * Metadata that will be put directly to the test report serialized as JSON.
    */
-  metadata?: Metadata;
+  metadata?: Metadata
 
   /**
    * Project name is visible in the report and during test execution.
@@ -432,7 +456,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * your configuration.
    *
    */
-  name?: string;
+  name?: string
 
   /**
    * The output directory for files created during test execution. Defaults to `<package.json-directory>/test-results`.
@@ -460,7 +484,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.outputDir](https://playwright.dev/docs/api/class-testconfig#test-config-output-dir) to change this
    * option for all projects.
    */
-  outputDir?: string;
+  outputDir?: string
 
   /**
    * The number of times to repeat each test, useful for debugging flaky tests.
@@ -468,7 +492,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.repeatEach](https://playwright.dev/docs/api/class-testconfig#test-config-repeat-each) to change
    * this option for all projects.
    */
-  repeatEach?: number;
+  repeatEach?: number
 
   /**
    * Whether to skip entries from `.gitignore` when searching for test files. By default, if neither
@@ -477,7 +501,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * specified, Playwright will ignore any test files matching `.gitignore` entries. This option allows to override that
    * behavior.
    */
-  respectGitIgnore?: boolean;
+  respectGitIgnore?: boolean
 
   /**
    * The maximum number of retry attempts given to failed tests. Learn more about
@@ -489,7 +513,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.retries](https://playwright.dev/docs/api/class-testconfig#test-config-retries) to change this
    * option for all projects.
    */
-  retries?: number;
+  retries?: number
 
   /**
    * The base directory, relative to the config file, for snapshot files created with `toMatchSnapshot`. Defaults to
@@ -503,7 +527,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * `'snapshots'`, the [testInfo.snapshotDir](https://playwright.dev/docs/api/class-testinfo#test-info-snapshot-dir)
    * would resolve to `snapshots/a.spec.js-snapshots`.
    */
-  snapshotDir?: string;
+  snapshotDir?: string
 
   /**
    * This option configures a template controlling location of snapshots generated by
@@ -619,7 +643,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * 1. Since `snapshotPathTemplate` resolves to relative path, it will be resolved relative to `configDir`.
    * 1. Forward slashes `"/"` can be used as path separators on any platform.
    */
-  snapshotPathTemplate?: string;
+  snapshotPathTemplate?: string
 
   /**
    * Name of a project that needs to run after this and all dependent projects have finished. Teardown is useful to
@@ -668,7 +692,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  teardown?: string;
+  teardown?: string
 
   /**
    * Directory that will be recursively scanned for test files. Defaults to the directory of the configuration file.
@@ -718,7 +742,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.testDir](https://playwright.dev/docs/api/class-testconfig#test-config-test-dir) to change this
    * option for all projects.
    */
-  testDir?: string;
+  testDir?: string
 
   /**
    * Files matching one of these patterns are not executed as test files. Matching is performed against the absolute
@@ -729,7 +753,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.testIgnore](https://playwright.dev/docs/api/class-testconfig#test-config-test-ignore) to change
    * this option for all projects.
    */
-  testIgnore?: string|RegExp|Array<string|RegExp>;
+  testIgnore?: string | RegExp | Array<string | RegExp>
 
   /**
    * Only the files matching one of these patterns are executed as test files. Matching is performed against the
@@ -742,7 +766,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.testMatch](https://playwright.dev/docs/api/class-testconfig#test-config-test-match) to change this
    * option for all projects.
    */
-  testMatch?: string|RegExp|Array<string|RegExp>;
+  testMatch?: string | RegExp | Array<string | RegExp>
 
   /**
    * Timeout for each test in milliseconds. Defaults to 30 seconds.
@@ -755,7 +779,7 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * Use [testConfig.timeout](https://playwright.dev/docs/api/class-testconfig#test-config-timeout) to change this
    * option for all projects.
    */
-  timeout?: number;
+  timeout?: number
 
   /**
    * The maximum number of concurrent worker processes to use for parallelizing tests from this project. Can also be set
@@ -796,11 +820,13 @@ interface TestProject<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  workers?: number|string;
+  workers?: number | string
 }
 
-export interface Project<TestArgs = {}, WorkerArgs = {}> extends TestProject<TestArgs, WorkerArgs> {
-}
+export interface Project<TestArgs = {}, WorkerArgs = {}> extends TestProject<
+  TestArgs,
+  WorkerArgs
+> {}
 
 /**
  * Runtime representation of the test project configuration. It is accessible in the tests via
@@ -813,84 +839,84 @@ export interface FullProject<TestArgs = {}, WorkerArgs = {}> {
   /**
    * See [testProject.use](https://playwright.dev/docs/api/class-testproject#test-project-use).
    */
-  use: UseOptions<PlaywrightTestOptions & TestArgs, PlaywrightWorkerOptions & WorkerArgs>;
+  use: UseOptions<PlaywrightTestOptions & TestArgs, PlaywrightWorkerOptions & WorkerArgs>
   /**
    * See [testProject.dependencies](https://playwright.dev/docs/api/class-testproject#test-project-dependencies).
    */
-  dependencies: Array<string>;
+  dependencies: Array<string>
 
   /**
    * See [testProject.grep](https://playwright.dev/docs/api/class-testproject#test-project-grep).
    */
-  grep: RegExp|Array<RegExp>;
+  grep: RegExp | Array<RegExp>
 
   /**
    * See [testProject.grepInvert](https://playwright.dev/docs/api/class-testproject#test-project-grep-invert).
    */
-  grepInvert: null|RegExp|Array<RegExp>;
+  grepInvert: null | RegExp | Array<RegExp>
 
   /**
    * See [testProject.ignoreSnapshots](https://playwright.dev/docs/api/class-testproject#test-project-ignore-snapshots).
    */
-  ignoreSnapshots: boolean;
+  ignoreSnapshots: boolean
 
   /**
    * See [testProject.metadata](https://playwright.dev/docs/api/class-testproject#test-project-metadata).
    */
-  metadata: Metadata;
+  metadata: Metadata
 
   /**
    * See [testProject.name](https://playwright.dev/docs/api/class-testproject#test-project-name).
    */
-  name: string;
+  name: string
 
   /**
    * See [testProject.outputDir](https://playwright.dev/docs/api/class-testproject#test-project-output-dir).
    */
-  outputDir: string;
+  outputDir: string
 
   /**
    * See [testProject.repeatEach](https://playwright.dev/docs/api/class-testproject#test-project-repeat-each).
    */
-  repeatEach: number;
+  repeatEach: number
 
   /**
    * See [testProject.retries](https://playwright.dev/docs/api/class-testproject#test-project-retries).
    */
-  retries: number;
+  retries: number
 
   /**
    * See [testProject.snapshotDir](https://playwright.dev/docs/api/class-testproject#test-project-snapshot-dir).
    */
-  snapshotDir: string;
+  snapshotDir: string
 
   /**
    * See [testProject.teardown](https://playwright.dev/docs/api/class-testproject#test-project-teardown).
    */
-  teardown?: string;
+  teardown?: string
 
   /**
    * See [testProject.testDir](https://playwright.dev/docs/api/class-testproject#test-project-test-dir).
    */
-  testDir: string;
+  testDir: string
 
   /**
    * See [testProject.testIgnore](https://playwright.dev/docs/api/class-testproject#test-project-test-ignore).
    */
-  testIgnore: string|RegExp|Array<string|RegExp>;
+  testIgnore: string | RegExp | Array<string | RegExp>
 
   /**
    * See [testProject.testMatch](https://playwright.dev/docs/api/class-testproject#test-project-test-match).
    */
-  testMatch: string|RegExp|Array<string|RegExp>;
+  testMatch: string | RegExp | Array<string | RegExp>
 
   /**
    * See [testProject.timeout](https://playwright.dev/docs/api/class-testproject#test-project-timeout).
    */
-  timeout: number;
+  timeout: number
 }
 
-type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never });
+type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never })
 
 /**
  * Playwright Test provides many options to configure how your tests are collected and executed, for example `timeout`
@@ -936,7 +962,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  projects?: Project<TestArgs, WorkerArgs>[];
+  projects?: Project<TestArgs, WorkerArgs>[]
   /**
    * The list of reporters to use. Each reporter can be:
    * - A builtin reporter name like `'list'` or `'json'`.
@@ -961,7 +987,9 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  reporter?: LiteralUnion<'list'|'dot'|'line'|'github'|'json'|'junit'|'null'|'html', string> | ReporterDescription[];
+  reporter?:
+    | LiteralUnion<'list' | 'dot' | 'line' | 'github' | 'json' | 'junit' | 'null' | 'html', string>
+    | ReporterDescription[]
   /**
    * Global options for all tests, for example
    * [testOptions.browserName](https://playwright.dev/docs/api/class-testoptions#test-options-browser-name). Learn more
@@ -982,7 +1010,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  use?: UseOptions<TestArgs, WorkerArgs>;
+  use?: UseOptions<TestArgs, WorkerArgs>
   /**
    * Launch a development web server (or multiple) during the tests.
    *
@@ -1088,7 +1116,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  webServer?: TestConfigWebServer | TestConfigWebServer[];
+  webServer?: TestConfigWebServer | TestConfigWebServer[]
   /**
    * Playwright transpiler configuration.
    *
@@ -1111,8 +1139,8 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
      * Paths to exclude from the transpilation expressed as a list of glob patterns. Typically heavy JS bundles that your
      * test uses are listed here.
      */
-    external?: Array<string>;
-  };
+    external?: Array<string>
+  }
 
   /**
    * These settings control whether git information is captured and stored in the config
@@ -1144,13 +1172,13 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
     /**
      * Whether to capture commit and pull request information such as hash, author, timestamp.
      */
-    commit?: boolean;
+    commit?: boolean
 
     /**
      * Whether to capture commit diff.
      */
-    diff?: boolean;
-  };
+    diff?: boolean
+  }
 
   /**
    * Configuration for the `expect` assertion library. Learn more about [various timeouts](https://playwright.dev/docs/test-timeouts).
@@ -1176,7 +1204,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
     /**
      * Default timeout for async expect matchers in milliseconds, defaults to 5000ms.
      */
-    timeout?: number;
+    timeout?: number
 
     /**
      * Configuration for the
@@ -1188,51 +1216,51 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
        * See [`animations`](https://playwright.dev/docs/api/class-page#page-screenshot-option-animations) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"disabled"`.
        */
-      animations?: "allow"|"disabled";
+      animations?: 'allow' | 'disabled'
 
       /**
        * See [`caret`](https://playwright.dev/docs/api/class-page#page-screenshot-option-caret) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"hide"`.
        */
-      caret?: "hide"|"initial";
+      caret?: 'hide' | 'initial'
 
       /**
        * An acceptable amount of pixels that could be different, unset by default.
        */
-      maxDiffPixels?: number;
+      maxDiffPixels?: number
 
       /**
        * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by
        * default.
        */
-      maxDiffPixelRatio?: number;
+      maxDiffPixelRatio?: number
 
       /**
        * See [`scale`](https://playwright.dev/docs/api/class-page#page-screenshot-option-scale) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot). Defaults to `"css"`.
        */
-      scale?: "css"|"device";
+      scale?: 'css' | 'device'
 
       /**
        * See [`style`](https://playwright.dev/docs/api/class-page#page-screenshot-option-style) in
        * [page.screenshot([options])](https://playwright.dev/docs/api/class-page#page-screenshot).
        */
-      stylePath?: string|Array<string>;
+      stylePath?: string | Array<string>
 
       /**
        * An acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and
        * `1` (lax). `"pixelmatch"` comparator computes color difference in
        * [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
        */
-      threshold?: number;
+      threshold?: number
 
       /**
        * A template controlling location of the screenshots. See
        * [testConfig.snapshotPathTemplate](https://playwright.dev/docs/api/class-testconfig#test-config-snapshot-path-template)
        * for details.
        */
-      pathTemplate?: string;
-    };
+      pathTemplate?: string
+    }
 
     /**
      * Configuration for the
@@ -1245,15 +1273,15 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
        * [testConfig.snapshotPathTemplate](https://playwright.dev/docs/api/class-testconfig#test-config-snapshot-path-template)
        * for details.
        */
-      pathTemplate?: string;
+      pathTemplate?: string
 
       /**
        * Controls how children of the snapshot root are matched against the actual accessibility tree. This is equivalent to
        * adding a `/children` property at the top of every aria snapshot template. Individual snapshots can override this by
        * including an explicit `/children` property.
        */
-      children?: "contain"|"equal"|"deep-equal";
-    };
+      children?: 'contain' | 'equal' | 'deep-equal'
+    }
 
     /**
      * Configuration for the
@@ -1264,21 +1292,21 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
       /**
        * An acceptable amount of pixels that could be different, unset by default.
        */
-      maxDiffPixels?: number;
+      maxDiffPixels?: number
 
       /**
        * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1` , unset by
        * default.
        */
-      maxDiffPixelRatio?: number;
+      maxDiffPixelRatio?: number
 
       /**
        * An acceptable perceived color difference between the same pixel in compared images, ranging from `0` (strict) and
        * `1` (lax). `"pixelmatch"` comparator computes color difference in
        * [YIQ color space](https://en.wikipedia.org/wiki/YIQ) and defaults `threshold` value to `0.2`.
        */
-      threshold?: number;
-    };
+      threshold?: number
+    }
 
     /**
      * Configuration for the [expect(value).toPass()](https://playwright.dev/docs/test-assertions#expecttopass) method.
@@ -1287,14 +1315,14 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
       /**
        * Probe intervals for toPass method in milliseconds.
        */
-      intervals?: Array<number>;
+      intervals?: Array<number>
 
       /**
        * Timeout for toPass method in milliseconds.
        */
-      timeout?: number;
-    };
-  };
+      timeout?: number
+    }
+  }
 
   /**
    * Whether to exit with an error if any tests are marked as flaky. Useful on CI.
@@ -1313,7 +1341,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  failOnFlakyTests?: boolean;
+  failOnFlakyTests?: boolean
 
   /**
    * Whether to exit with an error if any tests or groups are marked as
@@ -1333,7 +1361,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  forbidOnly?: boolean;
+  forbidOnly?: boolean
 
   /**
    * Playwright Test runs tests in parallel. In order to achieve that, it runs several worker processes that run at the
@@ -1354,7 +1382,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  fullyParallel?: boolean;
+  fullyParallel?: boolean
 
   /**
    * Path to the global setup file. This file will be required and run before all the tests. It must export a single
@@ -1375,7 +1403,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  globalSetup?: string|Array<string>;
+  globalSetup?: string | Array<string>
 
   /**
    * Path to the global teardown file. This file will be required and run after all the tests. It must export a single
@@ -1397,7 +1425,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  globalTeardown?: string|Array<string>;
+  globalTeardown?: string | Array<string>
 
   /**
    * Maximum time in milliseconds the whole test suite can run. Zero timeout (default) disables this behavior. Useful on
@@ -1416,7 +1444,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  globalTimeout?: number;
+  globalTimeout?: number
 
   /**
    * Filter to only run tests with a title matching one of the patterns. For example, passing `grep: /cart/` should only
@@ -1439,7 +1467,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  grep?: RegExp|Array<RegExp>;
+  grep?: RegExp | Array<RegExp>
 
   /**
    * Filter to only run tests with a title **not** matching one of the patterns. This is the opposite of
@@ -1460,7 +1488,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  grepInvert?: RegExp|Array<RegExp>;
+  grepInvert?: RegExp | Array<RegExp>
 
   /**
    * Whether to skip snapshot expectations, such as `expect(value).toMatchSnapshot()` and `await
@@ -1478,7 +1506,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  ignoreSnapshots?: boolean;
+  ignoreSnapshots?: boolean
 
   /**
    * The maximum number of test failures for the whole test suite run. After reaching this number, testing will stop and
@@ -1498,7 +1526,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  maxFailures?: number;
+  maxFailures?: number
 
   /**
    * Metadata contains key-value pairs to be included in the report. For example, the JSON report will include metadata
@@ -1516,7 +1544,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  metadata?: Metadata;
+  metadata?: Metadata
 
   /**
    * Config name is visible in the report and during test execution, unless overridden by
@@ -1534,7 +1562,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  name?: string;
+  name?: string
 
   /**
    * The output directory for files created during test execution. Defaults to `<package.json-directory>/test-results`.
@@ -1573,7 +1601,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  outputDir?: string;
+  outputDir?: string
 
   /**
    * Whether to preserve test output in the
@@ -1595,7 +1623,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  preserveOutput?: "always"|"never"|"failures-only";
+  preserveOutput?: 'always' | 'never' | 'failures-only'
 
   /**
    * Whether to suppress stdio and stderr output from the tests.
@@ -1612,7 +1640,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  quiet?: boolean;
+  quiet?: boolean
 
   /**
    * The number of times to repeat each test, useful for debugging flaky tests.
@@ -1629,7 +1657,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  repeatEach?: number;
+  repeatEach?: number
 
   /**
    * Whether to report slow test files. Pass `null` to disable this feature.
@@ -1650,17 +1678,17 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * Test files that took more than `threshold` milliseconds are considered slow, and the slowest ones are reported, no
    * more than `max` number of them. Passing zero as `max` reports all test files that exceed the threshold.
    */
-  reportSlowTests?: null|{
+  reportSlowTests?: null | {
     /**
      * The maximum number of slow test files to report. Defaults to `5`.
      */
-    max: number;
+    max: number
 
     /**
      * Test file duration in milliseconds that is considered slow. Defaults to 5 minutes.
      */
-    threshold: number;
-  };
+    threshold: number
+  }
 
   /**
    * Whether to skip entries from `.gitignore` when searching for test files. By default, if neither
@@ -1668,7 +1696,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * [testProject.testDir](https://playwright.dev/docs/api/class-testproject#test-project-test-dir) are explicitly
    * specified, Playwright will ignore any test files matching `.gitignore` entries.
    */
-  respectGitIgnore?: boolean;
+  respectGitIgnore?: boolean
 
   /**
    * The maximum number of retry attempts given to failed tests. By default failing tests are not retried. Learn more
@@ -1686,7 +1714,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  retries?: number;
+  retries?: number
 
   /**
    * Shard tests and execute only the selected shard. Specify in the one-based form like `{ total: 5, current: 2 }`.
@@ -1705,17 +1733,17 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  shard?: null|{
+  shard?: null | {
     /**
      * The index of the shard to execute, one-based.
      */
-    current: number;
+    current: number
 
     /**
      * The total number of shards.
      */
-    total: number;
-  };
+    total: number
+  }
 
   /**
    * **NOTE** Use
@@ -1746,7 +1774,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * `'snapshots'`, the [testInfo.snapshotDir](https://playwright.dev/docs/api/class-testinfo#test-info-snapshot-dir)
    * would resolve to `snapshots/a.spec.js-snapshots`.
    */
-  snapshotDir?: string;
+  snapshotDir?: string
 
   /**
    * This option configures a template controlling location of snapshots generated by
@@ -1862,7 +1890,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * 1. Since `snapshotPathTemplate` resolves to relative path, it will be resolved relative to `configDir`.
    * 1. Forward slashes `"/"` can be used as path separators on any platform.
    */
-  snapshotPathTemplate?: string;
+  snapshotPathTemplate?: string
 
   /**
    * Tag or tags prepended to each test in the report. Useful for tagging your test run to differentiate between
@@ -1882,7 +1910,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  tag?: string|Array<string>;
+  tag?: string | Array<string>
 
   /**
    * Directory that will be recursively scanned for test files. Defaults to the directory of the configuration file.
@@ -1899,7 +1927,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  testDir?: string;
+  testDir?: string
 
   /**
    * Files matching one of these patterns are not executed as test files. Matching is performed against the absolute
@@ -1919,7 +1947,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  testIgnore?: string|RegExp|Array<string|RegExp>;
+  testIgnore?: string | RegExp | Array<string | RegExp>
 
   /**
    * Only the files matching one of these patterns are executed as test files. Matching is performed against the
@@ -1941,7 +1969,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  testMatch?: string|RegExp|Array<string|RegExp>;
+  testMatch?: string | RegExp | Array<string | RegExp>
 
   /**
    * Timeout for each test in milliseconds. Defaults to 30 seconds.
@@ -1962,7 +1990,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  timeout?: number;
+  timeout?: number
 
   /**
    * Path to a single `tsconfig` applicable to all imported files. By default, `tsconfig` for each imported file is
@@ -1981,7 +2009,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  tsconfig?: string;
+  tsconfig?: string
 
   /**
    * Whether to update expected snapshots with the actual results produced by the test run. Defaults to `'missing'`.
@@ -2006,7 +2034,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  updateSnapshots?: "all"|"changed"|"missing"|"none";
+  updateSnapshots?: 'all' | 'changed' | 'missing' | 'none'
 
   /**
    * Defines how to update snapshots in the source code.
@@ -2015,7 +2043,7 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    *   as if they are resolving a merge conflict in the IDE.
    * - `'overwrite'` - Overwrite the source code with the new snapshot values.
    */
-  updateSourceMethod?: "overwrite"|"3way"|"patch";
+  updateSourceMethod?: 'overwrite' | '3way' | 'patch'
 
   /**
    * The maximum number of concurrent worker processes to use for parallelizing tests. Can also be set as percentage of
@@ -2039,13 +2067,12 @@ interface TestConfig<TestArgs = {}, WorkerArgs = {}> {
    * ```
    *
    */
-  workers?: number|string;
+  workers?: number | string
 }
 
-export interface Config<TestArgs = {}, WorkerArgs = {}> extends TestConfig<TestArgs, WorkerArgs> {
-}
+export interface Config<TestArgs = {}, WorkerArgs = {}> extends TestConfig<TestArgs, WorkerArgs> {}
 
-export type Metadata = { [key: string]: any };
+export type Metadata = { [key: string]: any }
 
 /**
  * Resolved configuration which is accessible via
@@ -2057,149 +2084,149 @@ export interface FullConfig<TestArgs = {}, WorkerArgs = {}> {
   /**
    * List of resolved projects.
    */
-  projects: FullProject<TestArgs, WorkerArgs>[];
+  projects: FullProject<TestArgs, WorkerArgs>[]
   /**
    * See [testConfig.reporter](https://playwright.dev/docs/api/class-testconfig#test-config-reporter).
    */
-  reporter: ReporterDescription[];
+  reporter: ReporterDescription[]
   /**
    * See [testConfig.webServer](https://playwright.dev/docs/api/class-testconfig#test-config-web-server).
    */
-  webServer: TestConfigWebServer | null;
+  webServer: TestConfigWebServer | null
   /**
    * Snapshot of [`process.argv`](https://nodejs.org/api/process.html#processargv) captured in the runner process.
    * Useful for reading custom command-line arguments — for example, args supplied after the `--` separator (`npx
    * playwright test -- --build-path=./out`). Playwright does not parse these; consumers are responsible for slicing and
    * interpreting them with any argument-parsing library.
    */
-  argv: Array<string>;
+  argv: Array<string>
 
   /**
    * Path to the configuration file used to run the tests. The value is an empty string if no config file was used.
    */
-  configFile?: string;
+  configFile?: string
 
   /**
    * See
    * [testConfig.failOnFlakyTests](https://playwright.dev/docs/api/class-testconfig#test-config-fail-on-flaky-tests).
    */
-  failOnFlakyTests: boolean;
+  failOnFlakyTests: boolean
 
   /**
    * See [testConfig.forbidOnly](https://playwright.dev/docs/api/class-testconfig#test-config-forbid-only).
    */
-  forbidOnly: boolean;
+  forbidOnly: boolean
 
   /**
    * See [testConfig.fullyParallel](https://playwright.dev/docs/api/class-testconfig#test-config-fully-parallel).
    */
-  fullyParallel: boolean;
+  fullyParallel: boolean
 
   /**
    * See [testConfig.globalSetup](https://playwright.dev/docs/api/class-testconfig#test-config-global-setup).
    */
-  globalSetup: null|string;
+  globalSetup: null | string
 
   /**
    * See [testConfig.globalTeardown](https://playwright.dev/docs/api/class-testconfig#test-config-global-teardown).
    */
-  globalTeardown: null|string;
+  globalTeardown: null | string
 
   /**
    * See [testConfig.globalTimeout](https://playwright.dev/docs/api/class-testconfig#test-config-global-timeout).
    */
-  globalTimeout: number;
+  globalTimeout: number
 
   /**
    * See [testConfig.grep](https://playwright.dev/docs/api/class-testconfig#test-config-grep).
    */
-  grep: RegExp|Array<RegExp>;
+  grep: RegExp | Array<RegExp>
 
   /**
    * See [testConfig.grepInvert](https://playwright.dev/docs/api/class-testconfig#test-config-grep-invert).
    */
-  grepInvert: null|RegExp|Array<RegExp>;
+  grepInvert: null | RegExp | Array<RegExp>
 
   /**
    * See [testConfig.maxFailures](https://playwright.dev/docs/api/class-testconfig#test-config-max-failures).
    */
-  maxFailures: number;
+  maxFailures: number
 
   /**
    * See [testConfig.metadata](https://playwright.dev/docs/api/class-testconfig#test-config-metadata).
    */
-  metadata: Metadata;
+  metadata: Metadata
 
   /**
    * See [testConfig.preserveOutput](https://playwright.dev/docs/api/class-testconfig#test-config-preserve-output).
    */
-  preserveOutput: "always"|"never"|"failures-only";
+  preserveOutput: 'always' | 'never' | 'failures-only'
 
   /**
    * See [testConfig.quiet](https://playwright.dev/docs/api/class-testconfig#test-config-quiet).
    */
-  quiet: boolean;
+  quiet: boolean
 
   /**
    * See [testConfig.reportSlowTests](https://playwright.dev/docs/api/class-testconfig#test-config-report-slow-tests).
    */
-  reportSlowTests: null|{
+  reportSlowTests: null | {
     /**
      * The maximum number of slow test files to report.
      */
-    max: number;
+    max: number
 
     /**
      * Test file duration in milliseconds that is considered slow.
      */
-    threshold: number;
-  };
+    threshold: number
+  }
 
   /**
    * Base directory for all relative paths used in the reporters.
    */
-  rootDir: string;
+  rootDir: string
 
   /**
    * See [testConfig.shard](https://playwright.dev/docs/api/class-testconfig#test-config-shard).
    */
-  shard: null|{
+  shard: null | {
     /**
      * The total number of shards.
      */
-    total: number;
+    total: number
 
     /**
      * The index of the shard to execute, one-based.
      */
-    current: number;
-  };
+    current: number
+  }
 
   /**
    * Resolved global tags. See [testConfig.tag](https://playwright.dev/docs/api/class-testconfig#test-config-tag).
    */
-  tags: Array<string>;
+  tags: Array<string>
 
   /**
    * See [testConfig.updateSnapshots](https://playwright.dev/docs/api/class-testconfig#test-config-update-snapshots).
    */
-  updateSnapshots: "all"|"changed"|"missing"|"none";
+  updateSnapshots: 'all' | 'changed' | 'missing' | 'none'
 
   /**
    * See
    * [testConfig.updateSourceMethod](https://playwright.dev/docs/api/class-testconfig#test-config-update-source-method).
    */
-  updateSourceMethod: "overwrite"|"3way"|"patch";
+  updateSourceMethod: 'overwrite' | '3way' | 'patch'
 
   /**
    * Playwright version.
    */
-  version: string;
+  version: string
 
   /**
    * See [testConfig.workers](https://playwright.dev/docs/api/class-testconfig#test-config-workers).
    */
-  workers: number;
+  workers: number
 }
 
 /**
@@ -2260,7 +2287,7 @@ export interface TestInfo {
    * name segments are not supported.
    * @param options
    */
-  snapshotPath(...name: ReadonlyArray<string>): string;
+  snapshotPath(...name: ReadonlyArray<string>): string
   /**
    * Returns a path to a snapshot file with the given `name`. Pass
    * [`kind`](https://playwright.dev/docs/api/class-testinfo#test-info-snapshot-path-option-kind) to obtain a specific
@@ -2299,7 +2326,7 @@ export interface TestInfo {
    * name segments are not supported.
    * @param options
    */
-  snapshotPath(name: string, options: { kind: 'snapshot' | 'screenshot' | 'aria' }): string;
+  snapshotPath(name: string, options: { kind: 'snapshot' | 'screenshot' | 'aria' }): string
   /**
    * Attach a value or a file from disk to the current test. Some reporters show test attachments. Either
    * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path) or
@@ -2337,27 +2364,30 @@ export interface TestInfo {
    * @param name Attachment name. The name will also be sanitized and used as the prefix of file name when saving to disk.
    * @param options
    */
-  attach(name: string, options?: {
-    /**
-     * Attachment body. Mutually exclusive with
-     * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path).
-     */
-    body?: string|Buffer;
+  attach(
+    name: string,
+    options?: {
+      /**
+       * Attachment body. Mutually exclusive with
+       * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path).
+       */
+      body?: string | Buffer
 
-    /**
-     * Content type of this attachment to properly present in the report, for example `'application/json'` or
-     * `'image/png'`. If omitted, content type is inferred based on the
-     * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path), or defaults to `text/plain`
-     * for [string] attachments and `application/octet-stream` for [Buffer] attachments.
-     */
-    contentType?: string;
+      /**
+       * Content type of this attachment to properly present in the report, for example `'application/json'` or
+       * `'image/png'`. If omitted, content type is inferred based on the
+       * [`path`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-path), or defaults to `text/plain`
+       * for [string] attachments and `application/octet-stream` for [Buffer] attachments.
+       */
+      contentType?: string
 
-    /**
-     * Path on the filesystem to the attached file. Mutually exclusive with
-     * [`body`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-body).
-     */
-    path?: string;
-  }): Promise<void>;
+      /**
+       * Path on the filesystem to the attached file. Mutually exclusive with
+       * [`body`](https://playwright.dev/docs/api/class-testinfo#test-info-attach-option-body).
+       */
+      path?: string
+    }
+  ): Promise<void>
 
   /**
    * Marks the currently running test as "should fail". Playwright Test runs this test and ensures that it is actually
@@ -2365,7 +2395,7 @@ export interface TestInfo {
    * fixed. This is similar to
    * [test.fail([title, details, body, condition, callback, description])](https://playwright.dev/docs/api/class-test#test-fail).
    */
-  fail(): void;
+  fail(): void
 
   /**
    * Conditionally mark the currently running test as "should fail" with an optional description. This is similar to
@@ -2373,13 +2403,13 @@ export interface TestInfo {
    * @param condition Test is marked as "should fail" when the condition is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fail(condition: boolean, description?: string): void;
+  fail(condition: boolean, description?: string): void
 
   /**
    * Mark a test as "fixme", with the intention to fix it. Test is immediately aborted. This is similar to
    * [test.fixme([title, details, body, condition, callback, description])](https://playwright.dev/docs/api/class-test#test-fixme).
    */
-  fixme(): void;
+  fixme(): void
 
   /**
    * Conditionally mark the currently running test as "fixme" with an optional description. This is similar to
@@ -2387,7 +2417,7 @@ export interface TestInfo {
    * @param condition Test is marked as "fixme" when the condition is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(condition: boolean, description?: string): void;
+  fixme(condition: boolean, description?: string): void
 
   /**
    * Returns a path inside the [testInfo.outputDir](https://playwright.dev/docs/api/class-testinfo#test-info-output-dir)
@@ -2411,7 +2441,7 @@ export interface TestInfo {
    * (i.e. `test-results/a-test-title`), otherwise it will throw.
    * @param pathSegments Path segments to append at the end of the resulting path.
    */
-  outputPath(...pathSegments: ReadonlyArray<string>): string;
+  outputPath(...pathSegments: ReadonlyArray<string>): string
 
   /**
    * Changes the timeout for the currently running test. Zero means no timeout. Learn more about
@@ -2431,13 +2461,13 @@ export interface TestInfo {
    *
    * @param timeout Timeout in milliseconds.
    */
-  setTimeout(timeout: number): void;
+  setTimeout(timeout: number): void
 
   /**
    * Unconditionally skip the currently running test. Test is immediately aborted. This is similar to
    * [test.skip([title, details, body, condition, callback, description])](https://playwright.dev/docs/api/class-test#test-skip).
    */
-  skip(): void;
+  skip(): void
 
   /**
    * Conditionally skips the currently running test with an optional description. This is similar to
@@ -2445,13 +2475,13 @@ export interface TestInfo {
    * @param condition A skip condition. Test is skipped when the condition is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(condition: boolean, description?: string): void;
+  skip(condition: boolean, description?: string): void
 
   /**
    * Marks the currently running test as "slow", giving it triple the default timeout. This is similar to
    * [test.slow([condition, callback, description])](https://playwright.dev/docs/api/class-test#test-slow).
    */
-  slow(): void;
+  slow(): void
 
   /**
    * Conditionally mark the currently running test as "slow" with an optional description, giving it triple the default
@@ -2460,7 +2490,7 @@ export interface TestInfo {
    * @param condition Test is marked as "slow" when the condition is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  slow(condition: boolean, description?: string): void;
+  slow(condition: boolean, description?: string): void
 
   /**
    * The list of annotations applicable to the current test. Includes annotations from the test, annotations from all
@@ -2473,18 +2503,18 @@ export interface TestInfo {
     /**
      * Annotation type, for example `'skip'` or `'fail'`.
      */
-    type: string;
+    type: string
 
     /**
      * Optional description.
      */
-    description?: string;
+    description?: string
 
     /**
      * Optional location in the source where the annotation is added.
      */
-    location?: Location;
-  }>;
+    location?: Location
+  }>
 
   /**
    * The list of files or buffers attached to the current test. Some reporters show test attachments.
@@ -2497,52 +2527,52 @@ export interface TestInfo {
     /**
      * Attachment name.
      */
-    name: string;
+    name: string
 
     /**
      * Content type of this attachment to properly present in the report, for example `'application/json'` or
      * `'image/png'`.
      */
-    contentType: string;
+    contentType: string
 
     /**
      * Optional path on the filesystem to the attached file.
      */
-    path?: string;
+    path?: string
 
     /**
      * Optional attachment body used instead of a file.
      */
-    body?: Buffer;
-  }>;
+    body?: Buffer
+  }>
 
   /**
    * Column number where the currently running test is declared.
    */
-  column: number;
+  column: number
 
   /**
    * Processed configuration from the [configuration file](https://playwright.dev/docs/test-configuration).
    */
-  config: FullConfig;
+  config: FullConfig
 
   /**
    * The number of milliseconds the test took to finish. Always zero before the test finishes, either successfully or
    * not. Can be used in
    * [test.afterEach([title, hookFunction])](https://playwright.dev/docs/api/class-test#test-after-each) hook.
    */
-  duration: number;
+  duration: number
 
   /**
    * First error thrown during test execution, if any. This is equal to the first element in
    * [testInfo.errors](https://playwright.dev/docs/api/class-testinfo#test-info-errors).
    */
-  error?: TestInfoError;
+  error?: TestInfoError
 
   /**
    * Errors thrown during test execution, if any.
    */
-  errors: Array<TestInfoError>;
+  errors: Array<TestInfoError>
 
   /**
    * Expected status for the currently running test. This is usually `'passed'`, except for a few cases:
@@ -2564,28 +2594,28 @@ export interface TestInfo {
    * ```
    *
    */
-  expectedStatus: "passed"|"failed"|"timedOut"|"skipped"|"interrupted";
+  expectedStatus: 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted'
 
   /**
    * Absolute path to a file where the currently running test is declared.
    */
-  file: string;
+  file: string
 
   /**
    * Test function as passed to `test(title, testFunction)`.
    */
-  fn: Function;
+  fn: Function
 
   /**
    * Line number where the currently running test is declared.
    */
-  line: number;
+  line: number
 
   /**
    * Absolute path to the output directory for this specific test run. Each test run gets its own directory so they
    * cannot conflict.
    */
-  outputDir: string;
+  outputDir: string
 
   /**
    * The index of the worker between `0` and `workers - 1`. It is guaranteed that workers running at the same time have
@@ -2595,18 +2625,18 @@ export interface TestInfo {
    * Also available as `process.env.TEST_PARALLEL_INDEX`. Learn more about
    * [parallelism and sharding](https://playwright.dev/docs/test-parallel) with Playwright Test.
    */
-  parallelIndex: number;
+  parallelIndex: number
 
   /**
    * Processed project configuration from the [configuration file](https://playwright.dev/docs/test-configuration).
    */
-  project: FullProject;
+  project: FullProject
 
   /**
    * Specifies a unique repeat index when running in "repeat each" mode. This mode is enabled by passing `--repeat-each`
    * to the [command line](https://playwright.dev/docs/test-cli).
    */
-  repeatEachIndex: number;
+  repeatEachIndex: number
 
   /**
    * Specifies the retry number when the test is retried after a failure. The first test run has
@@ -2631,7 +2661,7 @@ export interface TestInfo {
    * ```
    *
    */
-  retry: number;
+  retry: number
 
   /**
    * Absolute path to the snapshot output directory for this specific test. Each test suite gets its own directory so
@@ -2641,7 +2671,7 @@ export interface TestInfo {
    * [testProject.snapshotPathTemplate](https://playwright.dev/docs/api/class-testproject#test-project-snapshot-path-template)
    * configuration.
    */
-  snapshotDir: string;
+  snapshotDir: string
 
   /**
    * **NOTE** Use of [testInfo.snapshotSuffix](https://playwright.dev/docs/api/class-testinfo#test-info-snapshot-suffix)
@@ -2654,7 +2684,7 @@ export interface TestInfo {
    * `expect(value).toMatchSnapshot(snapshotName)` will use different snapshots depending on the platform. Learn more
    * about [snapshots](https://playwright.dev/docs/test-snapshots).
    */
-  snapshotSuffix: string;
+  snapshotSuffix: string
 
   /**
    * Actual status for the currently running test. Available after the test has finished in
@@ -2674,7 +2704,7 @@ export interface TestInfo {
    * ```
    *
    */
-  status?: "passed"|"failed"|"timedOut"|"skipped"|"interrupted";
+  status?: 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted'
 
   /**
    * Tags that apply to the test. Learn more about [tags](https://playwright.dev/docs/test-annotations#tag-tests).
@@ -2682,12 +2712,12 @@ export interface TestInfo {
    * **NOTE** Any changes made to this list while the test is running will not be visible to test reporters.
    *
    */
-  tags: Array<string>;
+  tags: Array<string>
 
   /**
    * Test id matching the test case id in the reporter API.
    */
-  testId: string;
+  testId: string
 
   /**
    * Timeout in milliseconds for the currently running test. Zero means no timeout. Learn more about
@@ -2705,17 +2735,17 @@ export interface TestInfo {
    * ```
    *
    */
-  timeout: number;
+  timeout: number
 
   /**
    * The title of the currently running test as passed to `test(title, testFunction)`.
    */
-  title: string;
+  title: string
 
   /**
    * The full title path starting with the test file name.
    */
-  titlePath: Array<string>;
+  titlePath: Array<string>
 
   /**
    * The unique index of the worker process that is running the test. When a worker is restarted, for example after a
@@ -2724,27 +2754,27 @@ export interface TestInfo {
    * Also available as `process.env.TEST_WORKER_INDEX`. Learn more about [parallelism and sharding](https://playwright.dev/docs/test-parallel)
    * with Playwright Test.
    */
-  workerIndex: number;
+  workerIndex: number
 }
 
-export type TestStatus = 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted';
+export type TestStatus = 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted'
 
 export type TestDetailsAnnotation = {
-  type: string;
-  description?: string;
-};
-
-export type TestAnnotation = TestDetailsAnnotation & {
-  location?: Location;
-};
-
-export type TestDetails = {
-  tag?: string | string[];
-  annotation?: TestDetailsAnnotation | TestDetailsAnnotation[];
+  type: string
+  description?: string
 }
 
-type TestBody<TestArgs> = (args: TestArgs, testInfo: TestInfo) => Promise<unknown> | unknown;
-type ConditionBody<TestArgs> = (args: TestArgs) => boolean;
+export type TestAnnotation = TestDetailsAnnotation & {
+  location?: Location
+}
+
+export type TestDetails = {
+  tag?: string | string[]
+  annotation?: TestDetailsAnnotation | TestDetailsAnnotation[]
+}
+
+type TestBody<TestArgs> = (args: TestArgs, testInfo: TestInfo) => Promise<unknown> | unknown
+type ConditionBody<TestArgs> = (args: TestArgs) => boolean
 
 /**
  * Playwright Test provides a `test` function to declare tests and `expect` function to write assertions.
@@ -2837,7 +2867,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param body Test body that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  (title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  (title: string, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Declares a test.
    * - `test(title, body)`
@@ -2914,7 +2944,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param body Test body that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+  (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
 
   /**
    * Declares a focused test. If there are some focused tests or suites, all of them will be run but nothing else.
@@ -2935,7 +2965,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param body Test body that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  only(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  only(title: string, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Declares a focused test. If there are some focused tests or suites, all of them will be run but nothing else.
    * - `test.only(title, body)`
@@ -2955,7 +2985,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param body Test body that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+  only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
 
   /**
    * Declares a group of tests.
@@ -3146,7 +3176,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Any tests
      * declared in this callback will belong to the group.
      */
-    (title: string, callback: () => void): void;
+    (title: string, callback: () => void): void
     /**
      * Declares a group of tests.
      * - `test.describe(title, callback)`
@@ -3241,7 +3271,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Any tests
      * declared in this callback will belong to the group.
      */
-    (callback: () => void): void;
+    (callback: () => void): void
     /**
      * Declares a group of tests.
      * - `test.describe(title, callback)`
@@ -3336,7 +3366,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Any tests
      * declared in this callback will belong to the group.
      */
-    (title: string, details: TestDetails, callback: () => void): void;
+    (title: string, details: TestDetails, callback: () => void): void
 
     /**
      * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
@@ -3373,7 +3403,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
      * Any tests added in this callback will belong to the group.
      */
-    only(title: string, callback: () => void): void;
+    only(title: string, callback: () => void): void
     /**
      * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
      * else.
@@ -3409,7 +3439,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
      * Any tests added in this callback will belong to the group.
      */
-    only(callback: () => void): void;
+    only(callback: () => void): void
     /**
      * Declares a focused group of tests. If there are some focused tests or suites, all of them will be run but nothing
      * else.
@@ -3445,7 +3475,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-only).
      * Any tests added in this callback will belong to the group.
      */
-    only(title: string, details: TestDetails, callback: () => void): void;
+    only(title: string, details: TestDetails, callback: () => void): void
 
     /**
      * Declares a skipped test group, similarly to
@@ -3480,7 +3510,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    skip(title: string, callback: () => void): void;
+    skip(title: string, callback: () => void): void
     /**
      * Declares a skipped test group, similarly to
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in the
@@ -3514,7 +3544,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    skip(callback: () => void): void;
+    skip(callback: () => void): void
     /**
      * Declares a skipped test group, similarly to
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in the
@@ -3548,7 +3578,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.skip(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-skip).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    skip(title: string, details: TestDetails, callback: () => void): void;
+    skip(title: string, details: TestDetails, callback: () => void): void
 
     /**
      * Declares a test group similarly to
@@ -3583,7 +3613,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    fixme(title: string, callback: () => void): void;
+    fixme(title: string, callback: () => void): void
     /**
      * Declares a test group similarly to
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in
@@ -3617,7 +3647,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    fixme(callback: () => void): void;
+    fixme(callback: () => void): void
     /**
      * Declares a test group similarly to
      * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe). Tests in
@@ -3651,7 +3681,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * [test.describe.fixme([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-fixme).
      * Any tests added in this callback will belong to the group, and will not be run.
      */
-    fixme(title: string, details: TestDetails, callback: () => void): void;
+    fixme(title: string, details: TestDetails, callback: () => void): void
 
     /**
      * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
@@ -3730,7 +3760,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
        * Any tests added in this callback will belong to the group.
        */
-      (title: string, callback: () => void): void;
+      (title: string, callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -3769,7 +3799,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
        * Any tests added in this callback will belong to the group.
        */
-      (callback: () => void): void;
+      (callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -3808,7 +3838,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial).
        * Any tests added in this callback will belong to the group.
        */
-      (title: string, details: TestDetails, callback: () => void): void;
+      (title: string, details: TestDetails, callback: () => void): void
 
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
@@ -3851,7 +3881,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(title: string, callback: () => void): void;
+      only(title: string, callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -3893,7 +3923,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(callback: () => void): void;
+      only(callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -3935,8 +3965,8 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.serial.only(title[, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-serial-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(title: string, details: TestDetails, callback: () => void): void;
-    };
+      only(title: string, details: TestDetails, callback: () => void): void
+    }
 
     /**
      * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
@@ -4017,7 +4047,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
        * Any tests added in this callback will belong to the group.
        */
-      (title: string, callback: () => void): void;
+      (title: string, callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -4057,7 +4087,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
        * Any tests added in this callback will belong to the group.
        */
-      (callback: () => void): void;
+      (callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -4097,7 +4127,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel).
        * Any tests added in this callback will belong to the group.
        */
-      (title: string, details: TestDetails, callback: () => void): void;
+      (title: string, details: TestDetails, callback: () => void): void
 
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
@@ -4134,7 +4164,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(title: string, callback: () => void): void;
+      only(title: string, callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -4170,7 +4200,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(callback: () => void): void;
+      only(callback: () => void): void
       /**
        * **NOTE** See [test.describe.configure([options])](https://playwright.dev/docs/api/class-test#test-describe-configure) for
        * the preferred way of configuring the execution mode.
@@ -4206,8 +4236,8 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
        * [test.describe.parallel.only([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe-parallel-only).
        * Any tests added in this callback will belong to the group.
        */
-      only(title: string, details: TestDetails, callback: () => void): void;
-    };
+      only(title: string, details: TestDetails, callback: () => void): void
+    }
 
     /**
      * Configures the enclosing scope. Can be executed either on the top level or inside a describe. Configuration applies
@@ -4279,8 +4309,12 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      *
      * @param options
      */
-    configure: (options: { mode?: 'default' | 'parallel' | 'serial', retries?: number, timeout?: number }) => void;
-  };
+    configure: (options: {
+      mode?: 'default' | 'parallel' | 'serial'
+      retries?: number
+      timeout?: number
+    }) => void
+  }
 
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
@@ -4362,7 +4396,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  skip(title: string, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -4443,7 +4477,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+  skip(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -4524,7 +4558,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(): void;
+  skip(): void
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -4605,7 +4639,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(condition: boolean, description?: string): void;
+  skip(condition: boolean, description?: string): void
   /**
    * Skip a test. Playwright will not run the test past the `test.skip()` call.
    *
@@ -4686,7 +4720,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+  skip(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void
 
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
@@ -4765,7 +4799,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+  fixme(title: string, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -4843,7 +4877,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+  fixme(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -4921,7 +4955,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(): void;
+  fixme(): void
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -4999,7 +5033,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(condition: boolean, description?: string): void;
+  fixme(condition: boolean, description?: string): void
   /**
    * Mark a test as "fixme", with the intention to fix it. Playwright will not run the test past the `test.fixme()`
    * call.
@@ -5077,7 +5111,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * when the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  fixme(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+  fixme(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void
 
   /**
    * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
@@ -5232,7 +5266,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * "should fail" when the return value is `true`.
      * @param description Optional description that will be reflected in a test report.
      */
-    (title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+    (title: string, body: TestBody<TestArgs & WorkerArgs>): void
     /**
      * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
      * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
@@ -5309,7 +5343,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * "should fail" when the return value is `true`.
      * @param description Optional description that will be reflected in a test report.
      */
-    (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+    (title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
     /**
      * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
      * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
@@ -5386,7 +5420,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * "should fail" when the return value is `true`.
      * @param description Optional description that will be reflected in a test report.
      */
-    (condition: boolean, description?: string): void;
+    (condition: boolean, description?: string): void
     /**
      * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
      * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
@@ -5463,7 +5497,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * "should fail" when the return value is `true`.
      * @param description Optional description that will be reflected in a test report.
      */
-    (callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+    (callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void
     /**
      * Marks a test as "should fail". Playwright runs this test and ensures that it is actually failing. This is useful
      * for documentation purposes to acknowledge that some functionality is broken until it is fixed.
@@ -5540,7 +5574,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * "should fail" when the return value is `true`.
      * @param description Optional description that will be reflected in a test report.
      */
-    (): void;
+    (): void
 
     /**
      * You can use `test.fail.only` to focus on a specific test that is expected to fail. This is particularly useful when
@@ -5571,7 +5605,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * @param body Test body that takes one or two arguments: an object with fixtures and optional
      * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
      */
-    only(title: string, body: TestBody<TestArgs & WorkerArgs>): void;
+    only(title: string, body: TestBody<TestArgs & WorkerArgs>): void
     /**
      * You can use `test.fail.only` to focus on a specific test that is expected to fail. This is particularly useful when
      * debugging a failing test or working on a specific issue.
@@ -5601,7 +5635,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * @param body Test body that takes one or two arguments: an object with fixtures and optional
      * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
      */
-    only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void;
+    only(title: string, details: TestDetails, body: TestBody<TestArgs & WorkerArgs>): void
   }
 
   /**
@@ -5625,7 +5659,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    *
    * @param message Optional message describing the reason for the abort. It will be included in the failure error.
    */
-  abort(message?: string): never;
+  abort(message?: string): never
 
   /**
    * Marks a test as "slow". Slow test will be given triple the default timeout.
@@ -5684,7 +5718,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  slow(): void;
+  slow(): void
   /**
    * Marks a test as "slow". Slow test will be given triple the default timeout.
    *
@@ -5742,7 +5776,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  slow(condition: boolean, description?: string): void;
+  slow(condition: boolean, description?: string): void
   /**
    * Marks a test as "slow". Slow test will be given triple the default timeout.
    *
@@ -5800,7 +5834,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * the return value is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  slow(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void;
+  slow(callback: ConditionBody<TestArgs & WorkerArgs>, description?: string): void
 
   /**
    * Changes the timeout for the test. Zero means no timeout. Learn more about [various timeouts](https://playwright.dev/docs/test-timeouts).
@@ -5854,7 +5888,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    *
    * @param timeout Timeout in milliseconds.
    */
-  setTimeout(timeout: number): void;
+  setTimeout(timeout: number): void
   /**
    * Declares a `beforeEach` hook that is executed before each test.
    *
@@ -5907,7 +5941,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  beforeEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  beforeEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void
   /**
    * Declares a `beforeEach` hook that is executed before each test.
    *
@@ -5960,7 +5994,10 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  beforeEach(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  beforeEach(
+    title: string,
+    inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any
+  ): void
   /**
    * Declares an `afterEach` hook that is executed after each test.
    *
@@ -6012,7 +6049,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  afterEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  afterEach(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void
   /**
    * Declares an `afterEach` hook that is executed after each test.
    *
@@ -6064,7 +6101,10 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  afterEach(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  afterEach(
+    title: string,
+    inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any
+  ): void
   /**
    * Declares a `beforeAll` hook that is executed once per worker process before all tests.
    *
@@ -6118,7 +6158,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  beforeAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  beforeAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void
   /**
    * Declares a `beforeAll` hook that is executed once per worker process before all tests.
    *
@@ -6172,7 +6212,10 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  beforeAll(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  beforeAll(
+    title: string,
+    inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any
+  ): void
   /**
    * Declares an `afterAll` hook that is executed once per worker after all tests.
    *
@@ -6213,7 +6256,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  afterAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  afterAll(inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void
   /**
    * Declares an `afterAll` hook that is executed once per worker after all tests.
    *
@@ -6254,7 +6297,10 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * @param hookFunction Hook function that takes one or two arguments: an object with worker fixtures and optional
    * [TestInfo](https://playwright.dev/docs/api/class-testinfo).
    */
-  afterAll(title: string, inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any): void;
+  afterAll(
+    title: string,
+    inner: (args: TestArgs & WorkerArgs, testInfo: TestInfo) => Promise<any> | any
+  ): void
   /**
    * Specifies options or fixtures to use in a single test file or a
    * [test.describe([title, details, callback])](https://playwright.dev/docs/api/class-test#test-describe) group. Most
@@ -6297,7 +6343,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    *
    * @param options An object with local options.
    */
-  use(fixtures: Fixtures<{}, {}, TestArgs, WorkerArgs>): void;
+  use(fixtures: Fixtures<{}, {}, TestArgs, WorkerArgs>): void
   /**
    * Declares a test step that is shown in the report.
    *
@@ -6615,7 +6661,11 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * @param body Step body.
      * @param options
      */
-    <T>(title: string, body: (step: TestStepInfo) => T | Promise<T>, options?: { box?: boolean, location?: Location, timeout?: number }): Promise<T>;
+    <T>(
+      title: string,
+      body: (step: TestStepInfo) => T | Promise<T>,
+      options?: { box?: boolean; location?: Location; timeout?: number }
+    ): Promise<T>
     /**
      * Mark a test step as "skip" to temporarily disable its execution, useful for steps that are currently failing and
      * planned for a near-term fix. Playwright will not run the step. See also
@@ -6643,7 +6693,11 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
      * @param body Step body.
      * @param options
      */
-    skip(title: string, body: (step: TestStepInfo) => any | Promise<any>, options?: { box?: boolean, location?: Location, timeout?: number }): Promise<void>;
+    skip(
+      title: string,
+      body: (step: TestStepInfo) => any | Promise<any>,
+      options?: { box?: boolean; location?: Location; timeout?: number }
+    ): Promise<void>
   }
   /**
    * `expect` function can be used to create test assertions. Read more about [test assertions](https://playwright.dev/docs/test-assertions).
@@ -6657,7 +6711,7 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * ```
    *
    */
-  expect: Expect<{}>;
+  expect: Expect<{}>
   /**
    * Extends the `test` object by defining fixtures and/or options that can be used in the tests.
    *
@@ -6725,7 +6779,9 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * Learn more about [fixtures](https://playwright.dev/docs/test-fixtures) and [parametrizing tests](https://playwright.dev/docs/test-parameterize).
    * @param fixtures An object containing fixtures and/or options. Learn more about [fixtures format](https://playwright.dev/docs/test-fixtures).
    */
-  extend<T extends {}, W extends {} = {}>(fixtures: Fixtures<T, W, TestArgs, WorkerArgs>): TestType<TestArgs & T, WorkerArgs & W>;
+  extend<T extends {}, W extends {} = {}>(
+    fixtures: Fixtures<T, W, TestArgs, WorkerArgs>
+  ): TestType<TestArgs & T, WorkerArgs & W>
   /**
    * Returns information about the currently running test. This method can only be called during the test execution,
    * otherwise it throws.
@@ -6743,41 +6799,86 @@ export interface TestType<TestArgs extends {}, WorkerArgs extends {}> {
    * ```
    *
    */
-  info(): TestInfo;
+  info(): TestInfo
 }
 
-export type TestFixture<R, Args extends {}> = (args: Args, use: (r: R) => Promise<void>, testInfo: TestInfo) => any;
-export type WorkerFixture<R, Args extends {}> = (args: Args, use: (r: R) => Promise<void>, workerInfo: WorkerInfo) => any;
-type TestFixtureValue<R, Args extends {}> = Exclude<R, Function> | TestFixture<R, Args>;
-type WorkerFixtureValue<R, Args extends {}> = Exclude<R, Function> | WorkerFixture<R, Args>;
-export type Fixtures<T extends {} = {}, W extends {} = {}, PT extends {} = {}, PW extends {} = {}> = {
-  [K in keyof PW]?: WorkerFixtureValue<PW[K], W & PW> | [WorkerFixtureValue<PW[K], W & PW>, { scope: 'worker', timeout?: number | undefined, title?: string, box?: boolean | 'self' }];
+export type TestFixture<R, Args extends {}> = (
+  args: Args,
+  use: (r: R) => Promise<void>,
+  testInfo: TestInfo
+) => any
+export type WorkerFixture<R, Args extends {}> = (
+  args: Args,
+  use: (r: R) => Promise<void>,
+  workerInfo: WorkerInfo
+) => any
+type TestFixtureValue<R, Args extends {}> = Exclude<R, Function> | TestFixture<R, Args>
+type WorkerFixtureValue<R, Args extends {}> = Exclude<R, Function> | WorkerFixture<R, Args>
+export type Fixtures<
+  T extends {} = {},
+  W extends {} = {},
+  PT extends {} = {},
+  PW extends {} = {}
+> = {
+  [K in keyof PW]?:
+    | WorkerFixtureValue<PW[K], W & PW>
+    | [
+        WorkerFixtureValue<PW[K], W & PW>,
+        { scope: 'worker'; timeout?: number | undefined; title?: string; box?: boolean | 'self' }
+      ]
 } & {
-  [K in keyof PT]?: TestFixtureValue<PT[K], T & W & PT & PW> | [TestFixtureValue<PT[K], T & W & PT & PW>, { scope: 'test', timeout?: number | undefined, title?: string, box?: boolean | 'self' }];
+  [K in keyof PT]?:
+    | TestFixtureValue<PT[K], T & W & PT & PW>
+    | [
+        TestFixtureValue<PT[K], T & W & PT & PW>,
+        { scope: 'test'; timeout?: number | undefined; title?: string; box?: boolean | 'self' }
+      ]
 } & {
-  [K in Exclude<keyof W, keyof PW | keyof PT>]?: [WorkerFixtureValue<W[K], W & PW>, { scope: 'worker', auto?: boolean, option?: boolean, timeout?: number | undefined, title?: string, box?: boolean | 'self' }];
+  [K in Exclude<keyof W, keyof PW | keyof PT>]?: [
+    WorkerFixtureValue<W[K], W & PW>,
+    {
+      scope: 'worker'
+      auto?: boolean
+      option?: boolean
+      timeout?: number | undefined
+      title?: string
+      box?: boolean | 'self'
+    }
+  ]
 } & {
-  [K in Exclude<keyof T, keyof PW | keyof PT>]?: TestFixtureValue<T[K], T & W & PT & PW> | [TestFixtureValue<T[K], T & W & PT & PW>, { scope?: 'test', auto?: boolean, option?: boolean, timeout?: number | undefined, title?: string, box?: boolean | 'self' }];
-};
+  [K in Exclude<keyof T, keyof PW | keyof PT>]?:
+    | TestFixtureValue<T[K], T & W & PT & PW>
+    | [
+        TestFixtureValue<T[K], T & W & PT & PW>,
+        {
+          scope?: 'test'
+          auto?: boolean
+          option?: boolean
+          timeout?: number | undefined
+          title?: string
+          box?: boolean | 'self'
+        }
+      ]
+}
 
-type BrowserName = 'chromium' | 'firefox' | 'webkit';
-type BrowserChannel = Exclude<LaunchOptions['channel'], undefined>;
-type ColorScheme = Exclude<BrowserContextOptions['colorScheme'], undefined>;
-type ClientCertificate = Exclude<BrowserContextOptions['clientCertificates'], undefined>[0];
-type ExtraHTTPHeaders = Exclude<BrowserContextOptions['extraHTTPHeaders'], undefined>;
-type Proxy = Exclude<BrowserContextOptions['proxy'], undefined>;
-type StorageState = Exclude<BrowserContextOptions['storageState'], undefined>;
-type ServiceWorkerPolicy = Exclude<BrowserContextOptions['serviceWorkers'], undefined>;
+type BrowserName = 'chromium' | 'firefox' | 'webkit'
+type BrowserChannel = Exclude<LaunchOptions['channel'], undefined>
+type ColorScheme = Exclude<BrowserContextOptions['colorScheme'], undefined>
+type ClientCertificate = Exclude<BrowserContextOptions['clientCertificates'], undefined>[0]
+type ExtraHTTPHeaders = Exclude<BrowserContextOptions['extraHTTPHeaders'], undefined>
+type Proxy = Exclude<BrowserContextOptions['proxy'], undefined>
+type StorageState = Exclude<BrowserContextOptions['storageState'], undefined>
+type ServiceWorkerPolicy = Exclude<BrowserContextOptions['serviceWorkers'], undefined>
 type ConnectOptions = {
   /**
    * A browser websocket endpoint to connect to.
    */
-  wsEndpoint: string;
+  wsEndpoint: string
 
   /**
    * Additional HTTP headers to be sent with web socket connect request.
    */
-  headers?: { [key: string]: string; };
+  headers?: { [key: string]: string }
 
   /**
    * This option exposes network available on the connecting client to the browser being connected to.
@@ -6793,13 +6894,13 @@ type ConnectOptions = {
    * - `"<loopback>"` to expose localhost network.
    * - `"*.test.internal-domain,*.staging.internal-domain,<loopback>"` to expose test/staging deployments and localhost.
    */
-  exposeNetwork?: string;
+  exposeNetwork?: string
 
   /**
    * Timeout in milliseconds for the connection to be established. Optional, defaults to no timeout.
    */
-  timeout?: number;
-};
+  timeout?: number
+}
 
 /**
  * Playwright Test provides many options to configure test environment,
@@ -6858,8 +6959,8 @@ export interface PlaywrightWorkerOptions {
    * ```
    *
    */
-  browserName: BrowserName;
-  defaultBrowserType: BrowserName;
+  browserName: BrowserName
+  defaultBrowserType: BrowserName
   /**
    * Whether to run browser in headless mode. More details for
    * [Chromium](https://developers.google.com/web/updates/2017/04/headless-chrome) and
@@ -6879,7 +6980,7 @@ export interface PlaywrightWorkerOptions {
    * ```
    *
    */
-  headless: boolean;
+  headless: boolean
   /**
    * Browser distribution channel.
    *
@@ -6908,7 +7009,7 @@ export interface PlaywrightWorkerOptions {
    * ```
    *
    */
-  channel: BrowserChannel | undefined;
+  channel: BrowserChannel | undefined
   /**
    * Options used to launch the browser, as passed to
    * [browserType.launch([options])](https://playwright.dev/docs/api/class-browsertype#browser-type-launch). Specific
@@ -6940,7 +7041,7 @@ export interface PlaywrightWorkerOptions {
    * ```
    *
    */
-  launchOptions: Omit<LaunchOptions, 'tracesDir'>;
+  launchOptions: Omit<LaunchOptions, 'tracesDir'>
   /**
    * **Usage**
    *
@@ -6965,7 +7066,7 @@ export interface PlaywrightWorkerOptions {
    * [testOptions.headless](https://playwright.dev/docs/api/class-testoptions#test-options-headless) or
    * [testOptions.channel](https://playwright.dev/docs/api/class-testoptions#test-options-channel) are ignored.
    */
-  connectOptions: ConnectOptions | undefined;
+  connectOptions: ConnectOptions | undefined
   /**
    * Whether to automatically capture a screenshot after each test. Defaults to `'off'`.
    * - `'off'`: Do not capture screenshots.
@@ -6988,7 +7089,9 @@ export interface PlaywrightWorkerOptions {
    *
    * Learn more about [automatic screenshots](https://playwright.dev/docs/test-use-options#recording-options).
    */
-  screenshot: ScreenshotMode | { mode: ScreenshotMode } & Pick<PageScreenshotOptions, 'fullPage' | 'omitBackground'>;
+  screenshot:
+    | ScreenshotMode
+    | ({ mode: ScreenshotMode } & Pick<PageScreenshotOptions, 'fullPage' | 'omitBackground'>)
   /**
    * Whether to record trace for each test. Defaults to `'off'`. The initial run of a test is the "first run";
    * subsequent runs caused by [retries](https://playwright.dev/docs/test-retries) are "retries".
@@ -7023,7 +7126,16 @@ export interface PlaywrightWorkerOptions {
    *
    * Learn more about [recording trace](https://playwright.dev/docs/test-use-options#recording-options).
    */
-  trace: TraceMode | /** deprecated */ 'retry-with-trace' | { mode: TraceMode, snapshots?: boolean, screenshots?: boolean, sources?: boolean, attachments?: boolean };
+  trace:
+    | TraceMode
+    | /** deprecated */ 'retry-with-trace'
+    | {
+        mode: TraceMode
+        snapshots?: boolean
+        screenshots?: boolean
+        sources?: boolean
+        attachments?: boolean
+      }
   /**
    * Whether to record video for each test. Defaults to `'off'`. The initial run of a test is the "first run";
    * subsequent runs caused by [retries](https://playwright.dev/docs/test-retries) are "retries".
@@ -7065,12 +7177,44 @@ export interface PlaywrightWorkerOptions {
    *
    * Learn more about [recording video](https://playwright.dev/docs/test-use-options#recording-options).
    */
-  video: VideoMode | /** deprecated */ 'retry-with-video' | { mode: VideoMode, size?: ViewportSize, show?: { actions?: { duration?: number, position?: 'top-left' | 'top' | 'top-right' | 'bottom-left' | 'bottom' | 'bottom-right', fontSize?: number }, test?: { level?: 'file' | 'title' | 'step', position?: 'top-left' | 'top' | 'top-right' | 'bottom-left' | 'bottom' | 'bottom-right', fontSize?: number } } };
+  video:
+    | VideoMode
+    | /** deprecated */ 'retry-with-video'
+    | {
+        mode: VideoMode
+        size?: ViewportSize
+        show?: {
+          actions?: {
+            duration?: number
+            position?: 'top-left' | 'top' | 'top-right' | 'bottom-left' | 'bottom' | 'bottom-right'
+            fontSize?: number
+          }
+          test?: {
+            level?: 'file' | 'title' | 'step'
+            position?: 'top-left' | 'top' | 'top-right' | 'bottom-left' | 'bottom' | 'bottom-right'
+            fontSize?: number
+          }
+        }
+      }
 }
 
-export type ScreenshotMode = 'off' | 'on' | 'only-on-failure' | 'on-first-failure';
-export type TraceMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'on-all-retries' | 'retain-on-first-failure' | 'retain-on-failure-and-retries';
-export type VideoMode = 'off' | 'on' | 'retain-on-failure' | 'on-first-retry' | 'on-all-retries' | 'retain-on-first-failure' | 'retain-on-failure-and-retries';
+export type ScreenshotMode = 'off' | 'on' | 'only-on-failure' | 'on-first-failure'
+export type TraceMode =
+  | 'off'
+  | 'on'
+  | 'retain-on-failure'
+  | 'on-first-retry'
+  | 'on-all-retries'
+  | 'retain-on-first-failure'
+  | 'retain-on-failure-and-retries'
+export type VideoMode =
+  | 'off'
+  | 'on'
+  | 'retain-on-failure'
+  | 'on-first-retry'
+  | 'on-all-retries'
+  | 'retain-on-first-failure'
+  | 'retain-on-failure-and-retries'
 /**
  * Playwright Test provides many options to configure test environment,
  * [Browser](https://playwright.dev/docs/api/class-browser),
@@ -7127,7 +7271,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  acceptDownloads: boolean;
+  acceptDownloads: boolean
   /**
    * Toggles bypassing page's Content-Security-Policy. Defaults to `false`.
    *
@@ -7145,7 +7289,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  bypassCSP: boolean;
+  bypassCSP: boolean
   /**
    * Emulates [prefers-colors-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)
    * media feature, supported values are `'light'` and `'dark'`. See
@@ -7166,7 +7310,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  colorScheme: ColorScheme;
+  colorScheme: ColorScheme
   /**
    * TLS Client Authentication allows the server to request a client certificate and verify it.
    *
@@ -7203,7 +7347,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  clientCertificates: ClientCertificate[] | undefined;
+  clientCertificates: ClientCertificate[] | undefined
   /**
    * Specify device scale factor (can be thought of as dpr). Defaults to `1`. Learn more about
    * [emulating devices with device scale factor](https://playwright.dev/docs/emulation#devices).
@@ -7223,7 +7367,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  deviceScaleFactor: number | undefined;
+  deviceScaleFactor: number | undefined
   /**
    * An object containing additional HTTP headers to be sent with every request. Defaults to none.
    *
@@ -7243,7 +7387,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  extraHTTPHeaders: ExtraHTTPHeaders | undefined;
+  extraHTTPHeaders: ExtraHTTPHeaders | undefined
   /**
    * **Usage**
    *
@@ -7260,7 +7404,7 @@ export interface PlaywrightTestOptions {
    *
    * Learn more about [geolocation](https://playwright.dev/docs/emulation#color-scheme-and-media).
    */
-  geolocation: Geolocation | undefined;
+  geolocation: Geolocation | undefined
   /**
    * Specifies if viewport supports touch events. Defaults to false. Learn more about
    * [mobile emulation](https://playwright.dev/docs/emulation#devices).
@@ -7279,7 +7423,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  hasTouch: boolean;
+  hasTouch: boolean
   /**
    * Credentials for [HTTP authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication). If no
    * origin is specified, the username and password are sent to any servers upon unauthorized responses.
@@ -7301,7 +7445,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  httpCredentials: HTTPCredentials | undefined;
+  httpCredentials: HTTPCredentials | undefined
   /**
    * Whether to ignore HTTPS errors when sending network requests. Defaults to `false`.
    *
@@ -7319,7 +7463,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  ignoreHTTPSErrors: boolean;
+  ignoreHTTPSErrors: boolean
   /**
    * Whether the `meta viewport` tag is taken into account and touch events are enabled. isMobile is a part of device,
    * so you don't actually need to set it manually. Defaults to `false` and is not supported in Firefox. Learn more
@@ -7339,7 +7483,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  isMobile: boolean;
+  isMobile: boolean
   /**
    * Whether or not to enable JavaScript in the context. Defaults to `true`. Learn more about
    * [disabling JavaScript](https://playwright.dev/docs/emulation#javascript-enabled).
@@ -7358,7 +7502,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  javaScriptEnabled: boolean;
+  javaScriptEnabled: boolean
   /**
    * Specify user locale, for example `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value,
    * `Accept-Language` request header value as well as number and date formatting rules. Defaults to `en-US`. Learn more
@@ -7378,7 +7522,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  locale: string | undefined;
+  locale: string | undefined
   /**
    * Whether to emulate network being offline. Defaults to `false`. Learn more about
    * [network emulation](https://playwright.dev/docs/emulation#offline).
@@ -7397,7 +7541,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  offline: boolean;
+  offline: boolean
   /**
    * A list of permissions to grant to all pages in this context. See
    * [browserContext.grantPermissions(permissions[, options])](https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions)
@@ -7417,7 +7561,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  permissions: string[] | undefined;
+  permissions: string[] | undefined
   /**
    * Network proxy settings.
    *
@@ -7438,7 +7582,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  proxy: Proxy | undefined;
+  proxy: Proxy | undefined
   /**
    * Learn more about [storage state and auth](https://playwright.dev/docs/auth).
    *
@@ -7476,7 +7620,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  storageState: StorageState | undefined;
+  storageState: StorageState | undefined
   /**
    * Changes the timezone of the context. See
    * [ICU's metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1)
@@ -7496,7 +7640,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  timezoneId: string | undefined;
+  timezoneId: string | undefined
   /**
    * Specific user agent to use in this context.
    *
@@ -7514,7 +7658,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  userAgent: string | undefined;
+  userAgent: string | undefined
   /**
    * Emulates consistent viewport for each page. Defaults to an 1280x720 viewport. Use `null` to disable the consistent
    * viewport emulation. Learn more about [viewport emulation](https://playwright.dev/docs/emulation#viewport).
@@ -7536,7 +7680,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  viewport: ViewportSize | null;
+  viewport: ViewportSize | null
   /**
    * When using [page.goto(url[, options])](https://playwright.dev/docs/api/class-page#page-goto),
    * [page.route(url, handler[, options])](https://playwright.dev/docs/api/class-page#page-route),
@@ -7567,7 +7711,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  baseURL: string | undefined;
+  baseURL: string | undefined
   /**
    * Options used to create the context, as passed to
    * [browser.newContext([options])](https://playwright.dev/docs/api/class-browser#browser-new-context). Specific
@@ -7590,7 +7734,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  contextOptions: BrowserContextOptions;
+  contextOptions: BrowserContextOptions
   /**
    * Default timeout for each Playwright action in milliseconds, defaults to 0 (no timeout).
    *
@@ -7612,7 +7756,7 @@ export interface PlaywrightTestOptions {
    *
    * Learn more about [various timeouts](https://playwright.dev/docs/test-timeouts).
    */
-  actionTimeout: number;
+  actionTimeout: number
   /**
    * Timeout for each navigation action in milliseconds. Defaults to 0 (no timeout).
    *
@@ -7634,7 +7778,7 @@ export interface PlaywrightTestOptions {
    *
    * Learn more about [various timeouts](https://playwright.dev/docs/test-timeouts).
    */
-  navigationTimeout: number;
+  navigationTimeout: number
   /**
    * Whether to allow sites to register Service workers. Defaults to `'allow'`.
    * - `'allow'`: [Service Workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) can be
@@ -7655,7 +7799,7 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  serviceWorkers: ServiceWorkerPolicy;
+  serviceWorkers: ServiceWorkerPolicy
   /**
    * Custom attribute to be used in
    * [page.getByTestId(testId)](https://playwright.dev/docs/api/class-page#page-get-by-test-id). `data-testid` is used
@@ -7688,9 +7832,8 @@ export interface PlaywrightTestOptions {
    * ```
    *
    */
-  testIdAttribute: string;
+  testIdAttribute: string
 }
-
 
 /**
  * Playwright Test is based on the concept of the [test fixtures](https://playwright.dev/docs/test-fixtures). Test fixtures are used to
@@ -7719,7 +7862,7 @@ export interface PlaywrightTestOptions {
  * [fixtures.page](https://playwright.dev/docs/api/class-fixtures#fixtures-page).
  */
 export interface PlaywrightWorkerArgs {
-  playwright: typeof import('playwright-core');
+  playwright: typeof import('playwright-core')
   /**
    * [Browser](https://playwright.dev/docs/api/class-browser) instance is shared between all tests in the
    * [same worker](https://playwright.dev/docs/test-parallel) - this makes testing efficient. However, each test runs in an isolated
@@ -7738,7 +7881,7 @@ export interface PlaywrightWorkerArgs {
    * ```
    *
    */
-  browser: Browser;
+  browser: Browser
 }
 
 /**
@@ -7788,7 +7931,7 @@ export interface PlaywrightTestArgs {
    * ```
    *
    */
-  context: BrowserContext;
+  context: BrowserContext
   /**
    * Isolated [Page](https://playwright.dev/docs/api/class-page) instance, created for each test. Pages are isolated
    * between tests due to [fixtures.context](https://playwright.dev/docs/api/class-fixtures#fixtures-context) isolation.
@@ -7810,7 +7953,7 @@ export interface PlaywrightTestArgs {
    * ```
    *
    */
-  page: Page;
+  page: Page
   /**
    * Isolated [APIRequestContext](https://playwright.dev/docs/api/class-apirequestcontext) instance for each test.
    *
@@ -7831,21 +7974,32 @@ export interface PlaywrightTestArgs {
    * ```
    *
    */
-  request: APIRequestContext;
+  request: APIRequestContext
 }
 
 type ExcludeProps<A, B> = {
-  [K in Exclude<keyof A, keyof B>]: A[K];
-};
-type CustomProperties<T> = ExcludeProps<T, PlaywrightTestOptions & PlaywrightWorkerOptions & PlaywrightTestArgs & PlaywrightWorkerArgs>;
+  [K in Exclude<keyof A, keyof B>]: A[K]
+}
+type CustomProperties<T> = ExcludeProps<
+  T,
+  PlaywrightTestOptions & PlaywrightWorkerOptions & PlaywrightTestArgs & PlaywrightWorkerArgs
+>
 
-export type PlaywrightTestProject<TestArgs = {}, WorkerArgs = {}> = Project<PlaywrightTestOptions & CustomProperties<TestArgs>, PlaywrightWorkerOptions & CustomProperties<WorkerArgs>>;
-export type PlaywrightTestConfig<TestArgs = {}, WorkerArgs = {}> = Config<PlaywrightTestOptions & CustomProperties<TestArgs>, PlaywrightWorkerOptions & CustomProperties<WorkerArgs>>;
+export type PlaywrightTestProject<TestArgs = {}, WorkerArgs = {}> = Project<
+  PlaywrightTestOptions & CustomProperties<TestArgs>,
+  PlaywrightWorkerOptions & CustomProperties<WorkerArgs>
+>
+export type PlaywrightTestConfig<TestArgs = {}, WorkerArgs = {}> = Config<
+  PlaywrightTestOptions & CustomProperties<TestArgs>,
+  PlaywrightWorkerOptions & CustomProperties<WorkerArgs>
+>
 
 // Use the global URLPattern type if available (Node.js 22+, modern browsers),
 // otherwise fall back to `never` so it disappears from union types.
-type URLPattern = typeof globalThis extends { URLPattern: new (...args: any) => infer T } ? T : never;
-type AsymmetricMatcher = Record<string, any>;
+type URLPattern = typeof globalThis extends { URLPattern: new (...args: any) => infer T }
+  ? T
+  : never
+type AsymmetricMatcher = Record<string, any>
 
 interface AsymmetricMatchers {
   /**
@@ -7871,7 +8025,7 @@ interface AsymmetricMatchers {
    *
    * @param constructor Constructor of the expected object like `ExampleClass`, or a primitive boxed type like `Number`.
    */
-  any(sample: unknown): AsymmetricMatcher;
+  any(sample: unknown): AsymmetricMatcher
   /**
    * `expect.anything()` matches everything except `null` and `undefined`. Use it inside
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal)
@@ -7886,7 +8040,7 @@ interface AsymmetricMatchers {
    * ```
    *
    */
-  anything(): AsymmetricMatcher;
+  anything(): AsymmetricMatcher
   /**
    * `expect.arrayContaining()` matches an array that contains all of the elements in the expected array, in any order.
    * Note that received array may be a superset of the expected array and contain some extra elements.
@@ -7904,7 +8058,7 @@ interface AsymmetricMatchers {
    *
    * @param expected Expected array that is a subset of the received value.
    */
-  arrayContaining(sample: Array<unknown>): AsymmetricMatcher;
+  arrayContaining(sample: Array<unknown>): AsymmetricMatcher
   /**
    * `expect.arrayOf()` matches array of objects created from the
    * [`constructor`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-array-of-option-constructor)
@@ -7925,7 +8079,7 @@ interface AsymmetricMatchers {
    *
    * @param constructor Constructor of the expected object like `ExampleClass`, or a primitive boxed type like `Number`.
    */
-  arrayOf(sample: unknown): AsymmetricMatcher;
+  arrayOf(sample: unknown): AsymmetricMatcher
   /**
    * Compares floating point numbers for approximate equality. Use this method inside
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal)
@@ -7942,7 +8096,7 @@ interface AsymmetricMatchers {
    * @param expected Expected value.
    * @param numDigits The number of decimal digits after the decimal point that must be equal.
    */
-  closeTo(sample: number, precision?: number): AsymmetricMatcher;
+  closeTo(sample: number, precision?: number): AsymmetricMatcher
   /**
    * `expect.objectContaining()` matches an object that contains and matches all of the properties in the expected
    * object. Note that received object may be a superset of the expected object and contain some extra properties.
@@ -7973,7 +8127,7 @@ interface AsymmetricMatchers {
    *
    * @param expected Expected object pattern that contains a subset of the properties.
    */
-  objectContaining(sample: Record<string, unknown>): AsymmetricMatcher;
+  objectContaining(sample: Record<string, unknown>): AsymmetricMatcher
   /**
    * `expect.stringContaining()` matches a string that contains the expected substring. Use this method inside
    * [expect(value).toEqual(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal)
@@ -7987,7 +8141,7 @@ interface AsymmetricMatchers {
    *
    * @param expected Expected substring.
    */
-  stringContaining(sample: string): AsymmetricMatcher;
+  stringContaining(sample: string): AsymmetricMatcher
   /**
    * `expect.stringMatching()` matches a received string that in turn matches the expected pattern. Use this method
    * inside
@@ -8011,7 +8165,7 @@ interface AsymmetricMatchers {
    *
    * @param expected Pattern that expected string should match.
    */
-  stringMatching(sample: string | RegExp): AsymmetricMatcher;
+  stringMatching(sample: string | RegExp): AsymmetricMatcher
 }
 
 /**
@@ -8044,7 +8198,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  not: GenericAssertions<R>;
+  not: GenericAssertions<R>
   /**
    * Use `resolves` to unwrap the value of a fulfilled promise so any other matcher can be chained. If the promise is
    * rejected the assertion fails.
@@ -8058,7 +8212,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  resolves: GenericAssertions<R>;
+  resolves: GenericAssertions<R>
   /**
    * Use `.rejects` to unwrap the reason of a rejected promise so any other matcher can be chained. If the promise is
    * fulfilled the assertion fails.
@@ -8072,7 +8226,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  rejects: GenericAssertions<R>;
+  rejects: GenericAssertions<R>
   /**
    * Compares value with
    * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-be-option-expected) by
@@ -8090,7 +8244,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected value.
    */
-  toBe(expected: unknown): R;
+  toBe(expected: unknown): R
   /**
    * Compares floating point numbers for approximate equality. Use this method instead of
    * [expect(value).toBe(expected)](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-be)
@@ -8106,7 +8260,7 @@ interface GenericAssertions<R> {
    * @param expected Expected value.
    * @param numDigits The number of decimal digits after the decimal point that must be equal.
    */
-  toBeCloseTo(expected: number, numDigits?: number): R;
+  toBeCloseTo(expected: number, numDigits?: number): R
   /**
    * Ensures that value is not `undefined`.
    *
@@ -8118,7 +8272,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeDefined(): R;
+  toBeDefined(): R
   /**
    * Ensures that value is false in a boolean context, one of `false`, `0`, `''`, `null`, `undefined` or `NaN`. Use this
    * method when you don't care about the specific value.
@@ -8131,7 +8285,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeFalsy(): R;
+  toBeFalsy(): R
   /**
    * Ensures that `value > expected` for number or big integer values.
    *
@@ -8144,7 +8298,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The value to compare to.
    */
-  toBeGreaterThan(expected: number | bigint): R;
+  toBeGreaterThan(expected: number | bigint): R
   /**
    * Ensures that `value >= expected` for number or big integer values.
    *
@@ -8157,7 +8311,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The value to compare to.
    */
-  toBeGreaterThanOrEqual(expected: number | bigint): R;
+  toBeGreaterThanOrEqual(expected: number | bigint): R
   /**
    * Ensures that value is an instance of a class. Uses `instanceof` operator.
    *
@@ -8172,7 +8326,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The class or constructor function.
    */
-  toBeInstanceOf(expected: Function): R;
+  toBeInstanceOf(expected: Function): R
   /**
    * Ensures that `value < expected` for number or big integer values.
    *
@@ -8185,7 +8339,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The value to compare to.
    */
-  toBeLessThan(expected: number | bigint): R;
+  toBeLessThan(expected: number | bigint): R
   /**
    * Ensures that `value <= expected` for number or big integer values.
    *
@@ -8198,7 +8352,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The value to compare to.
    */
-  toBeLessThanOrEqual(expected: number | bigint): R;
+  toBeLessThanOrEqual(expected: number | bigint): R
   /**
    * Ensures that value is `NaN`.
    *
@@ -8210,7 +8364,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeNaN(): R;
+  toBeNaN(): R
   /**
    * Ensures that value is `null`.
    *
@@ -8222,7 +8376,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeNull(): R;
+  toBeNull(): R
   /**
    * Ensures that value is true in a boolean context, **anything but** `false`, `0`, `''`, `null`, `undefined` or `NaN`.
    * Use this method when you don't care about the specific value.
@@ -8235,7 +8389,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeTruthy(): R;
+  toBeTruthy(): R
   /**
    * Ensures that value is `undefined`.
    *
@@ -8247,7 +8401,7 @@ interface GenericAssertions<R> {
    * ```
    *
    */
-  toBeUndefined(): R;
+  toBeUndefined(): R
   /**
    * Ensures that string value contains an expected substring. Comparison is case-sensitive.
    *
@@ -8261,7 +8415,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected substring.
    */
-  toContain(expected: string): R;
+  toContain(expected: string): R
   /**
    * Ensures that value is an `Array` or `Set` and contains an expected item.
    *
@@ -8275,7 +8429,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected value in the collection.
    */
-  toContain(expected: unknown): R;
+  toContain(expected: unknown): R
   /**
    * Ensures that value is an `Array` or `Set` and contains an item equal to the expected.
    *
@@ -8300,7 +8454,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected value in the collection.
    */
-  toContainEqual(expected: unknown): R;
+  toContainEqual(expected: unknown): R
   /**
    * Compares contents of the value with contents of
    * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-equal-option-expected),
@@ -8362,7 +8516,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected value.
    */
-  toEqual(expected: unknown): R;
+  toEqual(expected: unknown): R
   /**
    * Ensures that value has a `.length` property equal to
    * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-have-length-option-expected).
@@ -8377,7 +8531,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected length.
    */
-  toHaveLength(expected: number): R;
+  toHaveLength(expected: number): R
   /**
    * Ensures that property at provided `keyPath` exists on the object and optionally checks that property is equal to
    * the
@@ -8405,7 +8559,7 @@ interface GenericAssertions<R> {
    * array items.
    * @param expected Optional expected value to compare the property to.
    */
-  toHaveProperty(keyPath: string | Array<string>, value?: unknown): R;
+  toHaveProperty(keyPath: string | Array<string>, value?: unknown): R
   /**
    * Ensures that string value matches a regular expression.
    *
@@ -8418,7 +8572,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Regular expression to match against.
    */
-  toMatch(expected: RegExp | string): R;
+  toMatch(expected: RegExp | string): R
   /**
    * Compares contents of the value with contents of
    * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-match-object-option-expected),
@@ -8444,7 +8598,7 @@ interface GenericAssertions<R> {
    *
    * @param expected The expected object value to match against.
    */
-  toMatchObject(expected: Record<string, unknown> | Array<unknown>): R;
+  toMatchObject(expected: Record<string, unknown> | Array<unknown>): R
   /**
    * Compares contents of the value with contents of
    * [`expected`](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-strict-equal-option-expected)
@@ -8466,7 +8620,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected value.
    */
-  toStrictEqual(expected: unknown): R;
+  toStrictEqual(expected: unknown): R
   /**
    * Calls the function and ensures it throws an error.
    *
@@ -8496,7 +8650,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected error message or error object.
    */
-  toThrow(error?: unknown): R;
+  toThrow(error?: unknown): R
   /**
    * An alias for
    * [expect(value).toThrow([expected])](https://playwright.dev/docs/api/class-genericassertions#generic-assertions-to-throw).
@@ -8511,8 +8665,7 @@ interface GenericAssertions<R> {
    *
    * @param expected Expected error message or error object.
    */
-  toThrowError(error?: unknown): R;
-
+  toThrowError(error?: unknown): R
 }
 
 type FunctionAssertions = {
@@ -8536,120 +8689,167 @@ type FunctionAssertions = {
    *
    * @param options
    */
-  toPass(options?: { timeout?: number, intervals?: number[] }): Promise<void>;
-};
+  toPass(options?: { timeout?: number; intervals?: number[] }): Promise<void>
+}
 
-type BaseMatchers<R, T> = GenericAssertions<R> & PlaywrightTest.Matchers<R, T> & SnapshotAssertions;
-type AllowedGenericMatchers<R, T> = PlaywrightTest.Matchers<R, T> & Pick<GenericAssertions<R>, 'toBe' | 'toBeDefined' | 'toBeFalsy' | 'toBeNull' | 'toBeTruthy' | 'toBeUndefined'>;
+type BaseMatchers<R, T> = GenericAssertions<R> & PlaywrightTest.Matchers<R, T> & SnapshotAssertions
+type AllowedGenericMatchers<R, T> = PlaywrightTest.Matchers<R, T> &
+  Pick<
+    GenericAssertions<R>,
+    'toBe' | 'toBeDefined' | 'toBeFalsy' | 'toBeNull' | 'toBeTruthy' | 'toBeUndefined'
+  >
 
-type SpecificMatchers<R, T> =
-  T extends Page ? PageAssertions & AllowedGenericMatchers<R, T> :
-  T extends Locator ? LocatorAssertions & AllowedGenericMatchers<R, T> :
-  T extends APIResponse ? APIResponseAssertions & AllowedGenericMatchers<R, T> :
-  BaseMatchers<R, T> & (T extends Function ? FunctionAssertions : {});
-type AllMatchers<R, T> = PageAssertions & LocatorAssertions & APIResponseAssertions & FunctionAssertions & BaseMatchers<R, T>;
+type SpecificMatchers<R, T> = T extends Page
+  ? PageAssertions & AllowedGenericMatchers<R, T>
+  : T extends Locator
+    ? LocatorAssertions & AllowedGenericMatchers<R, T>
+    : T extends APIResponse
+      ? APIResponseAssertions & AllowedGenericMatchers<R, T>
+      : BaseMatchers<R, T> & (T extends Function ? FunctionAssertions : {})
+type AllMatchers<R, T> = PageAssertions &
+  LocatorAssertions &
+  APIResponseAssertions &
+  FunctionAssertions &
+  BaseMatchers<R, T>
 
-type IfAny<T, Y, N> = 0 extends (1 & T) ? Y : N;
-type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
-type ToUserMatcher<F, DefaultReturnType> = F extends (first: any, ...args: infer Rest) => infer R ? (...args: Rest) => (R extends PromiseLike<infer U> ? Promise<void> : DefaultReturnType) : never;
+type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N
+type Awaited<T> = T extends PromiseLike<infer U> ? U : T
+type ToUserMatcher<F, DefaultReturnType> = F extends (first: any, ...args: infer Rest) => infer R
+  ? (...args: Rest) => R extends PromiseLike<infer U> ? Promise<void> : DefaultReturnType
+  : never
 type ToUserMatcherObject<T, DefaultReturnType, ArgType> = {
-  [K in keyof T as T[K] extends (arg: ArgType, ...rest: any[]) => any ? K : never]: ToUserMatcher<T[K], DefaultReturnType>;
-};
+  [K in keyof T as T[K] extends (arg: ArgType, ...rest: any[]) => any ? K : never]: ToUserMatcher<
+    T[K],
+    DefaultReturnType
+  >
+}
 
-type MatcherHintColor = (arg: string) => string;
+type MatcherHintColor = (arg: string) => string
 
 export type MatcherHintOptions = {
-  comment?: string;
-  expectedColor?: MatcherHintColor;
-  isDirectExpectCall?: boolean;
-  isNot?: boolean;
-  promise?: string;
-  receivedColor?: MatcherHintColor;
-  secondArgument?: string;
-  secondArgumentColor?: MatcherHintColor;
-};
+  comment?: string
+  expectedColor?: MatcherHintColor
+  isDirectExpectCall?: boolean
+  isNot?: boolean
+  promise?: string
+  receivedColor?: MatcherHintColor
+  secondArgument?: string
+  secondArgumentColor?: MatcherHintColor
+}
 
 export interface ExpectMatcherUtils {
-  matcherHint(matcherName: string, received: unknown, expected: unknown, options?: MatcherHintOptions): string;
-  printDiffOrStringify(expected: unknown, received: unknown, expectedLabel: string, receivedLabel: string, expand: boolean): string;
-  printExpected(value: unknown): string;
-  printReceived(object: unknown): string;
-  printWithType<T>(name: string, value: T, print: (value: T) => string): string;
-  diff(a: unknown, b: unknown): string | null;
-  stringify(object: unknown, maxDepth?: number, maxWidth?: number): string;
+  matcherHint(
+    matcherName: string,
+    received: unknown,
+    expected: unknown,
+    options?: MatcherHintOptions
+  ): string
+  printDiffOrStringify(
+    expected: unknown,
+    received: unknown,
+    expectedLabel: string,
+    receivedLabel: string,
+    expand: boolean
+  ): string
+  printExpected(value: unknown): string
+  printReceived(object: unknown): string
+  printWithType<T>(name: string, value: T, print: (value: T) => string): string
+  diff(a: unknown, b: unknown): string | null
+  stringify(object: unknown, maxDepth?: number, maxWidth?: number): string
 }
 
 export type ExpectMatcherState = {
   /**
    * Whether this matcher was called with the negated .not modifier.
    */
-  isNot: boolean;
+  isNot: boolean
   /**
    * - 'rejects' if matcher was called with the promise .rejects modifier
    * - 'resolves' if matcher was called with the promise .resolves modifier
    * - '' if matcher was not called with a promise modifier
    */
-  promise: 'rejects' | 'resolves' | '';
-  utils: ExpectMatcherUtils;
+  promise: 'rejects' | 'resolves' | ''
+  utils: ExpectMatcherUtils
   /**
    * Timeout in milliseconds for the assertion to be fulfilled.
    */
-  timeout: number;
-};
+  timeout: number
+}
 
 export type MatcherReturnType = {
-  message: () => string;
-  pass: boolean;
-  name?: string;
-  expected?: unknown;
-  actual?: any;
-  log?: string[];
-  timeout?: number;
-};
+  message: () => string
+  pass: boolean
+  name?: string
+  expected?: unknown
+  actual?: any
+  log?: string[]
+  timeout?: number
+}
 
 type MakeMatchers<R, T, ExtendedMatchers> = {
   /**
    * If you know how to test something, `.not` lets you test its opposite.
    */
-  not: MakeMatchers<R, T, ExtendedMatchers>;
+  not: MakeMatchers<R, T, ExtendedMatchers>
   /**
    * Use resolves to unwrap the value of a fulfilled promise so any other
    * matcher can be chained. If the promise is rejected the assertion fails.
    */
-  resolves: MakeMatchers<Promise<R>, Awaited<T>, ExtendedMatchers>;
+  resolves: MakeMatchers<Promise<R>, Awaited<T>, ExtendedMatchers>
   /**
    * Unwraps the reason of a rejected promise so any other matcher can be chained.
    * If the promise is fulfilled the assertion fails.
    */
-  rejects: MakeMatchers<Promise<R>, any, ExtendedMatchers>;
-} & IfAny<T, AllMatchers<R, T>, SpecificMatchers<R, T> & ToUserMatcherObject<ExtendedMatchers, R, T>>;
+  rejects: MakeMatchers<Promise<R>, any, ExtendedMatchers>
+} & IfAny<
+  T,
+  AllMatchers<R, T>,
+  SpecificMatchers<R, T> & ToUserMatcherObject<ExtendedMatchers, R, T>
+>
 
 type PollMatchers<R, T, ExtendedMatchers> = {
   /**
    * If you know how to test something, `.not` lets you test its opposite.
    */
-  not: PollMatchers<R, T, ExtendedMatchers>;
-} & BaseMatchers<R, T> & ToUserMatcherObject<ExtendedMatchers, R, T>;
+  not: PollMatchers<R, T, ExtendedMatchers>
+} & BaseMatchers<R, T> &
+  ToUserMatcherObject<ExtendedMatchers, R, T>
 
 export type Expect<ExtendedMatchers = {}> = {
-  <T = unknown>(actual: T, messageOrOptions?: string | { message?: string }): MakeMatchers<void, T, ExtendedMatchers>;
-  soft: Expect<ExtendedMatchers>;
-  poll: <T = unknown>(actual: () => T | Promise<T>, messageOrOptions?: string | { message?: string, timeout?: number, intervals?: number[] }) => PollMatchers<Promise<void>, T, ExtendedMatchers>;
-  extend<MoreMatchers extends Record<string, (this: ExpectMatcherState, receiver: any, ...args: any[]) => MatcherReturnType | Promise<MatcherReturnType>>>(matchers: MoreMatchers): Expect<ExtendedMatchers & MoreMatchers>;
+  <T = unknown>(
+    actual: T,
+    messageOrOptions?: string | { message?: string }
+  ): MakeMatchers<void, T, ExtendedMatchers>
+  soft: Expect<ExtendedMatchers>
+  poll: <T = unknown>(
+    actual: () => T | Promise<T>,
+    messageOrOptions?: string | { message?: string; timeout?: number; intervals?: number[] }
+  ) => PollMatchers<Promise<void>, T, ExtendedMatchers>
+  extend<
+    MoreMatchers extends Record<
+      string,
+      (
+        this: ExpectMatcherState,
+        receiver: any,
+        ...args: any[]
+      ) => MatcherReturnType | Promise<MatcherReturnType>
+    >
+  >(
+    matchers: MoreMatchers
+  ): Expect<ExtendedMatchers & MoreMatchers>
   configure: (configuration: {
-    message?: string,
-    timeout?: number,
-    soft?: boolean,
-  }) => Expect<ExtendedMatchers>;
-  getState(): unknown;
-  not: Omit<AsymmetricMatchers, 'any' | 'anything'>;
-} & AsymmetricMatchers;
+    message?: string
+    timeout?: number
+    soft?: boolean
+  }) => Expect<ExtendedMatchers>
+  getState(): unknown
+  not: Omit<AsymmetricMatchers, 'any' | 'anything'>
+} & AsymmetricMatchers
 
 // --- BEGINGLOBAL ---
 declare global {
   export namespace PlaywrightTest {
-    export interface Matchers<R, T = unknown> {
-    }
+    export interface Matchers<R, T = unknown> {}
   }
 }
 // --- ENDGLOBAL ---
@@ -8658,43 +8858,55 @@ declare global {
  * These tests are executed in Playwright environment that launches the browser
  * and provides a fresh page to each test.
  */
-export const test: TestType<PlaywrightTestArgs & PlaywrightTestOptions, PlaywrightWorkerArgs & PlaywrightWorkerOptions>;
-export default test;
+export const test: TestType<
+  PlaywrightTestArgs & PlaywrightTestOptions,
+  PlaywrightWorkerArgs & PlaywrightWorkerOptions
+>
+export default test
 
-export const _baseTest: TestType<{}, {}>;
-export const expect: Expect<{}>;
+export const _baseTest: TestType<{}, {}>
+export const expect: Expect<{}>
 
 /**
  * Defines Playwright config
  */
-export function defineConfig(config: PlaywrightTestConfig): PlaywrightTestConfig;
-export function defineConfig<T>(config: PlaywrightTestConfig<T>): PlaywrightTestConfig<T>;
-export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>): PlaywrightTestConfig<T, W>;
-export function defineConfig(config: PlaywrightTestConfig, ...configs: PlaywrightTestConfig[]): PlaywrightTestConfig;
-export function defineConfig<T>(config: PlaywrightTestConfig<T>, ...configs: PlaywrightTestConfig<T>[]): PlaywrightTestConfig<T>;
-export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...configs: PlaywrightTestConfig<T, W>[]): PlaywrightTestConfig<T, W>;
+export function defineConfig(config: PlaywrightTestConfig): PlaywrightTestConfig
+export function defineConfig<T>(config: PlaywrightTestConfig<T>): PlaywrightTestConfig<T>
+export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>): PlaywrightTestConfig<T, W>
+export function defineConfig(
+  config: PlaywrightTestConfig,
+  ...configs: PlaywrightTestConfig[]
+): PlaywrightTestConfig
+export function defineConfig<T>(
+  config: PlaywrightTestConfig<T>,
+  ...configs: PlaywrightTestConfig<T>[]
+): PlaywrightTestConfig<T>
+export function defineConfig<T, W>(
+  config: PlaywrightTestConfig<T, W>,
+  ...configs: PlaywrightTestConfig<T, W>[]
+): PlaywrightTestConfig<T, W>
 
-type MergedT<List> = List extends [TestType<infer T, any>, ...(infer Rest)] ? T & MergedT<Rest> : {};
-type MergedW<List> = List extends [TestType<any, infer W>, ...(infer Rest)] ? W & MergedW<Rest> : {};
-type MergedTestType<List> = TestType<MergedT<List>, MergedW<List>>;
+type MergedT<List> = List extends [TestType<infer T, any>, ...infer Rest] ? T & MergedT<Rest> : {}
+type MergedW<List> = List extends [TestType<any, infer W>, ...infer Rest] ? W & MergedW<Rest> : {}
+type MergedTestType<List> = TestType<MergedT<List>, MergedW<List>>
 
 /**
  * Merges fixtures
  */
-export function mergeTests<List extends any[]>(...tests: List): MergedTestType<List>;
+export function mergeTests<List extends any[]>(...tests: List): MergedTestType<List>
 
-type MergedExpectMatchers<List> = List extends [Expect<infer M>, ...(infer Rest)] ? M & MergedExpectMatchers<Rest> : {};
-type MergedExpect<List> = Expect<MergedExpectMatchers<List>>;
+type MergedExpectMatchers<List> = List extends [Expect<infer M>, ...infer Rest]
+  ? M & MergedExpectMatchers<Rest>
+  : {}
+type MergedExpect<List> = Expect<MergedExpectMatchers<List>>
 
 /**
  * Merges expects
  */
-export function mergeExpects<List extends any[]>(...expects: List): MergedExpect<List>;
+export function mergeExpects<List extends any[]>(...expects: List): MergedExpect<List>
 
 // This is required to not export everything by default. See https://github.com/Microsoft/TypeScript/issues/19545#issuecomment-340490459
-export { };
-
-
+export {}
 
 /**
  * The [APIResponseAssertions](https://playwright.dev/docs/api/class-apiresponseassertions) class provides assertion
@@ -8723,7 +8935,7 @@ interface APIResponseAssertions {
    * ```
    *
    */
-  toBeOK(): Promise<void>;
+  toBeOK(): Promise<void>
 
   /**
    * Makes the assertion check for the opposite condition.
@@ -8737,7 +8949,7 @@ interface APIResponseAssertions {
    * ```
    *
    */
-  not: APIResponseAssertions;
+  not: APIResponseAssertions
 }
 
 /**
@@ -8770,13 +8982,13 @@ interface LocatorAssertions {
    * @param options
    */
   toBeAttached(options?: {
-    attached?: boolean;
+    attached?: boolean
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a checked input.
@@ -8796,7 +9008,7 @@ interface LocatorAssertions {
      * [`indeterminate`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-checked-option-indeterminate)
      * is set to true.
      */
-    checked?: boolean;
+    checked?: boolean
 
     /**
      * Asserts that the element is in the indeterminate (mixed) state. Only supported for checkboxes and radio buttons.
@@ -8804,13 +9016,13 @@ interface LocatorAssertions {
      * [`checked`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-checked-option-checked)
      * is provided.
      */
-    indeterminate?: boolean;
+    indeterminate?: boolean
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a disabled element. Element is
@@ -8832,8 +9044,8 @@ interface LocatorAssertions {
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an editable element.
@@ -8848,13 +9060,13 @@ interface LocatorAssertions {
    * @param options
    */
   toBeEditable(options?: {
-    editable?: boolean;
+    editable?: boolean
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an empty editable element or to a
@@ -8873,8 +9085,8 @@ interface LocatorAssertions {
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an enabled element.
@@ -8889,13 +9101,13 @@ interface LocatorAssertions {
    * @param options
    */
   toBeEnabled(options?: {
-    enabled?: boolean;
+    enabled?: boolean
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to a focused DOM node.
@@ -8913,8 +9125,8 @@ interface LocatorAssertions {
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures that [Locator](https://playwright.dev/docs/api/class-locator) either does not resolve to any DOM node, or
@@ -8933,8 +9145,8 @@ interface LocatorAssertions {
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element that intersects viewport,
@@ -8960,13 +9172,13 @@ interface LocatorAssertions {
      * The minimal ratio of the element to intersect viewport. If equals to `0`, then element should intersect viewport at
      * any positive ratio. Defaults to `0`.
      */
-    ratio?: number;
+    ratio?: number
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures that [Locator](https://playwright.dev/docs/api/class-locator) points to an attached and
@@ -8998,10 +9210,10 @@ interface LocatorAssertions {
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
+    timeout?: number
 
-    visible?: boolean;
-  }): Promise<void>;
+    visible?: boolean
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given CSS classes.
@@ -9041,12 +9253,15 @@ interface LocatorAssertions {
    * elements.
    * @param options
    */
-  toContainClass(expected: string|ReadonlyArray<string>, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toContainClass(
+    expected: string | ReadonlyArray<string>,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element that contains the given
@@ -9101,24 +9316,27 @@ interface LocatorAssertions {
    * @param expected Expected substring or RegExp or a list of those.
    * @param options
    */
-  toContainText(expected: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-contain-text-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toContainText(
+    expected: string | RegExp | ReadonlyArray<string | RegExp>,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-contain-text-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
 
-    /**
-     * Whether to use `element.innerText` instead of `element.textContent` when retrieving DOM node text.
-     */
-    useInnerText?: boolean;
-  }): Promise<void>;
+      /**
+       * Whether to use `element.innerText` instead of `element.textContent` when retrieving DOM node text.
+       */
+      useInnerText?: boolean
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
@@ -9134,19 +9352,22 @@ interface LocatorAssertions {
    * @param description Expected accessible description.
    * @param options
    */
-  toHaveAccessibleDescription(description: string|RegExp, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-description-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toHaveAccessibleDescription(
+    description: string | RegExp,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-description-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
@@ -9162,19 +9383,22 @@ interface LocatorAssertions {
    * @param errorMessage Expected accessible error message.
    * @param options
    */
-  toHaveAccessibleErrorMessage(errorMessage: string|RegExp, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-error-message-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toHaveAccessibleErrorMessage(
+    errorMessage: string | RegExp,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-error-message-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
@@ -9190,19 +9414,22 @@ interface LocatorAssertions {
    * @param name Expected accessible name.
    * @param options
    */
-  toHaveAccessibleName(name: string|RegExp, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-name-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toHaveAccessibleName(
+    name: string | RegExp,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-accessible-name-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given attribute.
@@ -9218,19 +9445,23 @@ interface LocatorAssertions {
    * @param value Expected attribute value.
    * @param options
    */
-  toHaveAttribute(name: string, value: string|RegExp, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-attribute-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toHaveAttribute(
+    name: string,
+    value: string | RegExp,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-attribute-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given attribute. The
@@ -9246,12 +9477,15 @@ interface LocatorAssertions {
    * @param name Attribute name.
    * @param options
    */
-  toHaveAttribute(name: string, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveAttribute(
+    name: string,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given CSS classes.
@@ -9282,12 +9516,15 @@ interface LocatorAssertions {
    * @param expected Expected class or RegExp or a list of those.
    * @param options
    */
-  toHaveClass(expected: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveClass(
+    expected: string | RegExp | ReadonlyArray<string | RegExp>,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) resolves to an exact number of DOM nodes.
@@ -9302,12 +9539,15 @@ interface LocatorAssertions {
    * @param count Expected count.
    * @param options
    */
-  toHaveCount(count: number, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveCount(
+    count: number,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) resolves to an element with the given computed
@@ -9324,17 +9564,21 @@ interface LocatorAssertions {
    * @param value CSS property value.
    * @param options
    */
-  toHaveCSS(name: string, value: string|RegExp, options?: {
-    /**
-     * Pseudo-element to read computed styles from.
-     */
-    pseudo?: "before"|"after";
+  toHaveCSS(
+    name: string,
+    value: string | RegExp,
+    options?: {
+      /**
+       * Pseudo-element to read computed styles from.
+       */
+      pseudo?: 'before' | 'after'
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given DOM Node
@@ -9350,12 +9594,15 @@ interface LocatorAssertions {
    * @param id Element id.
    * @param options
    */
-  toHaveId(id: string|RegExp, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveId(
+    id: string | RegExp,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with given JavaScript
@@ -9372,12 +9619,16 @@ interface LocatorAssertions {
    * @param value Property value.
    * @param options
    */
-  toHaveJSProperty(name: string, value: any, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveJSProperty(
+    name: string,
+    value: any,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with a given
@@ -9396,12 +9647,97 @@ interface LocatorAssertions {
    * @param role Required aria role.
    * @param options
    */
-  toHaveRole(role: "alert"|"alertdialog"|"application"|"article"|"banner"|"blockquote"|"button"|"caption"|"cell"|"checkbox"|"code"|"columnheader"|"combobox"|"complementary"|"contentinfo"|"definition"|"deletion"|"dialog"|"directory"|"document"|"emphasis"|"feed"|"figure"|"form"|"generic"|"grid"|"gridcell"|"group"|"heading"|"img"|"insertion"|"link"|"list"|"listbox"|"listitem"|"log"|"main"|"marquee"|"math"|"meter"|"menu"|"menubar"|"menuitem"|"menuitemcheckbox"|"menuitemradio"|"navigation"|"none"|"note"|"option"|"paragraph"|"presentation"|"progressbar"|"radio"|"radiogroup"|"region"|"row"|"rowgroup"|"rowheader"|"scrollbar"|"search"|"searchbox"|"separator"|"slider"|"spinbutton"|"status"|"strong"|"subscript"|"superscript"|"switch"|"tab"|"table"|"tablist"|"tabpanel"|"term"|"textbox"|"time"|"timer"|"toolbar"|"tooltip"|"tree"|"treegrid"|"treeitem", options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveRole(
+    role:
+      | 'alert'
+      | 'alertdialog'
+      | 'application'
+      | 'article'
+      | 'banner'
+      | 'blockquote'
+      | 'button'
+      | 'caption'
+      | 'cell'
+      | 'checkbox'
+      | 'code'
+      | 'columnheader'
+      | 'combobox'
+      | 'complementary'
+      | 'contentinfo'
+      | 'definition'
+      | 'deletion'
+      | 'dialog'
+      | 'directory'
+      | 'document'
+      | 'emphasis'
+      | 'feed'
+      | 'figure'
+      | 'form'
+      | 'generic'
+      | 'grid'
+      | 'gridcell'
+      | 'group'
+      | 'heading'
+      | 'img'
+      | 'insertion'
+      | 'link'
+      | 'list'
+      | 'listbox'
+      | 'listitem'
+      | 'log'
+      | 'main'
+      | 'marquee'
+      | 'math'
+      | 'meter'
+      | 'menu'
+      | 'menubar'
+      | 'menuitem'
+      | 'menuitemcheckbox'
+      | 'menuitemradio'
+      | 'navigation'
+      | 'none'
+      | 'note'
+      | 'option'
+      | 'paragraph'
+      | 'presentation'
+      | 'progressbar'
+      | 'radio'
+      | 'radiogroup'
+      | 'region'
+      | 'row'
+      | 'rowgroup'
+      | 'rowheader'
+      | 'scrollbar'
+      | 'search'
+      | 'searchbox'
+      | 'separator'
+      | 'slider'
+      | 'spinbutton'
+      | 'status'
+      | 'strong'
+      | 'subscript'
+      | 'superscript'
+      | 'switch'
+      | 'tab'
+      | 'table'
+      | 'tablist'
+      | 'tabpanel'
+      | 'term'
+      | 'textbox'
+      | 'time'
+      | 'timer'
+      | 'toolbar'
+      | 'tooltip'
+      | 'tree'
+      | 'treegrid'
+      | 'treeitem',
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * This function will wait until two consecutive locator screenshots yield the same result, and then compare the last
@@ -9418,84 +9754,87 @@ interface LocatorAssertions {
    * @param name Snapshot name.
    * @param options
    */
-  toHaveScreenshot(name: string|ReadonlyArray<string>, options?: {
-    /**
-     * When set to `"disabled"`, stops CSS animations, CSS transitions and Web Animations. Animations get different
-     * treatment depending on their duration:
-     * - finite animations are fast-forwarded to completion, so they'll fire `transitionend` event.
-     * - infinite animations are canceled to initial state, and then played over after the screenshot.
-     *
-     * Defaults to `"disabled"` that disables animations.
-     */
-    animations?: "disabled"|"allow";
+  toHaveScreenshot(
+    name: string | ReadonlyArray<string>,
+    options?: {
+      /**
+       * When set to `"disabled"`, stops CSS animations, CSS transitions and Web Animations. Animations get different
+       * treatment depending on their duration:
+       * - finite animations are fast-forwarded to completion, so they'll fire `transitionend` event.
+       * - infinite animations are canceled to initial state, and then played over after the screenshot.
+       *
+       * Defaults to `"disabled"` that disables animations.
+       */
+      animations?: 'disabled' | 'allow'
 
-    /**
-     * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
-     * changed.  Defaults to `"hide"`.
-     */
-    caret?: "hide"|"initial";
+      /**
+       * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
+       * changed.  Defaults to `"hide"`.
+       */
+      caret?: 'hide' | 'initial'
 
-    /**
-     * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
-     * box `#FF00FF` (customized by
-     * [`maskColor`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-screenshot-1-option-mask-color))
-     * that completely covers its bounding box. The mask is also applied to invisible elements, see
-     * [Matching only visible elements](https://playwright.dev/docs/locators#matching-only-visible-elements) to disable that.
-     */
-    mask?: Array<Locator>;
+      /**
+       * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
+       * box `#FF00FF` (customized by
+       * [`maskColor`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-screenshot-1-option-mask-color))
+       * that completely covers its bounding box. The mask is also applied to invisible elements, see
+       * [Matching only visible elements](https://playwright.dev/docs/locators#matching-only-visible-elements) to disable that.
+       */
+      mask?: Array<Locator>
 
-    /**
-     * Specify the color of the overlay box for masked elements, in
-     * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
-     */
-    maskColor?: string;
+      /**
+       * Specify the color of the overlay box for masked elements, in
+       * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
+       */
+      maskColor?: string
 
-    /**
-     * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
-     * configurable with `TestConfig.expect`. Unset by default.
-     */
-    maxDiffPixelRatio?: number;
+      /**
+       * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
+       * configurable with `TestConfig.expect`. Unset by default.
+       */
+      maxDiffPixelRatio?: number
 
-    /**
-     * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
-     * default.
-     */
-    maxDiffPixels?: number;
+      /**
+       * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
+       * default.
+       */
+      maxDiffPixels?: number
 
-    /**
-     * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
-     * Defaults to `false`.
-     */
-    omitBackground?: boolean;
+      /**
+       * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
+       * Defaults to `false`.
+       */
+      omitBackground?: boolean
 
-    /**
-     * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
-     * will keep screenshots small. Using `"device"` option will produce a single pixel per each device pixel, so
-     * screenshots of high-dpi devices will be twice as large or even larger.
-     *
-     * Defaults to `"css"`.
-     */
-    scale?: "css"|"device";
+      /**
+       * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
+       * will keep screenshots small. Using `"device"` option will produce a single pixel per each device pixel, so
+       * screenshots of high-dpi devices will be twice as large or even larger.
+       *
+       * Defaults to `"css"`.
+       */
+      scale?: 'css' | 'device'
 
-    /**
-     * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
-     * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
-     * stylesheet pierces the Shadow DOM and applies to the inner frames.
-     */
-    stylePath?: string|Array<string>;
+      /**
+       * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
+       * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
+       * stylesheet pierces the Shadow DOM and applies to the inner frames.
+       */
+      stylePath?: string | Array<string>
 
-    /**
-     * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
-     * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
-     * `TestConfig.expect`. Defaults to `0.2`.
-     */
-    threshold?: number;
+      /**
+       * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
+       * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
+       * `TestConfig.expect`. Defaults to `0.2`.
+       */
+      threshold?: number
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * This function will wait until two consecutive locator screenshots yield the same result, and then compare the last
@@ -9520,13 +9859,13 @@ interface LocatorAssertions {
      *
      * Defaults to `"disabled"` that disables animations.
      */
-    animations?: "disabled"|"allow";
+    animations?: 'disabled' | 'allow'
 
     /**
      * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
      * changed.  Defaults to `"hide"`.
      */
-    caret?: "hide"|"initial";
+    caret?: 'hide' | 'initial'
 
     /**
      * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
@@ -9535,31 +9874,31 @@ interface LocatorAssertions {
      * that completely covers its bounding box. The mask is also applied to invisible elements, see
      * [Matching only visible elements](https://playwright.dev/docs/locators#matching-only-visible-elements) to disable that.
      */
-    mask?: Array<Locator>;
+    mask?: Array<Locator>
 
     /**
      * Specify the color of the overlay box for masked elements, in
      * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
      */
-    maskColor?: string;
+    maskColor?: string
 
     /**
      * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
      * configurable with `TestConfig.expect`. Unset by default.
      */
-    maxDiffPixelRatio?: number;
+    maxDiffPixelRatio?: number
 
     /**
      * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
      * default.
      */
-    maxDiffPixels?: number;
+    maxDiffPixels?: number
 
     /**
      * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
      * Defaults to `false`.
      */
-    omitBackground?: boolean;
+    omitBackground?: boolean
 
     /**
      * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
@@ -9568,27 +9907,27 @@ interface LocatorAssertions {
      *
      * Defaults to `"css"`.
      */
-    scale?: "css"|"device";
+    scale?: 'css' | 'device'
 
     /**
      * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
      * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
      * stylesheet pierces the Shadow DOM and applies to the inner frames.
      */
-    stylePath?: string|Array<string>;
+    stylePath?: string | Array<string>
 
     /**
      * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
      * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
      * `TestConfig.expect`. Defaults to `0.2`.
      */
-    threshold?: number;
+    threshold?: number
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given text. All
@@ -9642,24 +9981,27 @@ interface LocatorAssertions {
    * @param expected Expected string or RegExp or a list of those.
    * @param options
    */
-  toHaveText(expected: string|RegExp|ReadonlyArray<string|RegExp>, options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-text-option-ignore-case)
-     * option takes precedence over the corresponding regular expression flag if specified.
-     */
-    ignoreCase?: boolean;
+  toHaveText(
+    expected: string | RegExp | ReadonlyArray<string | RegExp>,
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-text-option-ignore-case)
+       * option takes precedence over the corresponding regular expression flag if specified.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
 
-    /**
-     * Whether to use `element.innerText` instead of `element.textContent` when retrieving DOM node text.
-     */
-    useInnerText?: boolean;
-  }): Promise<void>;
+      /**
+       * Whether to use `element.innerText` instead of `element.textContent` when retrieving DOM node text.
+       */
+      useInnerText?: boolean
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to an element with the given input
@@ -9675,12 +10017,15 @@ interface LocatorAssertions {
    * @param value Expected value.
    * @param options
    */
-  toHaveValue(value: string|RegExp, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveValue(
+    value: string | RegExp,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the [Locator](https://playwright.dev/docs/api/class-locator) points to multi-select/combobox (i.e. a
@@ -9707,12 +10052,15 @@ interface LocatorAssertions {
    * @param values Expected options currently selected.
    * @param options
    */
-  toHaveValues(values: ReadonlyArray<string|RegExp>, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveValues(
+    values: ReadonlyArray<string | RegExp>,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Asserts that the target element matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
@@ -9730,12 +10078,15 @@ interface LocatorAssertions {
    * @param expected
    * @param options
    */
-  toMatchAriaSnapshot(expected: string, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toMatchAriaSnapshot(
+    expected: string,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Asserts that the target element matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
@@ -9757,13 +10108,13 @@ interface LocatorAssertions {
      * Name of the snapshot to store in the snapshot folder corresponding to this test. Generates sequential names if not
      * specified.
      */
-    name?: string;
+    name?: string
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Makes the assertion check for the opposite condition.
@@ -9777,7 +10128,7 @@ interface LocatorAssertions {
    * ```
    *
    */
-  not: LocatorAssertions;
+  not: LocatorAssertions
 }
 
 /**
@@ -9810,7 +10161,10 @@ interface PageAssertions {
    * @param name Snapshot name.
    * @param options
    */
-  toHaveScreenshot(name: string|ReadonlyArray<string>, options?: PageAssertionsToHaveScreenshotOptions): Promise<void>;
+  toHaveScreenshot(
+    name: string | ReadonlyArray<string>,
+    options?: PageAssertionsToHaveScreenshotOptions
+  ): Promise<void>
 
   /**
    * This function will wait until two consecutive page screenshots yield the same result, and then compare the last
@@ -9825,7 +10179,7 @@ interface PageAssertions {
    * Note that screenshot assertions only work with Playwright test runner.
    * @param options
    */
-  toHaveScreenshot(options?: PageAssertionsToHaveScreenshotOptions): Promise<void>;
+  toHaveScreenshot(options?: PageAssertionsToHaveScreenshotOptions): Promise<void>
 
   /**
    * Ensures the page has the given title.
@@ -9839,12 +10193,15 @@ interface PageAssertions {
    * @param titleOrRegExp Expected title or RegExp.
    * @param options
    */
-  toHaveTitle(titleOrRegExp: string|RegExp, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toHaveTitle(
+    titleOrRegExp: string | RegExp,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Ensures the page is navigated to the given URL.
@@ -9876,20 +10233,23 @@ interface PageAssertions {
    * against the current browser URL.
    * @param options
    */
-  toHaveURL(url: string|RegExp|URLPattern|((url: URL) => boolean), options?: {
-    /**
-     * Whether to perform case-insensitive match.
-     * [`ignoreCase`](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-url-option-ignore-case)
-     * option takes precedence over the corresponding regular expression parameter if specified. A provided predicate
-     * ignores this flag.
-     */
-    ignoreCase?: boolean;
+  toHaveURL(
+    url: string | RegExp | URLPattern | ((url: URL) => boolean),
+    options?: {
+      /**
+       * Whether to perform case-insensitive match.
+       * [`ignoreCase`](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-url-option-ignore-case)
+       * option takes precedence over the corresponding regular expression parameter if specified. A provided predicate
+       * ignores this flag.
+       */
+      ignoreCase?: boolean
 
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Asserts that the page body matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
@@ -9907,12 +10267,15 @@ interface PageAssertions {
    * @param expected
    * @param options
    */
-  toMatchAriaSnapshot(expected: string, options?: {
-    /**
-     * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
-     */
-    timeout?: number;
-  }): Promise<void>;
+  toMatchAriaSnapshot(
+    expected: string,
+    options?: {
+      /**
+       * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
+       */
+      timeout?: number
+    }
+  ): Promise<void>
 
   /**
    * Asserts that the page body matches the given [accessibility snapshot](https://playwright.dev/docs/aria-snapshots).
@@ -9934,13 +10297,13 @@ interface PageAssertions {
      * Name of the snapshot to store in the snapshot folder corresponding to this test. Generates sequential names if not
      * specified.
      */
-    name?: string;
+    name?: string
 
     /**
      * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
      */
-    timeout?: number;
-  }): Promise<void>;
+    timeout?: number
+  }): Promise<void>
 
   /**
    * Makes the assertion check for the opposite condition.
@@ -9954,7 +10317,7 @@ interface PageAssertions {
    * ```
    *
    */
-  not: PageAssertions;
+  not: PageAssertions
 }
 
 /**
@@ -9999,26 +10362,29 @@ interface SnapshotAssertions {
    * @param name Snapshot name.
    * @param options
    */
-  toMatchSnapshot(name: string|ReadonlyArray<string>, options?: {
-    /**
-     * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
-     * configurable with `TestConfig.expect`. Unset by default.
-     */
-    maxDiffPixelRatio?: number;
+  toMatchSnapshot(
+    name: string | ReadonlyArray<string>,
+    options?: {
+      /**
+       * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
+       * configurable with `TestConfig.expect`. Unset by default.
+       */
+      maxDiffPixelRatio?: number
 
-    /**
-     * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
-     * default.
-     */
-    maxDiffPixels?: number;
+      /**
+       * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
+       * default.
+       */
+      maxDiffPixels?: number
 
-    /**
-     * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
-     * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
-     * `TestConfig.expect`. Defaults to `0.2`.
-     */
-    threshold?: number;
-  }): void;
+      /**
+       * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
+       * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
+       * `TestConfig.expect`. Defaults to `0.2`.
+       */
+      threshold?: number
+    }
+  ): void
 
   /**
    * **NOTE** To compare screenshots, use
@@ -10056,26 +10422,26 @@ interface SnapshotAssertions {
      * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
      * configurable with `TestConfig.expect`. Unset by default.
      */
-    maxDiffPixelRatio?: number;
+    maxDiffPixelRatio?: number
 
     /**
      * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
      * default.
      */
-    maxDiffPixels?: number;
+    maxDiffPixels?: number
 
     /**
      * Snapshot name. If not passed, the test name and ordinals are used when called multiple times.
      */
-    name?: string|Array<string>;
+    name?: string | Array<string>
 
     /**
      * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
      * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
      * `TestConfig.expect`. Defaults to `0.2`.
      */
-    threshold?: number;
-  }): void;
+    threshold?: number
+  }): void
 }
 
 /**
@@ -10085,17 +10451,17 @@ export interface Location {
   /**
    * Column number in the source file.
    */
-  column: number;
+  column: number
 
   /**
    * Path to the source file.
    */
-  file: string;
+  file: string
 
   /**
    * Line number in the source file.
    */
-  line: number;
+  line: number
 }
 
 /**
@@ -10107,28 +10473,28 @@ export interface TestInfoError {
    * [cause](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause) for the
    * error. Will be `undefined` if there is no cause or if the cause is not an instance of [Error].
    */
-  cause?: TestInfoError;
+  cause?: TestInfoError
 
   /**
    * Additional context for the error, such as the aria snapshot of the receiver at the time of an `expect(...)` matcher
    * failure.
    */
-  errorContext?: string;
+  errorContext?: string
 
   /**
    * Error message. Set when [Error] (or its subclass) has been thrown.
    */
-  message?: string;
+  message?: string
 
   /**
    * Error stack. Set when [Error] (or its subclass) has been thrown.
    */
-  stack?: string;
+  stack?: string
 
   /**
    * The value that was thrown. Set when anything except the [Error] (or its subclass) has been thrown.
    */
-  value?: string;
+  value?: string
 }
 
 /**
@@ -10192,27 +10558,30 @@ export interface TestStepInfo {
    * @param name Attachment name. The name will also be sanitized and used as the prefix of file name when saving to disk.
    * @param options
    */
-  attach(name: string, options?: {
-    /**
-     * Attachment body. Mutually exclusive with
-     * [`path`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-path).
-     */
-    body?: string|Buffer;
+  attach(
+    name: string,
+    options?: {
+      /**
+       * Attachment body. Mutually exclusive with
+       * [`path`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-path).
+       */
+      body?: string | Buffer
 
-    /**
-     * Content type of this attachment to properly present in the report, for example `'application/json'` or
-     * `'image/png'`. If omitted, content type is inferred based on the
-     * [`path`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-path), or defaults to
-     * `text/plain` for [string] attachments and `application/octet-stream` for [Buffer] attachments.
-     */
-    contentType?: string;
+      /**
+       * Content type of this attachment to properly present in the report, for example `'application/json'` or
+       * `'image/png'`. If omitted, content type is inferred based on the
+       * [`path`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-path), or defaults to
+       * `text/plain` for [string] attachments and `application/octet-stream` for [Buffer] attachments.
+       */
+      contentType?: string
 
-    /**
-     * Path on the filesystem to the attached file. Mutually exclusive with
-     * [`body`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-body).
-     */
-    path?: string;
-  }): Promise<void>;
+      /**
+       * Path on the filesystem to the attached file. Mutually exclusive with
+       * [`body`](https://playwright.dev/docs/api/class-teststepinfo#test-step-info-attach-option-body).
+       */
+      path?: string
+    }
+  ): Promise<void>
 
   /**
    * Abort the currently running step and mark it as skipped. Useful for steps that are currently failing and planned
@@ -10233,7 +10602,7 @@ export interface TestStepInfo {
    * ```
    *
    */
-  skip(): void;
+  skip(): void
 
   /**
    * Conditionally abort the currently running step and mark it as skipped with an optional description. Useful for
@@ -10256,13 +10625,13 @@ export interface TestStepInfo {
    * @param condition A skip condition. Test step is skipped when the condition is `true`.
    * @param description Optional description that will be reflected in a test report.
    */
-  skip(condition: boolean, description?: string): void;
+  skip(condition: boolean, description?: string): void
 
   /**
    * The full title path starting with the test file name, including the step titles. See also
    * [testInfo.titlePath](https://playwright.dev/docs/api/class-testinfo#test-info-title-path).
    */
-  titlePath: Array<string>;
+  titlePath: Array<string>
 }
 
 /**
@@ -10274,7 +10643,7 @@ export interface WorkerInfo {
   /**
    * Processed configuration from the [configuration file](https://playwright.dev/docs/test-configuration).
    */
-  config: FullConfig;
+  config: FullConfig
 
   /**
    * The index of the worker between `0` and `workers - 1`. It is guaranteed that workers running at the same time have
@@ -10284,12 +10653,12 @@ export interface WorkerInfo {
    * Also available as `process.env.TEST_PARALLEL_INDEX`. Learn more about
    * [parallelism and sharding](https://playwright.dev/docs/test-parallel) with Playwright Test.
    */
-  parallelIndex: number;
+  parallelIndex: number
 
   /**
    * Processed project configuration from the [configuration file](https://playwright.dev/docs/test-configuration).
    */
-  project: FullProject;
+  project: FullProject
 
   /**
    * The unique index of the worker process that is running the test. When a worker is restarted, for example after a
@@ -10298,7 +10667,7 @@ export interface WorkerInfo {
    * Also available as `process.env.TEST_WORKER_INDEX`. Learn more about [parallelism and sharding](https://playwright.dev/docs/test-parallel)
    * with Playwright Test.
    */
-  workerIndex: number;
+  workerIndex: number
 }
 
 export interface PageAssertionsToHaveScreenshotOptions {
@@ -10310,13 +10679,13 @@ export interface PageAssertionsToHaveScreenshotOptions {
    *
    * Defaults to `"disabled"` that disables animations.
    */
-  animations?: "disabled"|"allow";
+  animations?: 'disabled' | 'allow'
 
   /**
    * When set to `"hide"`, screenshot will hide text caret. When set to `"initial"`, text caret behavior will not be
    * changed.  Defaults to `"hide"`.
    */
-  caret?: "hide"|"initial";
+  caret?: 'hide' | 'initial'
 
   /**
    * An object which specifies clipping of the resulting image.
@@ -10325,29 +10694,29 @@ export interface PageAssertionsToHaveScreenshotOptions {
     /**
      * x-coordinate of top-left corner of clip area
      */
-    x: number;
+    x: number
 
     /**
      * y-coordinate of top-left corner of clip area
      */
-    y: number;
+    y: number
 
     /**
      * width of clipping area
      */
-    width: number;
+    width: number
 
     /**
      * height of clipping area
      */
-    height: number;
-  };
+    height: number
+  }
 
   /**
    * When true, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to
    * `false`.
    */
-  fullPage?: boolean;
+  fullPage?: boolean
 
   /**
    * Specify locators that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink
@@ -10356,31 +10725,31 @@ export interface PageAssertionsToHaveScreenshotOptions {
    * that completely covers its bounding box. The mask is also applied to invisible elements, see
    * [Matching only visible elements](https://playwright.dev/docs/locators#matching-only-visible-elements) to disable that.
    */
-  mask?: Array<Locator>;
+  mask?: Array<Locator>
 
   /**
    * Specify the color of the overlay box for masked elements, in
    * [CSS color format](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value). Default color is pink `#FF00FF`.
    */
-  maskColor?: string;
+  maskColor?: string
 
   /**
    * An acceptable ratio of pixels that are different to the total amount of pixels, between `0` and `1`. Default is
    * configurable with `TestConfig.expect`. Unset by default.
    */
-  maxDiffPixelRatio?: number;
+  maxDiffPixelRatio?: number
 
   /**
    * An acceptable amount of pixels that could be different. Default is configurable with `TestConfig.expect`. Unset by
    * default.
    */
-  maxDiffPixels?: number;
+  maxDiffPixels?: number
 
   /**
    * Hides default white background and allows capturing screenshots with transparency. Not applicable to `jpeg` images.
    * Defaults to `false`.
    */
-  omitBackground?: boolean;
+  omitBackground?: boolean
 
   /**
    * When set to `"css"`, screenshot will have a single pixel per each css pixel on the page. For high-dpi devices, this
@@ -10389,43 +10758,43 @@ export interface PageAssertionsToHaveScreenshotOptions {
    *
    * Defaults to `"css"`.
    */
-  scale?: "css"|"device";
+  scale?: 'css' | 'device'
 
   /**
    * File name containing the stylesheet to apply while making the screenshot. This is where you can hide dynamic
    * elements, make elements invisible or change their properties to help you creating repeatable screenshots. This
    * stylesheet pierces the Shadow DOM and applies to the inner frames.
    */
-  stylePath?: string|Array<string>;
+  stylePath?: string | Array<string>
 
   /**
    * An acceptable perceived color difference in the [YIQ color space](https://en.wikipedia.org/wiki/YIQ) between the
    * same pixel in compared images, between zero (strict) and one (lax), default is configurable with
    * `TestConfig.expect`. Defaults to `0.2`.
    */
-  threshold?: number;
+  threshold?: number
 
   /**
    * Time to retry the assertion for in milliseconds. Defaults to `timeout` in `TestConfig.expect`.
    */
-  timeout?: number;
+  timeout?: number
 }
 
 interface TestConfigWebServer {
   /**
    * Shell command to start. For example `npm run start`..
    */
-  command: string;
+  command: string
 
   /**
    * Current working directory of the spawned process, defaults to the directory of the configuration file.
    */
-  cwd?: string;
+  cwd?: string
 
   /**
    * Environment variables to set for the command, `process.env` by default.
    */
-  env?: { [key: string]: string; };
+  env?: { [key: string]: string }
 
   /**
    * How to shut down the process. If unspecified, the process group is forcefully `SIGKILL`ed. If set to `{ signal:
@@ -10435,26 +10804,26 @@ interface TestConfigWebServer {
    * down a Docker container requires `SIGTERM`.
    */
   gracefulShutdown?: {
-    signal: "SIGINT"|"SIGTERM";
+    signal: 'SIGINT' | 'SIGTERM'
 
-    timeout: number;
-  };
+    timeout: number
+  }
 
   /**
    * Whether to ignore HTTPS errors when fetching the `url`. Defaults to `false`.
    */
-  ignoreHTTPSErrors?: boolean;
+  ignoreHTTPSErrors?: boolean
 
   /**
    * Specifies a custom name for the web server. This name will be prefixed to log messages. Defaults to `[WebServer]`.
    */
-  name?: string;
+  name?: string
 
   /**
    * The port that your http server is expected to appear on. It does wait until it accepts connections. Either `port`
    * or `url` should be specified.
    */
-  port?: number;
+  port?: number
 
   /**
    * If true, it will re-use an existing server on the `port` or `url` when available. If no server is running on that
@@ -10462,18 +10831,18 @@ interface TestConfigWebServer {
    * listening on the `port` or `url`. This should be commonly set to `!process.env.CI` to allow the local dev server
    * when running tests locally.
    */
-  reuseExistingServer?: boolean;
+  reuseExistingServer?: boolean
 
   /**
    * Whether to pipe the stderr of the command to the process stderr or ignore it. Defaults to `"pipe"`.
    */
-  stderr?: "pipe"|"ignore";
+  stderr?: 'pipe' | 'ignore'
 
   /**
    * If `"pipe"`, it will pipe the stdout of the command to the process stdout. If `"ignore"`, it will ignore the stdout
    * of the command. Default to `"ignore"`.
    */
-  stdout?: "pipe"|"ignore";
+  stdout?: 'pipe' | 'ignore'
 
   /**
    * Consider command started only when given output has been produced.
@@ -10484,26 +10853,25 @@ interface TestConfigWebServer {
      * environment, for example `/Listening on port (?<my_server_port>\d+)/` will store the port number in
      * `process.env['MY_SERVER_PORT']`.
      */
-    stdout?: RegExp;
+    stdout?: RegExp
 
     /**
      * Regular expression to wait for in the `stderr` of the command output. Named capture groups are stored in the
      * environment, for example `/Listening on port (?<my_server_port>\d+)/` will store the port number in
      * `process.env['MY_SERVER_PORT']`.
      */
-    stderr?: RegExp;
-  };
+    stderr?: RegExp
+  }
 
   /**
    * How long to wait for the process to start up and be available in milliseconds. Defaults to 60000.
    */
-  timeout?: number;
+  timeout?: number
 
   /**
    * The url on your http server that is expected to return a 2xx, 3xx, 400, 401, 402, or 403 status code when the
    * server is ready to accept connections. Redirects (3xx status codes) are being followed and the new location is
    * checked. Either `port` or `url` should be specified.
    */
-  url?: string;
+  url?: string
 }
-

@@ -4,6 +4,7 @@ description: Produce test coverage
 ---
 
 Parameters:
+
 - Task: the task to perform
 - Seed file (optional): the seed file to use, defaults to `${seedFile}`
 - Test plan file (optional): the test plan file to write, under `specs/` folder.

@@ -14,169 +14,169 @@
  * limitations under the License.
  */
 
-import type { FrameSnapshot, ResourceSnapshot } from './snapshot';
-import type { Language } from '@isomorphic/locatorGenerators';
-import type { Point, SerializedError, StackFrame } from '@protocol/channels';
+import type { FrameSnapshot, ResourceSnapshot } from './snapshot'
+import type { Language } from '@isomorphic/locatorGenerators'
+import type { Point, SerializedError, StackFrame } from '@protocol/channels'
 
-export type Size = { width: number, height: number };
+export type Size = { width: number; height: number }
 
 // Make sure you add _modernize_N_to_N1(event: any) to traceModernizer.ts.
-export type VERSION = 8;
+export type VERSION = 8
 
 export type BrowserContextEventOptions = {
-  baseURL?: string,
-  viewport?: Size,
-  deviceScaleFactor?: number,
-  isMobile?: boolean,
-  userAgent?: string,
-};
+  baseURL?: string
+  viewport?: Size
+  deviceScaleFactor?: number
+  isMobile?: boolean
+  userAgent?: string
+}
 
 export type ContextCreatedTraceEvent = {
-  version: number,
-  type: 'context-options',
-  origin: 'testRunner' | 'library',
-  browserName: string,
-  channel?: string,
-  platform: string,
-  playwrightVersion?: string,
-  wallTime: number,
-  monotonicTime: number,
-  title?: string,
-  options: BrowserContextEventOptions,
-  sdkLanguage?: Language,
-  testIdAttributeName?: string,
-  contextId?: string,
-  testTimeout?: number,
-};
+  version: number
+  type: 'context-options'
+  origin: 'testRunner' | 'library'
+  browserName: string
+  channel?: string
+  platform: string
+  playwrightVersion?: string
+  wallTime: number
+  monotonicTime: number
+  title?: string
+  options: BrowserContextEventOptions
+  sdkLanguage?: Language
+  testIdAttributeName?: string
+  contextId?: string
+  testTimeout?: number
+}
 
 export type ScreencastFrameTraceEvent = {
-  type: 'screencast-frame',
-  pageId: string,
-  sha1: string,
-  width: number,
-  height: number,
-  timestamp: number,
-  frameSwapWallTime?: number,
-};
+  type: 'screencast-frame'
+  pageId: string
+  sha1: string
+  width: number
+  height: number
+  timestamp: number
+  frameSwapWallTime?: number
+}
 
 export type BeforeActionTraceEvent = {
-  type: 'before',
-  callId: string;
-  startTime: number;
-  title?: string;
-  class: string;
-  method: string;
-  params: Record<string, any>;
-  stepId?: string;
-  beforeSnapshot?: string;
-  stack?: StackFrame[];
-  pageId?: string;
-  parentId?: string;
-  group?: string;
-};
+  type: 'before'
+  callId: string
+  startTime: number
+  title?: string
+  class: string
+  method: string
+  params: Record<string, any>
+  stepId?: string
+  beforeSnapshot?: string
+  stack?: StackFrame[]
+  pageId?: string
+  parentId?: string
+  group?: string
+}
 
 export type InputActionTraceEvent = {
-  type: 'input',
-  callId: string;
-  inputSnapshot?: string;
-  point?: Point;
-};
+  type: 'input'
+  callId: string
+  inputSnapshot?: string
+  point?: Point
+}
 
 export type AfterActionTraceEventAttachment = {
-  name: string;
-  contentType: string;
-  path?: string;
-  sha1?: string;
-  base64?: string;
-};
+  name: string
+  contentType: string
+  path?: string
+  sha1?: string
+  base64?: string
+}
 
 export type AfterActionTraceEventAnnotation = {
-  type: string,
+  type: string
   description?: string
-};
+}
 
 export type AfterActionTraceEvent = {
-  type: 'after',
-  callId: string;
-  endTime: number;
-  afterSnapshot?: string;
-  error?: SerializedError['error'];
-  attachments?: AfterActionTraceEventAttachment[];
-  annotations?: AfterActionTraceEventAnnotation[];
-  result?: any;
-  point?: Point;
-};
+  type: 'after'
+  callId: string
+  endTime: number
+  afterSnapshot?: string
+  error?: SerializedError['error']
+  attachments?: AfterActionTraceEventAttachment[]
+  annotations?: AfterActionTraceEventAnnotation[]
+  result?: any
+  point?: Point
+}
 
 export type LogTraceEvent = {
-  type: 'log',
-  callId: string;
-  time: number;
-  message: string;
-};
+  type: 'log'
+  callId: string
+  time: number
+  message: string
+}
 
 export type EventTraceEvent = {
-  type: 'event',
-  time: number;
-  class: string;
-  method: string;
-  params: any;
-  pageId?: string;
-};
+  type: 'event'
+  time: number
+  class: string
+  method: string
+  params: any
+  pageId?: string
+}
 
 export type ConsoleMessageTraceEvent = {
-  type: 'console';
-  time: number;
-  pageId?: string;
-  messageType: string,
-  text: string,
-  args?: { preview: string, value: any }[],
+  type: 'console'
+  time: number
+  pageId?: string
+  messageType: string
+  text: string
+  args?: { preview: string; value: any }[]
   location: {
-    url: string,
-    lineNumber: number,
-    columnNumber: number,
-  },
-};
+    url: string
+    lineNumber: number
+    columnNumber: number
+  }
+}
 
 export type ResourceSnapshotTraceEvent = {
-  type: 'resource-snapshot',
-  snapshot: ResourceSnapshot,
-};
+  type: 'resource-snapshot'
+  snapshot: ResourceSnapshot
+}
 
 export type FrameSnapshotTraceEvent = {
-  type: 'frame-snapshot',
-  snapshot: FrameSnapshot,
-};
+  type: 'frame-snapshot'
+  snapshot: FrameSnapshot
+}
 
 export type ActionTraceEvent = {
-  type: 'action',
-} & Omit<BeforeActionTraceEvent, 'type'>
-  & Omit<AfterActionTraceEvent, 'type'>
-  & Omit<InputActionTraceEvent, 'type'>;
+  type: 'action'
+} & Omit<BeforeActionTraceEvent, 'type'> &
+  Omit<AfterActionTraceEvent, 'type'> &
+  Omit<InputActionTraceEvent, 'type'>
 
 export type StdioTraceEvent = {
-  type: 'stdout' | 'stderr';
-  timestamp: number;
-  text?: string;
-  base64?: string;
-};
+  type: 'stdout' | 'stderr'
+  timestamp: number
+  text?: string
+  base64?: string
+}
 
 export type ErrorTraceEvent = {
-  type: 'error';
-  message: string;
-  stack?: StackFrame[];
-};
+  type: 'error'
+  message: string
+  stack?: StackFrame[]
+}
 
 export type TraceEvent =
-    ContextCreatedTraceEvent |
-    ScreencastFrameTraceEvent |
-    ActionTraceEvent |
-    BeforeActionTraceEvent |
-    InputActionTraceEvent |
-    AfterActionTraceEvent |
-    EventTraceEvent |
-    LogTraceEvent |
-    ConsoleMessageTraceEvent |
-    ResourceSnapshotTraceEvent |
-    FrameSnapshotTraceEvent |
-    StdioTraceEvent |
-    ErrorTraceEvent;
+  | ContextCreatedTraceEvent
+  | ScreencastFrameTraceEvent
+  | ActionTraceEvent
+  | BeforeActionTraceEvent
+  | InputActionTraceEvent
+  | AfterActionTraceEvent
+  | EventTraceEvent
+  | LogTraceEvent
+  | ConsoleMessageTraceEvent
+  | ResourceSnapshotTraceEvent
+  | FrameSnapshotTraceEvent
+  | StdioTraceEvent
+  | ErrorTraceEvent

@@ -19,8 +19,8 @@ function jsx(type, props, key) {
     __pw_type: 'jsx',
     type,
     props,
-    key,
-  };
+    key
+  }
 }
 
 function jsxs(type, props, key) {
@@ -28,15 +28,15 @@ function jsxs(type, props, key) {
     __pw_type: 'jsx',
     type,
     props,
-    key,
-  };
+    key
+  }
 }
 
 // this is used in <></> notation
-const Fragment = { __pw_jsx_fragment: true };
+const Fragment = { __pw_jsx_fragment: true }
 
 module.exports = {
   Fragment,
   jsx,
-  jsxs,
-};
+  jsxs
+}

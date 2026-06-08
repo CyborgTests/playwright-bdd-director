@@ -37,16 +37,15 @@ ClientSideCallMetadata:
 SDKLanguage:
   type: enum
   literals:
-  - javascript
-  - python
-  - java
-  - csharp
+    - javascript
+    - python
+    - java
+    - csharp
 
 Disposable:
   type: interface
 
   commands:
-
     dispose:
       internal: true
       flags:
@@ -59,9 +58,9 @@ WaitInfo:
     phase:
       type: enum
       literals:
-      - before
-      - after
-      - log
+        - before
+        - after
+        - log
     event: string?
     message: string?
     error: string?

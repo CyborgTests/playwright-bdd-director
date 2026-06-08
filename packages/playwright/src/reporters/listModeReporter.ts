@@ -14,57 +14,59 @@
  * limitations under the License.
  */
 
-import path from 'path';
+import path from 'path'
 
-import { formatError, terminalScreen } from './base';
+import { formatError, terminalScreen } from './base'
 
-import type { FullConfig, TestError } from '../../types/testReporter';
-import type { test } from '../common';
-import type { TerminalScreen } from './base';
-import type { ReporterV2 } from './reporterV2';
+import type { FullConfig, TestError } from '../../types/testReporter'
+import type { test } from '../common'
+import type { TerminalScreen } from './base'
+import type { ReporterV2 } from './reporterV2'
 
 class ListModeReporter implements ReporterV2 {
-  private config!: FullConfig;
-  private screen: TerminalScreen;
-  private _options: { screen?: TerminalScreen, includeTestId?: boolean };
+  private config!: FullConfig
+  private screen: TerminalScreen
+  private _options: { screen?: TerminalScreen; includeTestId?: boolean }
 
-  constructor(options: { screen?: TerminalScreen, includeTestId?: boolean } = {}) {
-    this._options = options;
-    this.screen = options?.screen ?? terminalScreen;
+  constructor(options: { screen?: TerminalScreen; includeTestId?: boolean } = {}) {
+    this._options = options
+    this.screen = options?.screen ?? terminalScreen
   }
 
   version(): 'v2' {
-    return 'v2';
+    return 'v2'
   }
 
   onConfigure(config: FullConfig) {
-    this.config = config;
+    this.config = config
   }
 
   onBegin(suite: test.Suite): void {
-    this._writeLine(`Listing tests:`);
-    const tests = suite.allTests();
-    const files = new Set<string>();
+    this._writeLine(`Listing tests:`)
+    const tests = suite.allTests()
+    const files = new Set<string>()
     for (const test of tests) {
       // root, project, file, ...describes, test
-      const [, projectName, , ...titles] = test.titlePath();
-      const location = `${path.relative(this.config.rootDir, test.location.file)}:${test.location.line}:${test.location.column}`;
-      const testId = this._options.includeTestId ? `[id=${test.id}] ` : '';
-      const projectLabel = this._options.includeTestId ? `project=` : '';
-      const projectTitle = projectName ? `[${projectLabel}${projectName}] › ` : '';
-      this._writeLine(`  ${testId}${projectTitle}${location} › ${titles.join(' › ')}`);
-      files.add(test.location.file);
+      const [, projectName, , ...titles] = test.titlePath()
+      const location = `${path.relative(this.config.rootDir, test.location.file)}:${test.location.line}:${test.location.column}`
+      const testId = this._options.includeTestId ? `[id=${test.id}] ` : ''
+      const projectLabel = this._options.includeTestId ? `project=` : ''
+      const projectTitle = projectName ? `[${projectLabel}${projectName}] › ` : ''
+      this._writeLine(`  ${testId}${projectTitle}${location} › ${titles.join(' › ')}`)
+      files.add(test.location.file)
     }
-    this._writeLine(`Total: ${tests.length} ${tests.length === 1 ? 'test' : 'tests'} in ${files.size} ${files.size === 1 ? 'file' : 'files'}`);
+    this._writeLine(
+      `Total: ${tests.length} ${tests.length === 1 ? 'test' : 'tests'} in ${files.size} ${files.size === 1 ? 'file' : 'files'}`
+    )
   }
 
   onError(error: TestError) {
-    this.screen.stderr.write('\n' + formatError(terminalScreen, error).message + '\n');
+    this.screen.stderr.write('\n' + formatError(terminalScreen, error).message + '\n')
   }
 
   private _writeLine(line: string) {
-    this.screen.stdout.write(line + '\n');
+    this.screen.stdout.write(line + '\n')
   }
 }
 
-export default ListModeReporter;
+export default ListModeReporter

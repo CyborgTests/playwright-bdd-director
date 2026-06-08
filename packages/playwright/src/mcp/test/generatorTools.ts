@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-import * as z from 'zod';
-import { isPathInside, resolveWithinRoot } from '@utils/fileUtils';
+import * as z from 'zod'
+import { isPathInside, resolveWithinRoot } from '@utils/fileUtils'
 
-import { defineTestTool } from './testTool';
-import { GeneratorJournal } from './testContext';
+import { defineTestTool } from './testTool'
+import { GeneratorJournal } from './testContext'
 
 export const setupPage = defineTestTool({
   schema: {
@@ -29,20 +29,32 @@ export const setupPage = defineTestTool({
     title: 'Setup generator page',
     description: 'Setup the page for test.',
     inputSchema: z.object({
-      plan: z.string().describe('The plan for the test. This should be the actual test plan with all the steps.'),
-      project: z.string().optional().describe('Project to use for setup. For example: "chromium", if no project is provided uses the first project in the config.'),
-      seedFile: z.string().optional().describe('A seed file contains a single test that is used to setup the page for testing, for example: "tests/seed.spec.ts". If no seed file is provided, a default seed file is created.'),
+      plan: z
+        .string()
+        .describe('The plan for the test. This should be the actual test plan with all the steps.'),
+      project: z
+        .string()
+        .optional()
+        .describe(
+          'Project to use for setup. For example: "chromium", if no project is provided uses the first project in the config.'
+        ),
+      seedFile: z
+        .string()
+        .optional()
+        .describe(
+          'A seed file contains a single test that is used to setup the page for testing, for example: "tests/seed.spec.ts". If no seed file is provided, a default seed file is created.'
+        )
     }),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
   handle: async (context, params, signal) => {
-    const seed = await context.getOrCreateSeedFile(params.seedFile, params.project);
-    context.generatorJournal = new GeneratorJournal(context.rootPath, params.plan, seed);
-    const { output, status } = await context.runSeedTest(seed.file, seed.projectName, signal);
-    return { content: [{ type: 'text', text: output }], isError: status !== 'paused' };
-  },
-});
+    const seed = await context.getOrCreateSeedFile(params.seedFile, params.project)
+    context.generatorJournal = new GeneratorJournal(context.rootPath, params.plan, seed)
+    const { output, status } = await context.runSeedTest(seed.file, seed.projectName, signal)
+    return { content: [{ type: 'text', text: output }], isError: status !== 'paused' }
+  }
+})
 
 export const generatorReadLog = defineTestTool({
   schema: {
@@ -50,19 +62,23 @@ export const generatorReadLog = defineTestTool({
     title: 'Retrieve test log',
     description: 'Retrieve the performed test log',
     inputSchema: z.object({}),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
-  handle: async context => {
+  handle: async (context) => {
     if (!context.generatorJournal)
-      throw new Error(`Please setup page using "${setupPage.schema.name}" first.`);
-    const result = context.generatorJournal.journal();
-    return { content: [{
-      type: 'text',
-      text: result,
-    }] };
-  },
-});
+      throw new Error(`Please setup page using "${setupPage.schema.name}" first.`)
+    const result = context.generatorJournal.journal()
+    return {
+      content: [
+        {
+          type: 'text',
+          text: result
+        }
+      ]
+    }
+  }
+})
 
 export const generatorWriteTest = defineTestTool({
   schema: {
@@ -71,36 +87,38 @@ export const generatorWriteTest = defineTestTool({
     description: 'Write the generated test to the test file',
     inputSchema: z.object({
       fileName: z.string().describe('The file to write the test to'),
-      code: z.string().describe('The generated test code'),
+      code: z.string().describe('The generated test code')
     }),
-    type: 'readOnly',
+    type: 'readOnly'
   },
 
   handle: async (context, params) => {
     if (!context.generatorJournal)
-      throw new Error(`Please setup page using "${setupPage.schema.name}" first.`);
+      throw new Error(`Please setup page using "${setupPage.schema.name}" first.`)
 
-    const testRunner = context.existingTestRunner();
+    const testRunner = context.existingTestRunner()
     if (!testRunner)
-      throw new Error('No test runner found, please setup page and perform actions first.');
-    const config = await testRunner.loadConfig();
+      throw new Error('No test runner found, please setup page and perform actions first.')
+    const config = await testRunner.loadConfig()
 
-    const resolvedFile = resolveWithinRoot(context.rootPath, params.fileName);
-    const dirs: string[] = [];
+    const resolvedFile = resolveWithinRoot(context.rootPath, params.fileName)
+    const dirs: string[] = []
     for (const project of config.projects) {
-      const projectTestDir = project.project.testDir;
+      const projectTestDir = project.project.testDir
       if (resolvedFile && isPathInside(projectTestDir, resolvedFile)) {
-        await fs.promises.mkdir(path.dirname(resolvedFile), { recursive: true });
-        await fs.promises.writeFile(resolvedFile, params.code);
+        await fs.promises.mkdir(path.dirname(resolvedFile), { recursive: true })
+        await fs.promises.writeFile(resolvedFile, params.code)
         return {
-          content: [{
-            type: 'text',
-            text: `### Result\nTest written to ${params.fileName}`,
-          }]
-        };
+          content: [
+            {
+              type: 'text',
+              text: `### Result\nTest written to ${params.fileName}`
+            }
+          ]
+        }
       }
-      dirs.push(path.relative(context.rootPath, projectTestDir).replace(/\\/g, '/'));
+      dirs.push(path.relative(context.rootPath, projectTestDir).replace(/\\/g, '/'))
     }
-    throw new Error(`Test file did not match any of the test dirs: ${dirs.join(', ')}`);
-  },
-});
+    throw new Error(`Test file did not match any of the test dirs: ${dirs.join(', ')}`)
+  }
+})

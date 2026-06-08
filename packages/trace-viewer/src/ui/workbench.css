@@ -51,7 +51,7 @@
   flex: none;
 }
 
-.workbench-action-filter input[type=search] {
+.workbench-action-filter input[type='search'] {
   width: 100%;
   padding: 4px 8px;
   line-height: 20px;

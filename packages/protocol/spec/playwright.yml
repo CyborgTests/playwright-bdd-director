@@ -16,7 +16,6 @@ Root:
   type: interface
 
   commands:
-
     initialize:
       internal: true
       parameters:
@@ -72,8 +71,8 @@ Playwright:
             send:
               type: enum?
               literals:
-              - always
-              - unauthorized
+                - always
+                - unauthorized
         proxy:
           type: object?
           properties:
@@ -228,7 +227,6 @@ JsonPipe:
       internal: true
 
   events:
-
     message:
       parameters:
         message: json
@@ -254,7 +252,6 @@ SelectorEngine:
     source: string
     contentScript: boolean?
 
-
 FormField:
   type: object
   properties:
@@ -270,16 +267,16 @@ FormField:
 LifecycleEvent:
   type: enum
   literals:
-  - load
-  - domcontentloaded
-  - networkidle
-  - commit
+    - load
+    - domcontentloaded
+    - networkidle
+    - commit
 
 ConsoleMessagesFilter:
   type: enum
   literals:
-  - all
-  - since-navigation
+    - all
+    - since-navigation
 
 RecorderSource:
   type: object
@@ -365,14 +362,14 @@ RecordHarOptions:
     content:
       type: enum?
       literals:
-      - embed
-      - attach
-      - omit
+        - embed
+        - attach
+        - omit
     mode:
       type: enum?
       literals:
-      - full
-      - minimal
+        - full
+        - minimal
     urlGlob: string?
     urlRegexSource: string?
     urlRegexFlags: string?
@@ -383,7 +380,6 @@ CDPSession:
   type: interface
 
   commands:
-
     send:
       title: Send CDP command
       group: configuration
@@ -400,7 +396,6 @@ CDPSession:
         potentiallyClosesScope: true
 
   events:
-
     event:
       parameters:
         method: string
@@ -419,7 +414,6 @@ BindingCall:
       items: SerializedValue
 
   commands:
-
     reject:
       internal: true
       parameters:
@@ -434,7 +428,6 @@ Debugger:
   type: interface
 
   commands:
-
     requestPause:
       title: Pause on next call
       group: configuration
@@ -459,7 +452,6 @@ Debugger:
             column: int?
 
   events:
-
     pausedStateChanged:
       parameters:
         pausedDetails:
@@ -484,7 +476,6 @@ Dialog:
     defaultValue: string
 
   commands:
-
     accept:
       title: Accept dialog
       parameters:

@@ -14,56 +14,58 @@
  * limitations under the License.
  */
 
-import './networkFilters.css';
+import './networkFilters.css'
 
-const resourceTypes = ['Fetch', 'HTML', 'JS', 'CSS', 'Font', 'Image'] as const;
-export type ResourceType = typeof resourceTypes[number];
+const resourceTypes = ['Fetch', 'HTML', 'JS', 'CSS', 'Font', 'Image'] as const
+export type ResourceType = (typeof resourceTypes)[number]
 
 export type FilterState = {
-  searchValue: string;
-  resourceTypes: Set<ResourceType>;
-};
+  searchValue: string
+  resourceTypes: Set<ResourceType>
+}
 
-export const defaultFilterState: FilterState = { searchValue: '', resourceTypes: new Set() };
+export const defaultFilterState: FilterState = { searchValue: '', resourceTypes: new Set() }
 
-export const NetworkFilters = ({ filterState, onFilterStateChange }: {
-  filterState: FilterState,
-  onFilterStateChange: (filterState: FilterState) => void,
+export const NetworkFilters = ({
+  filterState,
+  onFilterStateChange
+}: {
+  filterState: FilterState
+  onFilterStateChange: (filterState: FilterState) => void
 }) => {
   return (
-    <div className='network-filters'>
+    <div className="network-filters">
       <input
-        type='search'
-        placeholder='Filter network'
+        type="search"
+        placeholder="Filter network"
         spellCheck={false}
         value={filterState.searchValue}
-        onChange={e => onFilterStateChange({ ...filterState, searchValue: e.target.value })}
+        onChange={(e) => onFilterStateChange({ ...filterState, searchValue: e.target.value })}
       />
 
-      <div className='network-filters-resource-types' role='tablist' aria-multiselectable='true'>
+      <div className="network-filters-resource-types" role="tablist" aria-multiselectable="true">
         <div
-          title='All'
+          title="All"
           onClick={() => onFilterStateChange({ ...filterState, resourceTypes: new Set() })}
           className={`network-filters-resource-type ${filterState.resourceTypes.size === 0 ? 'selected' : ''}`}
         >
           All
         </div>
 
-        {resourceTypes.map(resourceType => (
+        {resourceTypes.map((resourceType) => (
           <div
             key={resourceType}
             title={resourceType}
-            onClick={event => {
-              let newType;
+            onClick={(event) => {
+              let newType
               if (event.ctrlKey || event.metaKey)
-                newType = filterState.resourceTypes.symmetricDifference(new Set([resourceType]));
-              else
-                newType = new Set([resourceType]);
+                newType = filterState.resourceTypes.symmetricDifference(new Set([resourceType]))
+              else newType = new Set([resourceType])
 
-              onFilterStateChange({ ...filterState, resourceTypes: newType });
+              onFilterStateChange({ ...filterState, resourceTypes: newType })
             }}
             className={`network-filters-resource-type ${filterState.resourceTypes.has(resourceType) ? 'selected' : ''}`}
-            role='tab'
+            role="tab"
             aria-selected={filterState.resourceTypes.has(resourceType)}
           >
             {resourceType}
@@ -71,5 +73,5 @@ export const NetworkFilters = ({ filterState, onFilterStateChange }: {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}

@@ -14,40 +14,54 @@
  * limitations under the License.
  */
 
-import * as React from 'react';
-import type { Source } from '@recorder/recorderTypes';
+import * as React from 'react'
+import type { Source } from '@recorder/recorderTypes'
 
 export const SourceChooser: React.FC<{
-  sources: Source[],
-  fileId: string | undefined,
-  setFileId: (fileId: string) => void,
+  sources: Source[]
+  fileId: string | undefined
+  setFileId: (fileId: string) => void
 }> = ({ sources, fileId, setFileId }) => {
-  return <select className='source-chooser' hidden={!sources.length} title='Source chooser' value={fileId} onChange={event => {
-    setFileId(event.target.selectedOptions[0].value);
-  }}>{renderSourceOptions(sources)}</select>;
-};
+  return (
+    <select
+      className="source-chooser"
+      hidden={!sources.length}
+      title="Source chooser"
+      value={fileId}
+      onChange={(event) => {
+        setFileId(event.target.selectedOptions[0].value)
+      }}
+    >
+      {renderSourceOptions(sources)}
+    </select>
+  )
+}
 
 function renderSourceOptions(sources: Source[]): React.ReactNode {
-  const transformTitle = (title: string): string => title.replace(/.*[/\\]([^/\\]+)/, '$1');
+  const transformTitle = (title: string): string => title.replace(/.*[/\\]([^/\\]+)/, '$1')
   const renderOption = (source: Source): React.ReactNode => (
-    <option key={source.id} value={source.id}>{transformTitle(source.label)}</option>
-  );
+    <option key={source.id} value={source.id}>
+      {transformTitle(source.label)}
+    </option>
+  )
 
-  const sourcesByGroups = new Map<string, Source[]>();
+  const sourcesByGroups = new Map<string, Source[]>()
   for (const source of sources) {
-    let list = sourcesByGroups.get(source.group || 'Debugger');
+    let list = sourcesByGroups.get(source.group || 'Debugger')
     if (!list) {
-      list = [];
-      sourcesByGroups.set(source.group || 'Debugger', list);
+      list = []
+      sourcesByGroups.set(source.group || 'Debugger', list)
     }
-    list.push(source);
+    list.push(source)
   }
 
   return [...sourcesByGroups.entries()].map(([group, sources]) => (
     <optgroup label={group} key={group}>
-      {sources.filter(s => (s.group || 'Debugger') === group).map(source => renderOption(source))}
+      {sources
+        .filter((s) => (s.group || 'Debugger') === group)
+        .map((source) => renderOption(source))}
     </optgroup>
-  ));
+  ))
 }
 
 export function emptySource(): Source {
@@ -58,5 +72,5 @@ export function emptySource(): Source {
     language: 'javascript',
     label: '',
     highlight: []
-  };
+  }
 }

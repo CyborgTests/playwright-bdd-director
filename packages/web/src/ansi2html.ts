@@ -14,49 +14,63 @@
   limitations under the License.
 */
 
-export function ansi2html(text: string, defaultColors: { bg: string, fg: string }): string {
-  const regex = /(\x1b\[(\d+(;\d+)*)m)|([^\x1b]+)/g;
-  const tokens: string[] = [];
-  let match;
-  let style: any = {};
+export function ansi2html(text: string, defaultColors: { bg: string; fg: string }): string {
+  const regex = /(\x1b\[(\d+(;\d+)*)m)|([^\x1b]+)/g
+  const tokens: string[] = []
+  let match
+  let style: any = {}
 
-  let reverse = false;
-  let fg: string | undefined = defaultColors?.fg;
-  let bg: string | undefined = defaultColors?.bg;
+  let reverse = false
+  let fg: string | undefined = defaultColors?.fg
+  let bg: string | undefined = defaultColors?.bg
 
   while ((match = regex.exec(text)) !== null) {
-    const [, , codeStr, , text] = match;
+    const [, , codeStr, , text] = match
     if (codeStr) {
       for (const segment of codeStr.split(';')) {
-        const code = +segment;
+        const code = +segment
         switch (code) {
-          case 0: style = {}; break;
-          case 1: style['font-weight'] = 'bold'; break;
-          case 2: style['opacity'] = '0.8'; break;
-          case 3: style['font-style'] = 'italic'; break;
-          case 4: style['text-decoration'] = 'underline'; break;
+          case 0:
+            style = {}
+            break
+          case 1:
+            style['font-weight'] = 'bold'
+            break
+          case 2:
+            style['opacity'] = '0.8'
+            break
+          case 3:
+            style['font-style'] = 'italic'
+            break
+          case 4:
+            style['text-decoration'] = 'underline'
+            break
           case 7:
-            reverse = true;
-            break;
-          case 8: style.display = 'none'; break;
-          case 9: style['text-decoration'] = 'line-through'; break;
+            reverse = true
+            break
+          case 8:
+            style.display = 'none'
+            break
+          case 9:
+            style['text-decoration'] = 'line-through'
+            break
           case 22:
-            delete style['font-weight'];
-            delete style['font-style'];
-            delete style['opacity'];
-            delete style['text-decoration'];
-            break;
+            delete style['font-weight']
+            delete style['font-style']
+            delete style['opacity']
+            delete style['text-decoration']
+            break
           case 23:
-            delete style['font-weight'];
-            delete style['font-style'];
-            delete style['opacity'];
-            break;
+            delete style['font-weight']
+            delete style['font-style']
+            delete style['opacity']
+            break
           case 24:
-            delete style['text-decoration'];
-            break;
+            delete style['text-decoration']
+            break
           case 27:
-            reverse = false;
-            break;
+            reverse = false
+            break
           case 30:
           case 31:
           case 32:
@@ -65,11 +79,11 @@ export function ansi2html(text: string, defaultColors: { bg: string, fg: string 
           case 35:
           case 36:
           case 37:
-            fg = ansiColors[code - 30];
-            break;
+            fg = ansiColors[code - 30]
+            break
           case 39:
-            fg = defaultColors?.fg;
-            break;
+            fg = defaultColors?.fg
+            break
           case 40:
           case 41:
           case 42:
@@ -78,12 +92,14 @@ export function ansi2html(text: string, defaultColors: { bg: string, fg: string 
           case 45:
           case 46:
           case 47:
-            bg = ansiColors[code - 40];
-            break;
+            bg = ansiColors[code - 40]
+            break
           case 49:
-            bg = defaultColors?.bg;
-            break;
-          case 53: style['text-decoration'] = 'overline'; break;
+            bg = defaultColors?.bg
+            break
+          case 53:
+            style['text-decoration'] = 'overline'
+            break
           case 90:
           case 91:
           case 92:
@@ -92,8 +108,8 @@ export function ansi2html(text: string, defaultColors: { bg: string, fg: string 
           case 95:
           case 96:
           case 97:
-            fg = brightAnsiColors[code - 90];
-            break;
+            fg = brightAnsiColors[code - 90]
+            break
           case 100:
           case 101:
           case 102:
@@ -102,21 +118,19 @@ export function ansi2html(text: string, defaultColors: { bg: string, fg: string 
           case 105:
           case 106:
           case 107:
-            bg = brightAnsiColors[code - 100];
-            break;
+            bg = brightAnsiColors[code - 100]
+            break
         }
       }
     } else if (text) {
-      const styleCopy = { ...style };
-      const color = reverse ? bg : fg;
-      if (color !== undefined)
-        styleCopy['color'] = color;
-      if (reverse && fg)
-        styleCopy['background-color'] = fg;
-      tokens.push(`<span style="${styleBody(styleCopy)}">${escapeHTML(text)}</span>`);
+      const styleCopy = { ...style }
+      const color = reverse ? bg : fg
+      if (color !== undefined) styleCopy['color'] = color
+      if (reverse && fg) styleCopy['background-color'] = fg
+      tokens.push(`<span style="${styleBody(styleCopy)}">${escapeHTML(text)}</span>`)
     }
   }
-  return tokens.join('');
+  return tokens.join('')
 }
 
 const ansiColors: Record<number, string> = {
@@ -127,8 +141,8 @@ const ansiColors: Record<number, string> = {
   4: 'var(--vscode-terminal-ansiBlue)',
   5: 'var(--vscode-terminal-ansiMagenta)',
   6: 'var(--vscode-terminal-ansiCyan)',
-  7: 'var(--vscode-terminal-ansiWhite)',
-};
+  7: 'var(--vscode-terminal-ansiWhite)'
+}
 
 const brightAnsiColors: Record<number, string> = {
   0: 'var(--vscode-terminal-ansiBrightBlack)',
@@ -138,13 +152,18 @@ const brightAnsiColors: Record<number, string> = {
   4: 'var(--vscode-terminal-ansiBrightBlue)',
   5: 'var(--vscode-terminal-ansiBrightMagenta)',
   6: 'var(--vscode-terminal-ansiBrightCyan)',
-  7: 'var(--vscode-terminal-ansiBrightWhite)',
-};
+  7: 'var(--vscode-terminal-ansiBrightWhite)'
+}
 
 function escapeHTML(text: string): string {
-  return text.replace(/[&"<>]/g, c => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' }[c]!));
+  return text.replace(
+    /[&"<>]/g,
+    (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c]!
+  )
 }
 
 function styleBody(style: any): string {
-  return Object.entries(style).map(([name, value]) => `${name}: ${value}`).join('; ');
+  return Object.entries(style)
+    .map(([name, value]) => `${name}: ${value}`)
+    .join('; ')
 }

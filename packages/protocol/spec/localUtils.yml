@@ -42,12 +42,11 @@ LocalUtils:
               defaultBrowserType:
                 type: enum
                 literals:
-                - chromium
-                - firefox
-                - webkit
+                  - chromium
+                  - firefox
+                  - webkit
 
   commands:
-
     zip:
       internal: true
       parameters:
@@ -89,10 +88,10 @@ LocalUtils:
         action:
           type: enum
           literals:
-          - error
-          - redirect
-          - fulfill
-          - noentry
+            - error
+            - redirect
+            - fulfill
+            - noentry
         message: string?
         redirectURL: string?
         status: int?
