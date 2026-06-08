@@ -44,12 +44,11 @@ export const DialogToolbarButton: React.FC<React.PropsWithChildren<DialogToolbar
 
       <Dialog
         style={{
-          backgroundColor: 'var(--vscode-sideBar-background)',
-          padding: '4px 8px'
+          maxWidth: '240px',
+          minWidth: '180px'
         }}
         open={open}
-        // TODO: Temporary spacing until design of toolbar buttons is revisited
-        verticalOffset={8}
+        verticalOffset={4}
         requestClose={() => setOpen(false)}
         anchor={anchor}
         dataTestId={dialogDataTestId}

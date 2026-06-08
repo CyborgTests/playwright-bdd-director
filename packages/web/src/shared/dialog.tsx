@@ -25,6 +25,9 @@ export interface DialogProps {
   isModal?: boolean;
   minWidth?: number;
   verticalOffset?: number;
+  horizontalOffset?: number;
+  alignRight?: boolean;
+  anchorRightEdge?: boolean;
   requestClose?: () => void;
   anchor?: React.RefObject<HTMLElement|null>;
   dataTestId?: string;
@@ -37,6 +40,9 @@ export const Dialog: React.FC<React.PropsWithChildren<DialogProps>> = ({
   isModal,
   minWidth,
   verticalOffset,
+  horizontalOffset,
+  alignRight,
+  anchorRightEdge,
   requestClose,
   anchor,
   dataTestId,
@@ -48,7 +54,7 @@ export const Dialog: React.FC<React.PropsWithChildren<DialogProps>> = ({
   const [_, setRecalculateDimensionsCount] = React.useState(0);
   const [dialogMeasure] = useMeasureForRef(dialogRef);
   const [anchorMeasure, recalculateAnchorMeasure] = useMeasureForRef(anchor);
-  const position = anchor ? dialogPosition(dialogMeasure, anchorMeasure, verticalOffset) : undefined;
+  const position = anchor ? dialogPosition(dialogMeasure, anchorMeasure, verticalOffset, horizontalOffset, alignRight, anchorRightEdge) : undefined;
 
   React.useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -119,10 +125,22 @@ export const Dialog: React.FC<React.PropsWithChildren<DialogProps>> = ({
 };
 
 // Note: there is a copy of this method in highlight.ts. Please fix bugs in both places.
-function dialogPosition(dialogBox: DOMRect, anchorBox: DOMRect, verticalOffset = 4, horizontalOffset = 4): { top: number, left: number } {
-  let left = Math.max(horizontalOffset, anchorBox.left);
-  if (left + dialogBox.width > window.innerWidth - horizontalOffset)
-    left = window.innerWidth - dialogBox.width - horizontalOffset;
+function dialogPosition(dialogBox: DOMRect, anchorBox: DOMRect, verticalOffset = 4, horizontalOffset = 4, alignRight = false, anchorRightEdge = false): { top: number, left: number } {
+  let left: number;
+  if (anchorRightEdge) {
+    // Align dialog's left edge with anchor's right edge
+    left = anchorBox.right + horizontalOffset;
+  } else if (alignRight) {
+    // Align dialog's right edge with anchor's right edge
+    left = anchorBox.right - dialogBox.width + horizontalOffset;
+  } else {
+    // Default: align dialog's left edge with anchor's left edge
+    left = anchorBox.left + horizontalOffset;
+  }
+  if (left + dialogBox.width > window.innerWidth - 4)
+    left = window.innerWidth - dialogBox.width - 4;
+  if (left < 4)
+    left = 4;
   let top = Math.max(0, anchorBox.bottom) + verticalOffset;
   if (top + dialogBox.height > window.innerHeight - verticalOffset) {
     // If can't fit below, either position above...

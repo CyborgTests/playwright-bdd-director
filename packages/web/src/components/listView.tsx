@@ -27,6 +27,7 @@ export type ListViewProps<T> = {
   isError?: (item: T, index: number) => boolean,
   isWarning?: (item: T, index: number) => boolean,
   isInfo?: (item: T, index: number) => boolean,
+  isDeleting?: (item: T, index: number) => boolean,
   ariaLabel?: string,
   selectedItem?: T,
   onAccepted?: (item: T, index: number) => void,
@@ -49,6 +50,7 @@ export function ListView<T>({
   isError,
   isWarning,
   isInfo,
+  isDeleting,
   selectedItem,
   onAccepted,
   onSelected,
@@ -133,7 +135,8 @@ export function ListView<T>({
               !notSelectable && highlightedItem === item && 'highlighted',
               isError?.(item, index) && 'error',
               isWarning?.(item, index) && 'warning',
-              isInfo?.(item, index) && 'info')}
+              isInfo?.(item, index) && 'info',
+              isDeleting?.(item, index) && 'deleting')}
           aria-selected={selectedItem === item}
           onClick={() => onSelected?.(item, index)}
           onMouseEnter={() => setHighlightedItem(item)}

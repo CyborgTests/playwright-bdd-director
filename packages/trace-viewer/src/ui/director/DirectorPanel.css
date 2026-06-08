@@ -17,46 +17,9 @@
 .director-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
   background: var(--vscode-sideBar-background, #252526);
   color: var(--vscode-sideBar-foreground, #cccccc);
 }
 
-/* Header */
-.director-panel-logo {
-  width: 24px;
-  height: 24px;
-  margin-left: 6px;
-  margin-right: 6px;
-}
-
-.director-panel .section-title {
-  display: flex;
-  flex: auto;
-  flex-direction: row;
-  align-items: center;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-/* Main content */
-.director-panel-content {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* Left sidebar */
-.director-sidebar {
-  overflow: hidden;
-}
-
-/* Editor panel (top) */
-.director-editor-panel {
-  overflow: hidden;
-}
-
-/* Output panel (bottom) */
-.director-output-panel {
-  overflow: hidden;
-}

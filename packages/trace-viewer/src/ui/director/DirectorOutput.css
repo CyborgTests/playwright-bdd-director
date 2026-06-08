@@ -17,9 +17,17 @@
 .director-output {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
   background: var(--vscode-panel-background, #1e1e1e);
   color: var(--vscode-panel-foreground, #cccccc);
+}
+
+.director-section-toolbar {
+  border-top: 1px solid var(--vscode-panel-border, #3e3e42);
+  background: var(--vscode-sideBar-background, #252526);
+  min-height: 30px;
+  align-items: center;
 }
 
 .director-output-title {

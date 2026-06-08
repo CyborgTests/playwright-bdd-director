@@ -65,8 +65,9 @@ wss.on('listening', () => {
 
 wss.on('connection', (ws) => {
   ws.on('message', (data) => {
+    let msg;
     try {
-      const msg = JSON.parse(data.toString());
+      msg = JSON.parse(data.toString());
       
       if (msg.type === 'GET_FILES') {
         const files = fs.readdirSync(testSuitesDir).filter(f => f.endsWith('.md') || f.endsWith('.feature')).map(name => ({
@@ -78,7 +79,12 @@ wss.on('connection', (ws) => {
       }
       
       else if (msg.type === 'CREATE_FILE') {
-        const filePath = path.join(testSuitesDir, msg.data.name);
+        // Extract just the filename if path includes test-suites/
+        let filename = msg.data.name;
+        if (filename.startsWith('test-suites/')) {
+          filename = filename.replace('test-suites/', '');
+        }
+        const filePath = path.join(testSuitesDir, filename);
         if (fs.existsSync(filePath)) {
           ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'File already exists' }));
         } else {
@@ -88,12 +94,23 @@ wss.on('connection', (ws) => {
       }
       
       else if (msg.type === 'SAVE_FILE') {
-        fs.writeFileSync(path.join(testSuitesDir, msg.data.name), msg.data.content, 'utf-8');
+        // Extract just the filename if path includes test-suites/
+        let filename = msg.data.name;
+        if (filename.startsWith('test-suites/')) {
+          filename = filename.replace('test-suites/', '');
+        }
+        const filePath = path.join(testSuitesDir, filename);
+        fs.writeFileSync(filePath, msg.data.content, 'utf-8');
         ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));
       }
       
       else if (msg.type === 'DELETE_FILE') {
-        const filePath = path.join(testSuitesDir, msg.data.name);
+        // Extract just the filename if path includes test-suites/
+        let filename = msg.data.name;
+        if (filename.startsWith('test-suites/')) {
+          filename = filename.replace('test-suites/', '');
+        }
+        const filePath = path.join(testSuitesDir, filename);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
           ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));
@@ -103,7 +120,7 @@ wss.on('connection', (ws) => {
       }
       
     } catch (e) {
-      ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: String(e) }));
+      ws.send(JSON.stringify({ id: msg?.id || 0, type: 'ERROR', error: String(e) }));
     }
   });
 });

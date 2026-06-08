@@ -35,7 +35,7 @@
   color: var(--vscode-debugIcon-stopForeground);
 }
 
-.ui-mode .section-toolbar {
+.section-toolbar {
   border-top: 1px solid var(--vscode-panel-border);
 }
 

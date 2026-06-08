@@ -80,9 +80,9 @@ export const SplitView: React.FC<SplitViewProps> = ({
     {!sidebarHidden && <div
       style={resizerStyle}
       className='split-view-resizer'
-      onMouseDown={event => setResizing({ offset: orientation === 'vertical' ? event.clientY : event.clientX, size })}
+      onMouseDown={(event: React.MouseEvent) => setResizing({ offset: orientation === 'vertical' ? event.clientY : event.clientX, size })}
       onMouseUp={() => setResizing(null)}
-      onMouseMove={event => {
+      onMouseMove={(event: React.MouseEvent) => {
         if (!event.buttons) {
           setResizing(null);
         } else if (resizing) {
@@ -98,6 +98,13 @@ export const SplitView: React.FC<SplitViewProps> = ({
           else
             setHSize(size * window.devicePixelRatio);
         }
+      }}
+      onDoubleClick={(event: React.MouseEvent) => {
+        const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio;
+        if (orientation === 'vertical')
+          setVSize(defaultSize);
+        else
+          setHSize(defaultSize);
       }}
     ></div>}
   </div>;

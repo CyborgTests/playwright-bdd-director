@@ -62,6 +62,10 @@
   border-right: 2px solid var(--vscode-panel-border);
 }
 
+.split-view-main {
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
 .split-view-resizer {
   position: absolute;
   z-index: 100;

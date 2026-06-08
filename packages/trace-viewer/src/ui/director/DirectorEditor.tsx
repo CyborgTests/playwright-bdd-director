@@ -18,6 +18,8 @@ import React from 'react';
 import { clsx } from '@web/uiUtils';
 import { Toolbar } from '@web/components/toolbar';
 import { ToolbarButton } from '@web/components/toolbarButton';
+import { CodeMirrorWrapper } from '@web/components/codeMirrorWrapper';
+import ReactMarkdown from 'react-markdown';
 import type { TestFile } from './DirectorModel';
 
 import './DirectorEditor.css';
@@ -44,103 +46,46 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
     setEditedContent(file?.content || '');
   }, [file?.path]);
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    setEditedContent(newContent);
-    onContentChange(newContent);
+  const handleContentChange = (content: string) => {
+    setEditedContent(content);
+    onContentChange(content);
   };
 
-  const renderPreview = () => {
-    if (!file) return <div className="director-empty">Select a file to preview</div>;
-    
-    // Simple markdown-like preview
-    const lines = editedContent.split('\n');
+  if (!file) {
     return (
-      <div className="director-preview-content">
-        {lines.map((line, i) => {
-          // Headers
-          if (line.startsWith('### ')) {
-            return <h3 key={i} className="director-preview-h3">{line.slice(4)}</h3>;
-          }
-          if (line.startsWith('## ')) {
-            return <h2 key={i} className="director-preview-h2">{line.slice(3)}</h2>;
-          }
-          if (line.startsWith('# ')) {
-            return <h1 key={i} className="director-preview-h1">{line.slice(2)}</h1>;
-          }
-          // List items (steps)
-          if (line.trim().startsWith('- ')) {
-            return (
-              <div key={i} className="director-preview-step">
-                <span className="director-preview-bullet">•</span>
-                {line.trim().slice(2)}
-              </div>
-            );
-          }
-          // Gherkin keywords
-          const gherkinMatch = line.match(/^(Given|When|Then|And|But)\s+(.+)$/i);
-          if (gherkinMatch) {
-            const [, keyword, text] = gherkinMatch;
-            return (
-              <div key={i} className="director-preview-step">
-                <span className={clsx('director-gherkin-keyword', keyword.toLowerCase())}>
-                  {keyword}
-                </span>
-                {text}
-              </div>
-            );
-          }
-          // Empty line
-          if (!line.trim()) {
-            return <div key={i} className="director-preview-empty" />;
-          }
-          // Regular text
-          return <div key={i} className="director-preview-text">{line}</div>;
-        })}
+      <div className="director-editor">
+        <Toolbar noShadow={true} className='director-section-toolbar'>
+          <span className="director-editor-filename">No file selected</span>
+          <div className="director-spacer" />
+        </Toolbar>
+        <div className="director-editor-content">
+          <div className="director-empty">Select a file to edit</div>
+        </div>
       </div>
     );
-  };
-
-  const renderEditor = () => {
-    if (!file) return <div className="director-empty">Select a file to edit</div>;
-    
-    return (
-      <textarea
-        className="director-textarea"
-        value={editedContent}
-        onChange={handleContentChange}
-        spellCheck={false}
-        placeholder="Write your test scenario here..."
-      />
-    );
-  };
+  }
 
   return (
     <div className="director-editor">
-      <Toolbar noShadow={true} noMinHeight={true}>
+      <Toolbar noShadow={true} className='director-section-toolbar'>
         <span className="director-editor-filename">{file?.name || 'No file selected'}</span>
-        {file?.isModified && <span className="director-modified-indicator">●</span>}
         <div className="director-spacer" />
         
         {/* Mode toggle */}
         <div className="director-mode-toggle">
-          <button
-            className={clsx('director-mode-btn', mode === 'editor' && 'active')}
+          <ToolbarButton
+            icon='edit'
+            title='Editor'
+            toggled={mode === 'editor'}
             onClick={() => setMode('editor')}
-            title="Editor"
-          >
-            Editor
-          </button>
-          <button
-            className={clsx('director-mode-btn', mode === 'preview' && 'active')}
+          />
+          <ToolbarButton
+            icon='eye'
+            title='Preview'
+            toggled={mode === 'preview'}
             onClick={() => setMode('preview')}
-            title="Preview"
-          >
-            Preview
-          </button>
+          />
         </div>
-        
-        <div className="director-spacer" />
         
         {/* Stage button */}
         <ToolbarButton
@@ -152,7 +97,20 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
       </Toolbar>
       
       <div className="director-editor-content">
-        {mode === 'editor' ? renderEditor() : renderPreview()}
+        {mode === 'editor' ? (
+          <CodeMirrorWrapper
+            text={editedContent}
+            highlighter='markdown'
+            onChange={handleContentChange}
+            lineNumbers={true}
+            wrapLines={true}
+            placeholder="Write your test scenario here..."
+          />
+        ) : (
+          <div className="director-preview-content">
+            <ReactMarkdown>{editedContent}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );

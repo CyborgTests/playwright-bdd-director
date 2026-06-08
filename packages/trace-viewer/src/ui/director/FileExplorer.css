@@ -17,86 +17,59 @@
 .director-file-explorer {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  overflow: hidden;
   background: var(--vscode-sideBar-background, #252526);
   color: var(--vscode-sideBar-foreground, #cccccc);
 }
 
-.director-section-title {
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--vscode-sideBarTitle-foreground, #bbbbbb);
-  background: var(--vscode-sideBarSectionHeader-background, #2d2d30);
-  border-bottom: 1px solid var(--vscode-panel-border, #3e3e42);
-}
-
-.director-file-list {
-  flex: 1;
-  overflow: auto;
-  padding: 4px 0;
-}
-
-.director-file-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px 5px 10px;
-  font-size: 13px;
-  cursor: pointer;
-  user-select: none;
-  border-left: 2px solid transparent;
-  transition: background-color 0.1s;
-}
-
-.director-file-item:hover {
-  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.05));
-}
-
-.director-file-item.selected {
-  background: var(--vscode-list-activeSelectionBackground, #094771);
-  color: var(--vscode-list-activeSelectionForeground, #ffffff);
-  border-left-color: var(--vscode-focusBorder, #007acc);
-}
-
-.director-file-item.running {
-  animation: director-pulse 1.5s ease-in-out infinite;
-}
-
-.director-file-item.passed .director-file-icon {
-  color: #4caf50;
-}
-
-.director-file-item.failed .director-file-icon {
-  color: #f44336;
-}
-
-.director-file-item.staged .director-file-icon {
-  color: #ff9800;
-}
-
-.director-file-icon {
+.director-panel-logo {
   flex: none;
-  width: 16px;
-  text-align: center;
-  font-size: 12px;
+  margin-left: 6px;
+  width: 24px;
+  height: 24px;
 }
 
-.director-file-name {
-  flex: 1;
-  overflow: hidden;
+.director-section-toolbar {
+  border-top: 1px solid var(--vscode-panel-border, #3e3e42);
+}
+
+.director-file-explorer .section-title {
+  display: flex;
+  flex: auto;
+  flex-direction: row;
+  align-items: center;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: hidden;
+  padding: 8px;
+  height: 30px;
+}
+
+.director-tree-item {
+  flex: auto;
+}
+
+.director-tree-item-title {
+  flex: auto;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  color: var(--vscode-foreground, #cccccc);
 }
 
 .director-file-modified {
   flex: none;
   font-size: 8px;
   color: var(--vscode-gitDecoration-modifiedResourceForeground, #e2c08d);
+  margin-left: 4px;
 }
 
-@keyframes director-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+.director-files-list-view .list-view-entry:not(.highlighted):not(.selected) .toolbar-button:not(.toggled) {
+  display: none;
+}
+
+.director-files-list-view .list-view-entry.deleting .toolbar-button {
+  display: flex !important;
 }

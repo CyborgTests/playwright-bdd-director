@@ -4,9 +4,13 @@
   "version": "0.0.0",
   "scripts": {},
   "dependencies": {
-    "codemirror": "5.65.18",
-    "@xterm/xterm": "^5.5.0",
     "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "codemirror": "5.65.18",
     "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
   }
 }

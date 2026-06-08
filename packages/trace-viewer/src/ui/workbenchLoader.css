@@ -63,8 +63,8 @@ body .drop-target {
 }
 
 .drop-target button {
-  color: rgb(255, 255, 255);
-  background-color: rgb(0, 122, 204);
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
   padding: 8px 12px;
   border: none;
   margin: 30px 0;
@@ -77,11 +77,12 @@ body .drop-target {
 }
 
 .progress-dialog {
-  width: 400px;
-  inset: 0;
-  border: none;
-  outline: none;
-  background-color: var(--vscode-sideBar-background);
+  width: 280px !important;
+  inset: 0 !important;
+  border: 1px solid var(--vscode-panel-border, #3e3e42) !important;
+  outline: none !important;
+  background-color: var(--vscode-sideBar-background) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 .progress-dialog::backdrop {
@@ -89,15 +90,12 @@ body .drop-target {
 }
 
 .progress-content {
-  padding: 16px;
+  padding: 8px;
 }
 
 .progress-content .title {
   /* This is set in common.css */
   background-color: unset;
-  font-size: 18px;
-  font-weight: bold;
-  padding: 0;
 }
 
 .progress-wrapper {

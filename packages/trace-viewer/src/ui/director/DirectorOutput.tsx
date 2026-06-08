@@ -54,7 +54,7 @@ export const DirectorOutput: React.FC<DirectorOutputProps> = ({
 
   return (
     <div className="director-output">
-      <Toolbar noShadow={true} noMinHeight={true}>
+      <Toolbar noShadow={true} className='director-section-toolbar'>
         <span className="director-output-title">Output</span>
         <div className="director-spacer" />
         

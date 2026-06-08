@@ -7,10 +7,12 @@ export function connectWs(port: number): Promise<void> {
     ws = new WebSocket(`ws://localhost:${port}`);
     
     ws.onopen = () => {
+      console.log('🔗 Director connected');
       resolve();
     };
     
     ws.onerror = (err) => {
+      console.error('❌ Director connection failed');
       reject(err);
     };
     
@@ -63,7 +65,9 @@ export async function getFiles() {
 }
 
 export async function createFile(name: string, content: string) {
-  return sendRequest('CREATE_FILE', { name, content });
+  const result = await sendRequest('CREATE_FILE', { name, content });
+  console.log(`📄 Created: ${name}`);
+  return result;
 }
 
 export async function saveFile(name: string, content: string) {
@@ -71,5 +75,7 @@ export async function saveFile(name: string, content: string) {
 }
 
 export async function deleteFile(name: string) {
-  return sendRequest('DELETE_FILE', { name });
+  const result = await sendRequest('DELETE_FILE', { name });
+  console.log(`🗑️ Deleted: ${name}`);
+  return result;
 }

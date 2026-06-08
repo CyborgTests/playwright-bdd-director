@@ -56,21 +56,25 @@ a {
 }
 
 dialog {
-  border: none;
-  padding: 0;
-  box-shadow: var(--box-shadow);
-  line-height: 28px;
-  max-width: 400px;
+  border: 1px solid var(--vscode-panel-border, #3e3e42) !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  max-width: 280px !important;
+  min-width: 200px !important;
+  background: var(--vscode-panel-background, #1e1e1e) !important;
 }
 
 dialog .title {
   display: flex;
   align-items: center;
   margin: 0;
-  padding: 0 5px;
-  height: 32px;
-  background-color: var(--vscode-sideBar-background);
-  max-width: 400px;
+  padding: 0 6px;
+  height: 28px;
+  background-color: var(--vscode-sideBar-background, #252526);
+  border-bottom: 1px solid var(--vscode-panel-border, #3e3e42);
+  font-weight: 600;
+  color: var(--vscode-foreground, #cccccc);
+  font-size: 12px;
 }
 
 dialog .title .codicon {
@@ -78,18 +82,23 @@ dialog .title .codicon {
 }
 
 dialog .body {
-  padding: 10px;
+  padding: 8px;
   text-align: center;
+  background: var(--vscode-panel-background, #1e1e1e);
+  border-top: 1px solid var(--vscode-panel-border, #3e3e42);
+  color: var(--vscode-foreground, #cccccc);
 }
 
 .button {
-  color: var(--vscode-button-foreground);
-  background: var(--vscode-button-background);
-  margin: 10px;
-  border: none;
+  color: var(--vscode-button-foreground, #cccccc);
+  background: var(--vscode-button-secondaryBackground, #3c3c3c);
+  margin: 8px;
+  border: 1px solid var(--vscode-button-border, #3c3c3c);
   height: 28px;
   min-width: 40px;
   cursor: pointer;
+  border-radius: 3px;
+  font-weight: 500;
   user-select: none;
 }
 
@@ -98,7 +107,8 @@ dialog .body {
 }
 
 .button:hover {
-  background: var(--vscode-button-hoverBackground);
+  background: var(--vscode-button-secondaryHoverBackground, #4a4a4a);
+  border-color: var(--vscode-button-border, #5a5a5a);
 }
 
 .button.secondary {
@@ -108,6 +118,131 @@ dialog .body {
 
 .button.secondary:hover {
   background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Button variants */
+.button.danger {
+  background: var(--vscode-errorBackground, #b91c1c);
+  border-color: var(--vscode-errorBorder, #dc2626);
+  color: var(--vscode-errorForeground, #ffffff);
+}
+
+.button.danger:hover {
+  background: var(--vscode-button-hoverBackground, #991b1b);
+  border-color: var(--vscode-errorBorder, #b91c1c);
+}
+
+.button.success {
+  background: var(--vscode-testing-iconPassed, #16a34a);
+  border-color: #15803d;
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+.button.success:hover {
+  background: #15803d;
+  border-color: #166534;
+}
+
+/* Dialog input fields */
+dialog input[type="text"],
+dialog input[type="number"],
+dialog input[type="search"],
+dialog input[type="email"],
+dialog input[type="password"],
+dialog textarea,
+dialog select {
+  background: #2a2a2a;
+  border: 1px solid #9c9c9c;
+  color: var(--vscode-input-foreground, #cccccc);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  outline: none;
+}
+
+dialog input[type="text"]:focus,
+dialog input[type="number"]:focus,
+dialog input[type="search"]:focus,
+dialog input[type="email"]:focus,
+dialog input[type="password"]:focus,
+dialog textarea:focus,
+dialog select:focus {
+  border-color: #9c9c9c;
+  outline: 1px solid #9c9c9c;
+  outline-offset: -1px;
+}
+
+dialog input[type="text"]:hover,
+dialog input[type="number"]:hover,
+dialog input[type="search"]:hover,
+dialog input[type="email"]:hover,
+dialog input[type="password"]:hover,
+dialog textarea:hover,
+dialog select:hover {
+  border-color: #acacac;
+}
+
+/* Dialog checkboxes and radio buttons */
+dialog input[type="checkbox"],
+dialog input[type="radio"] {
+  accent-color: var(--vscode-checkbox-border, #4096ff);
+  margin: 0 4px;
+}
+
+/* Dialog labels */
+dialog label {
+  color: var(--vscode-foreground, #cccccc);
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+/* Dialog fieldsets */
+dialog fieldset {
+  border: 1px solid var(--vscode-panel-border, #3e3e42);
+  border-radius: 4px;
+  padding: 12px;
+  margin: 8px 0;
+  background: var(--vscode-editor-background, #1e1e1e);
+}
+
+dialog fieldset legend {
+  color: var(--vscode-foreground, #cccccc);
+  font-weight: 600;
+  padding: 0 8px;
+}
+
+/* Dialog dividers */
+dialog hr {
+  border: none;
+  border-top: 1px solid var(--vscode-panel-border, #3e3e42);
+  margin: 12px 0;
+}
+
+/* Dialog containers */
+dialog .field-group {
+  border: 1px solid #9c9c9c;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 4px 0;
+  background: #2a2a2a;
+}
+
+dialog .field-row {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  gap: 8px;
+}
+
+dialog .field-label {
+  color: var(--vscode-foreground, #cccccc);
+  font-weight: 500;
+  min-width: 100px;
+}
+
+dialog .field-value {
+  flex: 1;
 }
 
 * {

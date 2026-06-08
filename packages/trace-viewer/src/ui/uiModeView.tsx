@@ -39,6 +39,7 @@ import { SettingsView } from './settingsView';
 import { DefaultSettingsView } from './defaultSettingsView';
 import { DirectorPanel } from './director/DirectorPanel';
 import type { TestFile } from './director/DirectorModel';
+import { saveFile } from './director/wsClient';
 
 let xtermSize = { cols: 80, rows: 24 };
 const xtermDataSource: XtermDataSource = {
@@ -479,10 +480,20 @@ export const UIModeView: React.FC<{}> = ({
     // Sync with PW test list if file has associated tests
   }, []);
 
-  const handleDirectorFileContentChange = React.useCallback((path: string, content: string) => {
+  const handleDirectorFileContentChange = React.useCallback(async (path: string, content: string) => {
+    // Update state
     setDirectorFiles(prev => prev.map(f => 
       f.path === path ? { ...f, content, isModified: true } : f
     ));
+    
+    // Save to disk
+    try {
+      await saveFile(path, content);
+      // Don't reset isModified for now to test if indicator shows
+      console.log(`✅ Saved: ${path}`);
+    } catch (error) {
+      console.error('Failed to save file:', error);
+    }
   }, []);
 
   const handleDirectorStage = React.useCallback((file: TestFile) => {
@@ -512,8 +523,8 @@ export const UIModeView: React.FC<{}> = ({
       UI Mode disconnected — <a href='/' style={{color: 'white', textDecoration: 'underline'}}>Reload</a>
     </div>}
     <SplitView
-      sidebarSize={350}
-      minSidebarSize={250}
+      sidebarSize={450}
+      minSidebarSize={300}
       orientation='horizontal'
       sidebarIsFirst={true}
       settingName='directorSidebar'
@@ -531,7 +542,7 @@ export const UIModeView: React.FC<{}> = ({
         sidebarIsFirst={true}
         settingName='testListSidebar'
         sidebar={<div className='vbox ui-mode-sidebar'>
-          <Toolbar noShadow={true} noMinHeight={true}>
+          <Toolbar noShadow={true} noMinHeight={true} className='section-toolbar'>
             <img src='playwright-logo.svg' alt='Playwright logo' />
             <div className='section-title'>Playwright</div>
             <ToolbarButton icon='refresh' title='Reload' onClick={() => reloadTests()} disabled={isRunningTest || isLoading}></ToolbarButton>
