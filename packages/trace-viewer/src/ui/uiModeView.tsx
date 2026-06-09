@@ -617,6 +617,10 @@ export const UIModeView: React.FC<{}> = ({}) => {
     // Find and highlight corresponding test in PW panel
   }, [])
 
+  const handleDirectorFilesRefresh = React.useCallback((files: TestFile[]) => {
+    setDirectorFiles(files)
+  }, [])
+
   return (
     <div className="vbox ui-mode">
       {!hasBrowsers && (
@@ -672,6 +676,7 @@ export const UIModeView: React.FC<{}> = ({}) => {
             onFileContentChange={handleDirectorFileContentChange}
             onStage={handleDirectorStage}
             onSyncWithTest={handleDirectorSyncWithTest}
+            onFilesRefresh={handleDirectorFilesRefresh}
           />
         }
         main={

@@ -19,7 +19,7 @@ import './splitView.css'
 import * as React from 'react'
 
 export type SplitViewProps = {
-  sidebarSize: number
+  sidebarSize?: number
   sidebarHidden?: boolean
   sidebarIsFirst?: boolean
   orientation?: 'vertical' | 'horizontal'
@@ -98,7 +98,7 @@ export const SplitView: React.FC<SplitViewProps> = ({
     <div className={clsx('split-view', orientation, sidebarIsFirst && 'sidebar-first')} ref={ref}>
       <div className="split-view-main">{main}</div>
       {!sidebarHidden && (
-        <div style={{ flexBasis: size }} className="split-view-sidebar">
+        <div style={sidebarSize !== undefined ? { flexBasis: size } : { flex: 1 }} className="split-view-sidebar">
           {sidebar}
         </div>
       )}
@@ -132,6 +132,7 @@ export const SplitView: React.FC<SplitViewProps> = ({
             }
           }}
           onDoubleClick={(event: React.MouseEvent) => {
+            if (sidebarSize === undefined) return
             const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio
             if (orientation === 'vertical') setVSize(defaultSize)
             else setHSize(defaultSize)

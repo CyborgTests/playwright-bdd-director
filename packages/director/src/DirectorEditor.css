@@ -202,7 +202,7 @@
 .director-preview-content {
   padding: 16px 20px;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.2;
   color: var(--vscode-editor-foreground, #d4d4d4);
   height: 100%;
   overflow: auto;
@@ -216,10 +216,8 @@
 .director-preview-content h6 {
   color: var(--vscode-titleBar-activeForeground, #cccccc);
   font-weight: 600;
-  margin-top: 24px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--vscode-panel-border, #3e3e42);
-  padding-bottom: 8px;
+  margin-top: 6px;
+  margin-bottom: 4px;
 }
 
 .director-preview-content h1 {
@@ -228,28 +226,34 @@
 
 .director-preview-content h2 {
   font-size: 18px;
+  padding-left: 0;
 }
 
 .director-preview-content h3 {
   font-size: 16px;
+  padding-left: 16px;
+  margin-top: 6px;
+  border-top: 2px solid var(--vscode-titleBar-activeForeground, #cccccc);
+  padding-top: 6px;
 }
 
 .director-preview-content h4 {
   font-size: 14px;
+  padding-left: 32px;
 }
 
 .director-preview-content p {
-  margin: 8px 0;
+  margin: 4px 0;
 }
 
 .director-preview-content ul,
 .director-preview-content ol {
-  margin: 8px 0;
+  margin: 4px 0;
   padding-left: 20px;
 }
 
 .director-preview-content li {
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .director-preview-content code {

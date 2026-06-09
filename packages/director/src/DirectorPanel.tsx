@@ -30,6 +30,7 @@ export interface DirectorPanelProps {
   onFileContentChange: (path: string, content: string) => void
   onStage: (file: TestFile) => void
   onSyncWithTest: (scenarioName: string) => void
+  onFilesRefresh?: (files: TestFile[]) => void
 }
 
 export const DirectorPanel: React.FC<DirectorPanelProps> = ({
@@ -37,7 +38,8 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   onFileSelect,
   onFileContentChange,
   onStage,
-  onSyncWithTest: _onSyncWithTest
+  onSyncWithTest: _onSyncWithTest,
+  onFilesRefresh
 }) => {
   const [selectedFile, setSelectedFile] = React.useState<TestFile | null>(null)
   const [outputEntries, setOutputEntries] = React.useState<DirectorOutputEntry[]>([])
@@ -64,10 +66,12 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     const fullName = name.trim() + ext
 
     try {
-      const { createFile } = await import('./wsClient')
+      const { createFile, getFiles } = await import('./wsClient')
       await createFile(fullName, '# New Test\n\n')
       addOutputEntry('info', `Created: ${fullName}`)
-      window.location.reload()
+      // Refresh file list without reload
+      const updatedFiles = await getFiles() as TestFile[]
+      onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to create ${fullName}: ${e}`)
     }
@@ -76,63 +80,72 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   // Handle delete file via WebSocket
   const handleDeleteFile = async (file: TestFile) => {
     try {
-      const { deleteFile } = await import('./wsClient')
+      const { deleteFile, getFiles } = await import('./wsClient')
       await deleteFile(file.name)
       addOutputEntry('info', `Deleted: ${file.name}`)
       if (selectedFile?.path === file.path) {
         setSelectedFile(null)
       }
-      window.location.reload()
+      // Refresh file list without reload
+      const updatedFiles = await getFiles() as TestFile[]
+      onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to delete ${file.name}: ${e}`)
     }
   }
 
-  // Handle stage
+  // Handle stage - process all .md files
   const handleStage = async () => {
-    if (!selectedFile) return
+    const mdFiles = files.filter(f => f.name.endsWith('.md'))
+    if (mdFiles.length === 0) {
+      addOutputEntry('error', 'No Markdown files to stage')
+      return
+    }
 
     setIsStaging(true)
-    addOutputEntry('progress', `Staging ${selectedFile.name}...`)
+    addOutputEntry('progress', `Staging ${mdFiles.length} file(s)...`)
 
-    // Simulate progress
+    for (let i = 0; i < mdFiles.length; i++) {
+      const file = mdFiles[i]
+      const overallProgress = Math.round((i / mdFiles.length) * 100)
+
+      setStageProgress({
+        file: file.name,
+        status: 'parsing',
+        progress: overallProgress,
+        message: `Processing ${file.name} (${i + 1}/${mdFiles.length})...`
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      setStageProgress({
+        file: file.name,
+        status: 'generating',
+        progress: overallProgress + 33,
+        message: `Generating test code for ${file.name}...`
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 400))
+
+      setStageProgress({
+        file: file.name,
+        status: 'compiling',
+        progress: overallProgress + 66,
+        message: `Compiling ${file.name}...`
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      addOutputEntry('success', `Staged: ${file.name}`)
+      onStage(file)
+    }
+
     setStageProgress({
-      file: selectedFile.name,
-      status: 'parsing',
-      progress: 0,
-      message: 'Parsing Markdown...'
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    setStageProgress({
-      file: selectedFile.name,
-      status: 'generating',
-      progress: 33,
-      message: 'Generating test code...'
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    setStageProgress({
-      file: selectedFile.name,
-      status: 'compiling',
-      progress: 66,
-      message: 'Compiling TypeScript...'
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 600))
-
-    setStageProgress({
-      file: selectedFile.name,
+      file: '',
       status: 'done',
       progress: 100,
-      message: 'Done!'
+      message: 'All files staged!'
     })
-
-    addOutputEntry('success', `Successfully staged ${selectedFile.name}`)
-
-    onStage(selectedFile)
 
     setTimeout(() => {
       setStageProgress(undefined)
@@ -161,8 +174,8 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     <div className="director-panel">
       {/* Main content */}
       <SplitView
-        sidebarSize={130}
-        minSidebarSize={70}
+        sidebarSize={150}
+        minSidebarSize={100}
         orientation="horizontal"
         sidebarIsFirst={true}
         settingName="directorFileExplorer"
@@ -173,6 +186,8 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
             onFileSelect={handleFileSelect}
             onNewFile={handleNewFile}
             onDeleteFile={handleDeleteFile}
+            onStage={handleStage}
+            isStaging={isStaging}
           />
         }
         main={
@@ -193,8 +208,6 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
               <DirectorEditor
                 file={selectedFile}
                 onContentChange={handleContentChange}
-                onStage={handleStage}
-                isStaging={isStaging}
               />
             }
           />

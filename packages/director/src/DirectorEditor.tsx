@@ -21,26 +21,51 @@ import { Toolbar } from '@web/components/toolbar'
 import { ToolbarButton } from '@web/components/toolbarButton'
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 
 import type { TestFile } from './DirectorModel'
 
 type EditorMode = 'editor' | 'preview'
 
+const HEADING_INDENT: Record<string, number> = { h2: 0, h3: 16, h4: 32 }
+const LIST_BASE_INDENT = 20
+
+function buildMarkdownComponents(content: string): Components {
+  const headingIndentRef = { current: 0 }
+
+  const makeHeading =
+    (tag: keyof typeof HEADING_INDENT, bold = false): Components['h2'] =>
+    ({ children, ...props }) => {
+      headingIndentRef.current = HEADING_INDENT[tag] ?? 0
+      return React.createElement(tag, props, bold ? React.createElement('strong', null, children) : children)
+    }
+
+  void content
+  return {
+    h2: makeHeading('h2', true),
+    h3: makeHeading('h3', true),
+    h4: makeHeading('h4', true),
+    ul: ({ children, ...props }) => {
+      return <ul {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>{children}</ul>
+    },
+    ol: ({ children, ...props }) => {
+      return <ol {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>{children}</ol>
+    },
+  }
+}
+
 export interface DirectorEditorProps {
   file: TestFile | null
   onContentChange: (content: string) => void
-  onStage: () => void
-  isStaging: boolean
 }
 
 export const DirectorEditor: React.FC<DirectorEditorProps> = ({
   file,
-  onContentChange,
-  onStage,
-  isStaging
+  onContentChange
 }) => {
   const [mode, setMode] = React.useState<EditorMode>('editor')
   const [editedContent, setEditedContent] = React.useState<string>(file?.content || '')
+  const markdownComponents = React.useMemo(() => buildMarkdownComponents(editedContent), [editedContent])
 
   React.useEffect(() => {
     setEditedContent(file?.content || '')
@@ -87,13 +112,6 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
           />
         </div>
 
-        {/* Stage button */}
-        <ToolbarButton
-          icon={isStaging ? 'sync~spin' : 'sync'}
-          title={isStaging ? 'Staging...' : 'Stage (generate tests)'}
-          onClick={onStage}
-          disabled={!file || isStaging}
-        />
       </Toolbar>
 
       <div className="director-editor-content">
@@ -108,7 +126,7 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
           />
         ) : (
           <div className="director-preview-content">
-            <ReactMarkdown>{editedContent}</ReactMarkdown>
+            <ReactMarkdown components={markdownComponents}>{editedContent}</ReactMarkdown>
           </div>
         )}
       </div>

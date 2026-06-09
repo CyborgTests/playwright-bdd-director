@@ -477,10 +477,9 @@ const PartitionedWorkbench: React.FunctionComponent<WorkbenchProps & { partition
         settingName="propertiesSidebar"
         main={
           <SplitView
-            sidebarSize={250}
+            sidebarSize={150}
             orientation="horizontal"
             sidebarIsFirst
-            settingName="actionListSidebar"
             main={
               <SnapshotTabsView
                 action={activeAction}

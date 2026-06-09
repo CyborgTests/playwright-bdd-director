@@ -31,6 +31,8 @@ export interface FileExplorerProps {
   onFileSelect: (file: TestFile) => void
   onNewFile?: (name: string, ext: string) => void
   onDeleteFile?: (file: TestFile) => void
+  onStage?: () => void
+  isStaging?: boolean
   runningFile?: string
 }
 
@@ -40,6 +42,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   onFileSelect,
   onNewFile,
   onDeleteFile,
+  onStage,
+  isStaging,
   runningFile: _runningFile
 }) => {
   // Dialog states
@@ -98,6 +102,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             icon="add"
             title="New file"
             onClick={handleNewFile}
+          />
+        )}
+        {onStage && (
+          <ToolbarButton
+            icon={isStaging ? 'sync~spin' : 'sync'}
+            title={isStaging ? 'Staging...' : 'Stage (generate tests)'}
+            onClick={onStage}
+            disabled={isStaging}
           />
         )}
       </Toolbar>
