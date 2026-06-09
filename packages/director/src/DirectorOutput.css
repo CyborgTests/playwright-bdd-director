@@ -35,6 +35,7 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--vscode-foreground, #cccccc);
+  padding-left: 8px;
 }
 
 .director-output-content {
