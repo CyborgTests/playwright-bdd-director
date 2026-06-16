@@ -9,17 +9,9 @@ export function connectWs(port: number): Promise<void> {
   return new Promise((resolve, reject) => {
     ws = new WebSocket(`ws://localhost:${port}`)
 
-    ws.onopen = () => {
-      // eslint-disable-next-line no-console
-      console.log('🔗 Director connected')
-      resolve()
-    }
+    ws.onopen = () => resolve()
 
-    ws.onerror = (err) => {
-      // eslint-disable-next-line no-console
-      console.error('❌ Director connection failed')
-      reject(err)
-    }
+    ws.onerror = (err) => reject(err)
 
     ws.onmessage = (event) => {
       try {
@@ -33,7 +25,7 @@ export function connectWs(port: number): Promise<void> {
             pending.resolve(msg.data)
           }
         }
-      } catch (_e) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -44,7 +36,7 @@ export function connectWs(port: number): Promise<void> {
   })
 }
 
-function sendRequest(type: string, data?: unknown): Promise<unknown> {
+function sendRequest(type: string, data?: unknown, timeoutMs = 5000): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       reject('WebSocket not connected')
@@ -61,7 +53,7 @@ function sendRequest(type: string, data?: unknown): Promise<unknown> {
         pendingRequests.delete(id)
         reject('Request timeout')
       }
-    }, 5000)
+    }, timeoutMs)
   })
 }
 
@@ -70,10 +62,7 @@ export async function getFiles() {
 }
 
 export async function createFile(name: string, content: string) {
-  const result = await sendRequest('CREATE_FILE', { name, content })
-  // eslint-disable-next-line no-console
-  console.log(`📄 Created: ${name}`)
-  return result
+  return sendRequest('CREATE_FILE', { name, content })
 }
 
 export async function saveFile(name: string, content: string) {
@@ -81,8 +70,10 @@ export async function saveFile(name: string, content: string) {
 }
 
 export async function deleteFile(name: string) {
-  const result = await sendRequest('DELETE_FILE', { name })
-  // eslint-disable-next-line no-console
-  console.log(`🗑️ Deleted: ${name}`)
-  return result
+  return sendRequest('DELETE_FILE', { name })
+}
+
+export async function runStage() {
+  const result = await sendRequest('RUN_STAGE', undefined, 300000)
+  return result as { output: string; code: number }
 }

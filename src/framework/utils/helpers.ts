@@ -90,12 +90,12 @@ export function matchIDWithSuffix(markdownID: string, testID: string): boolean {
 
 /**
  * Check if test file matches base name and type
- * @example isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'MANUAL') → true
+ * @example isMatchingTestFile('tests/automated/todo.auto.test.ts', 'todo', 'AUTO') → true
  */
 export function isMatchingTestFile(
   testFilePath: string,
   baseName: string,
-  kind: 'AUTO' | 'MANUAL'
+  kind: 'AUTO' | 'CYBORG'
 ): boolean {
   const fileName = path.basename(testFilePath)
   const parts = fileName.split('.')

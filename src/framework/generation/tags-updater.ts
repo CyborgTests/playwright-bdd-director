@@ -114,7 +114,13 @@ export function extractSuiteName(baseName: string): string {
  * Examples:
  * - "todo" -> "TODO"
  * - "edge-cases" -> "EDGE_CASES"
+ * - "12345" -> "NUMBER_12345"
  */
 export function getTagConstant(suiteName: string): string {
-  return suiteName.toUpperCase().replace(/-/g, '_')
+  const upper = suiteName.toUpperCase().replace(/-/g, '_')
+  // If starts with number, prepend NUMBER_ prefix
+  if (/^\d/.test(upper)) {
+    return `NUMBER_${upper}`
+  }
+  return upper
 }

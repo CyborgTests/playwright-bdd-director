@@ -1,6 +1,6 @@
 export const SUFFIXES = {
   AUTO: '-AUTO',
-  MANUAL: '-MANUAL'
+  CYBORG: '-CYBORG'
 } as const
 
 export const AST_IDENTIFIERS = {

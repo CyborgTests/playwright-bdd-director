@@ -28,9 +28,9 @@ export interface DirectorMetrics extends ValidationMetrics {
   phases: {
     mdFormatting: DirectorPhaseMetrics
     validation: { timeMs: number }
-    generation: { manual: number; auto: number; timeMs: number }
-    archiving: { manual: number; auto: number; timeMs: number }
-    autoFix: { manual: number; auto: number; timeMs: number }
+    generation: { cyborg: number; timeMs: number }
+    archiving: { cyborg: number; auto: number; timeMs: number }
+    autoFix: { cyborg: number; auto: number; timeMs: number }
     formatLint: { timeMs: number }
   }
 }
@@ -123,13 +123,13 @@ export function formatDirectorMetrics(metrics: DirectorMetrics): string {
   )
   lines.push(`    • Validation: ${metrics.phases.validation.timeMs}ms`)
   lines.push(
-    `    • Generation: ${metrics.phases.generation.manual} manual, ${metrics.phases.generation.auto} auto (${metrics.phases.generation.timeMs}ms)`
+    `    • Generation: ${metrics.phases.generation.cyborg} cyborg (${metrics.phases.generation.timeMs}ms)`
   )
   lines.push(
-    `    • Archiving: ${metrics.phases.archiving.manual} manual, ${metrics.phases.archiving.auto} auto (${metrics.phases.archiving.timeMs}ms)`
+    `    • Archiving: ${metrics.phases.archiving.cyborg} cyborg, ${metrics.phases.archiving.auto} auto (${metrics.phases.archiving.timeMs}ms)`
   )
   lines.push(
-    `    • Auto-fix: ${metrics.phases.autoFix.manual} manual, ${metrics.phases.autoFix.auto} auto (${metrics.phases.autoFix.timeMs}ms)`
+    `    • Auto-fix: ${metrics.phases.autoFix.cyborg} cyborg, ${metrics.phases.autoFix.auto} auto (${metrics.phases.autoFix.timeMs}ms)`
   )
   lines.push(`    • Format & Lint: ${metrics.phases.formatLint.timeMs}ms`)
   lines.push('')

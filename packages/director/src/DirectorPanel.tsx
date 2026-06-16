@@ -68,7 +68,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     try {
       const { createFile, getFiles } = await import('./wsClient')
       await createFile(fullName, '# New Test\n\n')
-      addOutputEntry('info', `Created: ${fullName}`)
+      addOutputEntry('success', `Created: ${fullName}`)
       // Refresh file list without reload
       const updatedFiles = await getFiles() as TestFile[]
       onFilesRefresh?.(updatedFiles)
@@ -82,7 +82,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     try {
       const { deleteFile, getFiles } = await import('./wsClient')
       await deleteFile(file.name)
-      addOutputEntry('info', `Deleted: ${file.name}`)
+      addOutputEntry('error', `Deleted: ${file.name}`)
       if (selectedFile?.path === file.path) {
         setSelectedFile(null)
       }
@@ -94,7 +94,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     }
   }
 
-  // Handle stage - process all .md files
+  // Handle stage - run real npm run stage via WebSocket
   const handleStage = async () => {
     const mdFiles = files.filter(f => f.name.endsWith('.md'))
     if (mdFiles.length === 0) {
@@ -105,52 +105,44 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     setIsStaging(true)
     addOutputEntry('progress', `Staging ${mdFiles.length} file(s)...`)
 
-    for (let i = 0; i < mdFiles.length; i++) {
-      const file = mdFiles[i]
-      const overallProgress = Math.round((i / mdFiles.length) * 100)
+    try {
+      const { runStage } = await import('./wsClient')
+      const result = await runStage()
 
-      setStageProgress({
-        file: file.name,
-        status: 'parsing',
-        progress: overallProgress,
-        message: `Processing ${file.name} (${i + 1}/${mdFiles.length})...`
+      // Add output lines from stage command
+      const lines = result.output.split('\n').filter(l => l.trim())
+      lines.forEach(line => {
+        if (line.includes('error') || line.includes('Error')) {
+          addOutputEntry('error', line)
+        } else if (line.includes('success') || line.includes('✅') || line.includes('fixed')) {
+          addOutputEntry('success', line)
+        } else {
+          addOutputEntry('info', line)
+        }
       })
 
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
       setStageProgress({
-        file: file.name,
-        status: 'generating',
-        progress: overallProgress + 33,
-        message: `Generating test code for ${file.name}...`
+        file: '',
+        status: 'done',
+        progress: 100,
+        message: 'Stage complete!'
       })
 
-      await new Promise((resolve) => setTimeout(resolve, 400))
+      // Refresh files after stage (may have generated new test files)
+      const { getFiles } = await import('./wsClient')
+      const updatedFiles = await getFiles() as TestFile[]
+      onFilesRefresh?.(updatedFiles)
 
-      setStageProgress({
-        file: file.name,
-        status: 'compiling',
-        progress: overallProgress + 66,
-        message: `Compiling ${file.name}...`
-      })
-
-      await new Promise((resolve) => setTimeout(resolve, 300))
-
-      addOutputEntry('success', `Staged: ${file.name}`)
-      onStage(file)
+      // Notify all files were staged
+      mdFiles.forEach(file => onStage(file))
+    } catch (e) {
+      addOutputEntry('error', `Stage failed: ${e}`)
     }
-
-    setStageProgress({
-      file: '',
-      status: 'done',
-      progress: 100,
-      message: 'All files staged!'
-    })
 
     setTimeout(() => {
       setStageProgress(undefined)
       setIsStaging(false)
-    }, 1000)
+    }, 1500)
   }
 
   // Add output entry

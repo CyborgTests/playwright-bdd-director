@@ -8,12 +8,12 @@ import { parseMDFile } from '../core/md-parser'
 import { getIcon } from '../utils/icons'
 import { addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
-type TestType = 'AUTO' | 'MANUAL'
+type TestType = 'AUTO' | 'CYBORG'
 
 export function generateTestFile(baseName: string, type: TestType): boolean {
   const mdData = parseMDFile(baseName)
 
-  const outputDir = type === 'AUTO' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsManual
+  const outputDir = type === 'AUTO' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsCyborg
 
   // Create output directory if needed
   if (!fs.existsSync(outputDir)) {
@@ -40,7 +40,7 @@ export function generateTestFile(baseName: string, type: TestType): boolean {
     stepTemplate = (stepLiteral) =>
       `await test.step(${stepLiteral}, async () => { /* TODO: Implement step logic */ });`
   } else {
-    suffix = SUFFIXES.MANUAL
+    suffix = SUFFIXES.CYBORG
     importStatement = "import test from '@cyborgtests/test'"
     testParams = '{ manualStep }'
     stepTemplate = (stepLiteral) => `await manualStep(${stepLiteral});`
@@ -54,10 +54,10 @@ export function generateTestFile(baseName: string, type: TestType): boolean {
         // No ID in MD - use title only
         testTtl = tc.ttl
       } else if (tc.id === '') {
-        // Empty ID [] - use suffix without dash (MANUAL, AUTO)
+        // Empty ID [] - use suffix without dash (CYBORG, AUTO)
         testTtl = `[${suffix.slice(1)}] ${tc.ttl}`
       } else {
-        // Non-empty ID - use suffix with dash (tc01-01-MANUAL)
+        // Non-empty ID - use suffix with dash (tc01-01-CYBORG)
         testTtl = `[${tc.id}${suffix}] ${tc.ttl}`
       }
       const testTtlLiteral = JSON.stringify(testTtl)
@@ -90,18 +90,19 @@ export function generateTestFile(baseName: string, type: TestType): boolean {
   const tagConstant = getTagConstant(suiteName)
   const tags = [`TAG.TEST.${type}`, `TAG.SUITE.${tagConstant}`]
 
+  // Use .fixme for AUTO tests until implemented
+  const describeMethod = type === 'AUTO' ? 'test.describe.fixme' : 'test.describe'
+
   // Generate file content
   const content = `${importStatement}
 import { TAG } from '@/test-constants/tags'
 
-test.describe(${suiteTtlLiteral}, { tag: [${tags.join(', ')}] }, () => {
+${describeMethod}(${suiteTtlLiteral}, { tag: [${tags.join(', ')}] }, () => {
 ${testCases}
 });`
 
   // Write file to disk
   fs.writeFileSync(testPath, content)
-  // eslint-disable-next-line no-console
-  console.log(`${getIcon('success')}  Generated: ${testPath}`)
 
   // Update tags.ts
   try {
@@ -120,6 +121,6 @@ export function generateAutoTestFile(baseName: string): boolean {
   return generateTestFile(baseName, 'AUTO')
 }
 
-export function generateManualTestFile(baseName: string): boolean {
-  return generateTestFile(baseName, 'MANUAL')
+export function generateCyborgTestFile(baseName: string): boolean {
+  return generateTestFile(baseName, 'CYBORG')
 }

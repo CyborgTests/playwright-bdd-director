@@ -15,8 +15,7 @@ export const TAG = {
    */
   TEST: {
     AUTO: '@auto',
-    MANUAL: '@manual',
-    HYBRID: '@hybrid'
+    CYBORG: '@cyborg'
   },
 
   /**
@@ -30,8 +29,14 @@ export const TAG = {
 
   /**
    * Test suite / functional area
+   * Auto-generated from test-suites/*.md filenames:
+   * - auth.md → AUTH: '@auth'
+   * - 12345.md → NUMBER_12345: '@12345'
+   * - user-profile.md → USER_PROFILE: '@user-profile'
    */
   SUITE: {
-    AUTH: '@auth'
+    AUTH: '@auth',
+    NUMBER_1: '@1',
+    NUMBER_11: '@11'
   }
 } as const

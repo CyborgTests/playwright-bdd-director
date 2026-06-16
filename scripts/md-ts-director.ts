@@ -9,7 +9,7 @@ import { clearMDCache } from '@/framework/core/md-parser'
 import { parseTestFile } from '@/framework/core/ts-parser'
 import { autoFixTestFile, isEmptyAutoTest } from '@/framework/generation/auto-fixer'
 import { archiveOrphanedTests } from '@/framework/generation/test-archiver'
-import { generateAutoTestFile, generateManualTestFile } from '@/framework/generation/test-generator'
+import { generateAutoTestFile, generateCyborgTestFile } from '@/framework/generation/test-generator'
 import {
   collectValidationMetrics,
   type DirectorMetrics,
@@ -60,8 +60,8 @@ function main() {
   // Phase 4: Archive orphaned tests
   const phase4 = archiveOrphanedTestFiles(phase2.validation)
 
-  // Phase 5: Auto-fix manual test files
-  const phase5 = autoFixManualTestFiles(phase2.validation)
+  // Phase 5: Auto-fix cyborg test files
+  const phase5 = autoFixCyborgTestFiles(phase2.validation)
 
   // Phase 6: Auto-fix empty automated test files
   const phase6 = autoFixEmptyAutoTestFiles(phase2.validation)
@@ -80,10 +80,10 @@ function main() {
     phases: {
       mdFormatting: { files: phase1.count ?? 0, fixed: phase1.manual ?? 0, timeMs: phase1.timeMs },
       validation: { timeMs: phase2.timeMs },
-      generation: { manual: phase3.manual ?? 0, auto: phase3.auto ?? 0, timeMs: phase3.timeMs },
-      archiving: { manual: phase4.manual ?? 0, auto: phase4.auto ?? 0, timeMs: phase4.timeMs },
+      generation: { cyborg: phase3.cyborg ?? 0, timeMs: phase3.timeMs },
+      archiving: { cyborg: phase4.cyborg ?? 0, auto: phase4.auto ?? 0, timeMs: phase4.timeMs },
       autoFix: {
-        manual: phase5.manual ?? 0,
+        cyborg: phase5.cyborg ?? 0,
         auto: phase6.auto ?? 0,
         timeMs: phase5.timeMs + phase6.timeMs
       },
@@ -95,6 +95,34 @@ function main() {
   console.log(formatDirectorMetrics(directorMetrics))
   saveMetrics(directorMetrics)
 
+  // Output fixed formatting files
+  if (phase1.fixedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('fix')}  Fixed formatting:`)
+    phase1.fixedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
+  // Output generated files
+  if (phase3.generatedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('success')}  Generated files:`)
+    phase3.generatedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
+  // Output auto-fixed cyborg files
+  if (phase5.fixedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('fix')}  Auto-fixed CYBORG:`)
+    phase5.fixedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
+  // Output auto-fixed auto files
+  if (phase6.fixedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('fix')}  Auto-fixed AUTO:`)
+    phase6.fixedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
   console.log(
     `\n${getIcon('success')}  Stage is set! ${finalValidation.validationResults.length} file(s) ready.\n`
   )
@@ -104,24 +132,25 @@ function main() {
 /**
  * Phase 1: Auto-fix MD formatting
  */
-function fixMarkdownFormatting(): { timeMs: number; count: number; manual: number } {
+function fixMarkdownFormatting(): { timeMs: number; count: number; manual: number; fixedFiles: string[] } {
   const startTime = Date.now()
   const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/**/*.md`)
   let fixed = 0
+  const fixedFiles: string[] = []
 
   for (const markdownFile of markdownFiles) {
     const wasFixed = autoFixMDFormatting(markdownFile)
     if (wasFixed) {
       fixed++
-      console.log(`${getIcon('fix')}  Fixed formatting: ${markdownFile}`)
-      console.log()
+      fixedFiles.push(markdownFile)
     }
   }
 
   return {
     timeMs: Date.now() - startTime,
     count: markdownFiles.length,
-    manual: fixed
+    manual: fixed,
+    fixedFiles
   }
 }
 
@@ -155,32 +184,31 @@ function runInitialValidation(): { validation: ValidatorResult; timeMs: number }
  */
 function generateMissingTestFiles(validation: ValidatorResult): {
   timeMs: number
-  manual: number
-  auto: number
+  cyborg: number
+  generatedFiles: string[]
 } {
   const startTime = Date.now()
-  let generatedManual = 0
-  let generatedAuto = 0
+  let generatedCyborg = 0
+  const generatedFiles: string[] = []
 
   for (const markdownFile of validation.markdownFiles) {
     const baseName = getMarkdownBaseName(markdownFile)
     const candidates = glob.sync(`${CONFIG.paths.testsDir}/**/${baseName}*.ts`)
 
-    const manualTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'MANUAL'))
+    const cyborgTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'CYBORG'))
 
-    if (manualTestFiles.length === 0) {
-      if (generateManualTestFile(baseName)) generatedManual++
-    }
-
-    if (!hasAutomatedTestFile(candidates, baseName)) {
-      if (generateAutoTestFile(baseName)) generatedAuto++
+    if (cyborgTestFiles.length === 0) {
+      if (generateCyborgTestFile(baseName)) {
+        generatedCyborg++
+        generatedFiles.push(`${baseName}.cyborg.test.ts`)
+      }
     }
   }
 
   return {
     timeMs: Date.now() - startTime,
-    manual: generatedManual,
-    auto: generatedAuto
+    cyborg: generatedCyborg,
+    generatedFiles
   }
 }
 
@@ -189,7 +217,7 @@ function generateMissingTestFiles(validation: ValidatorResult): {
  */
 function archiveOrphanedTestFiles(validation: ValidatorResult): {
   timeMs: number
-  manual: number
+  cyborg: number
   auto: number
 } {
   const startTime = Date.now()
@@ -198,7 +226,7 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
 
   return {
     timeMs: Date.now() - startTime,
-    manual: stats.manual,
+    cyborg: stats.cyborg,
     auto: stats.auto
   }
 }
@@ -206,31 +234,32 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
 /**
  * Phase 5: Auto-fix manual test files
  */
-function autoFixManualTestFiles(validation: ValidatorResult): { timeMs: number; manual: number } {
-  return processTestFiles(validation, 'MANUAL', false) as { timeMs: number; manual: number }
+function autoFixCyborgTestFiles(validation: ValidatorResult): { timeMs: number; cyborg: number; fixedFiles: string[] } {
+  return processTestFiles(validation, 'CYBORG', false)
 }
 
 /**
  * Phase 6: Auto-fix empty automated test files
  */
-function autoFixEmptyAutoTestFiles(validation: ValidatorResult): { timeMs: number; auto: number } {
-  return processTestFiles(validation, 'AUTO', true) as { timeMs: number; auto: number }
+function autoFixEmptyAutoTestFiles(validation: ValidatorResult): { timeMs: number; auto: number; fixedFiles: string[] } {
+  return processTestFiles(validation, 'AUTO', true)
 }
 
 /**
- * Process and auto-fix test files (manual or auto)
+ * Process and auto-fix test files (cyborg or auto)
  * @param validation - Validation result with parsed MD data
- * @param fileType - Type of test files to process ('MANUAL' or 'AUTO')
+ * @param fileType - Type of test files to process ('CYBORG' or 'AUTO')
  * @param onlyEmpty - For auto tests, only fix if empty (no implementation)
  */
 function processTestFiles(
   validation: ValidatorResult,
-  fileType: 'MANUAL' | 'AUTO',
+  fileType: 'CYBORG' | 'AUTO',
   onlyEmpty: boolean
-): { timeMs: number; [key: string]: number } {
+): { timeMs: number; cyborg: number; auto: number; fixedFiles: string[] } {
   const startTime = Date.now()
   const testFiles = glob.sync(`${CONFIG.paths.testsDir}/**/*.ts`, { nodir: true })
   let fixed = 0
+  const fixedFiles: string[] = []
 
   for (const testFile of testFiles) {
     const fileName = path.basename(testFile)
@@ -257,13 +286,7 @@ function processTestFiles(
         const fixResult = autoFixTestFile(testFile, markdownData)
         if (fixResult.fixed) {
           fixed++
-          console.log(`${getIcon('fix')}  Auto-fixed: ${testFile}`)
-          fixResult.changes.forEach((change) => console.log(`    ${change}`))
-          console.log()
-        } else if (fixResult.changes.length > 0 && fixResult.changes[0].includes('Skipped')) {
-          console.log(`${getIcon('info')}  Skipped: ${testFile}`)
-          fixResult.changes.forEach((change) => console.log(`    ${change}`))
-          console.log()
+          fixedFiles.push(testFile)
         }
       }
     } catch (error: unknown) {
@@ -274,7 +297,9 @@ function processTestFiles(
 
   return {
     timeMs: Date.now() - startTime,
-    [fileType]: fixed
+    cyborg: fileType === 'CYBORG' ? fixed : 0,
+    auto: fileType === 'AUTO' ? fixed : 0,
+    fixedFiles
   }
 }
 
@@ -284,8 +309,8 @@ function processTestFiles(
 function formatAndLintTests(): { timeMs: number } {
   const startTime = Date.now()
 
-  execSync('prettier --write tests --log-level silent', { stdio: 'inherit' })
-  execSync('eslint --fix tests', { stdio: 'inherit' })
+  execSync('npm run format:tests', { stdio: 'inherit' })
+  execSync('npm run lint:fix:tests', { stdio: 'inherit' })
 
   return {
     timeMs: Date.now() - startTime

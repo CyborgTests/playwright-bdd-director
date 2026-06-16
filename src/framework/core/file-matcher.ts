@@ -10,7 +10,7 @@ export interface FileMatchResult {
   file: string
   valid: boolean
   errors: string[]
-  isManualWithTestStep?: boolean
+  isCyborgWithTestStep?: boolean
 }
 
 /**
@@ -40,11 +40,10 @@ function formatTestCaseLabel(
 /**
  * Determine test file type from filename
  */
-function getFileType(fileName: string): 'MANUAL' | 'AUTO' | 'HYBRID' {
+function getFileType(fileName: string): 'AUTO' | 'CYBORG' {
   const lower = fileName.toLowerCase()
-  if (lower.includes('.manual.')) return 'MANUAL'
-  if (AUTOMATED_KINDS.some((kind) => lower.includes(`.${kind.toLowerCase()}.`))) return 'AUTO'
-  return 'HYBRID'
+  if (lower.includes('.cyborg.')) return 'CYBORG'
+  return 'AUTO'
 }
 
 /**
@@ -58,14 +57,14 @@ function validateIdField(mdId: string | null, tsId: string | null, context: stri
 
   // MD has empty brackets [] - TS must have suffix (not null and not empty)
   if (mdId === '' && (tsId === null || tsId === '')) {
-    return `• Missing ${context} suffix in TS (MD has [] - use [MANUAL], [AUTO], [HYBRID], etc.)`
+    return `• Missing ${context} suffix in TS (MD has [] - use [CYBORG], [AUTO], etc.)`
   }
 
   // Both empty string - valid (empty ID [] in both)
   if (mdId === '' && tsId === '') return null
 
   // Both have IDs - check if they match (with suffix support)
-  // This handles: mdId='' + tsId='MANUAL', mdId='tc01' + tsId='tc01-MANUAL', etc.
+  // This handles: mdId='' + tsId='CYBORG', mdId='tc01' + tsId='tc01-CYBORG', etc.
   if (mdId !== null && tsId !== null && matchIDWithSuffix(mdId, tsId)) return null
 
   // MD has non-empty ID but TS doesn't
@@ -84,7 +83,7 @@ function validateIdField(mdId: string | null, tsId: string | null, context: stri
 
 /**
  * Validate that test file has required tags based on filename
- * Checks for TEST tag (manual/auto/hybrid) and SUITE tag
+ * Checks for TEST tag (auto/cyborg) and SUITE tag
  */
 function validateTags(testFile: string, tags: string[]): string[] {
   const errors: string[] = []
@@ -317,7 +316,7 @@ export function matchFiles(
 
   // 3. Validate test case count - if different, stop here
   const fileType = getFileType(testFile)
-  const manualWithTestStep = fileType === 'MANUAL' && hasTestStepCalls(typeScriptData)
+  const cyborgWithTestStep = fileType === 'CYBORG' && hasTestStepCalls(typeScriptData)
   const countError = validateTestCaseCount(markdownData, typeScriptData)
   if (countError) {
     errors.push(countError)
@@ -326,19 +325,19 @@ export function matchFiles(
       file: testFile,
       valid: false,
       errors,
-      isManualWithTestStep: manualWithTestStep
+      isCyborgWithTestStep: cyborgWithTestStep
     }
   }
 
   // 4. Validate each test case
-  // Skip step validation for manual tests with test.step - they are intentionally structured
-  const testCaseErrors = validateTestCases(markdownData, typeScriptData, manualWithTestStep)
+  // Skip step validation for cyborg tests with test.step - they are intentionally structured
+  const testCaseErrors = validateTestCases(markdownData, typeScriptData, cyborgWithTestStep)
   errors.push(...testCaseErrors)
 
   return {
     file: testFile,
     valid: errors.length === 0,
     errors,
-    isManualWithTestStep: manualWithTestStep
+    isCyborgWithTestStep: cyborgWithTestStep
   }
 }

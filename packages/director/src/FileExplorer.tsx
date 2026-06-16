@@ -106,7 +106,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         )}
         {onStage && (
           <ToolbarButton
-            icon={isStaging ? 'sync~spin' : 'sync'}
+            icon={isStaging ? 'gear~spin' : 'gear'}
             title={isStaging ? 'Staging...' : 'Stage (generate tests)'}
             onClick={onStage}
             disabled={isStaging}

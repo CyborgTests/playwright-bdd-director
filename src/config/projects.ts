@@ -3,24 +3,11 @@ import { Project } from '@playwright/test'
 import { defaultDevice } from './devices'
 
 /**
- * Manual project configuration
+ * Cyborg project configuration
  */
-export const manualProject: Project = {
-  name: 'manual',
-  testMatch: /.*\.manual\.test\.ts$/,
-  timeout: 0,
-  fullyParallel: false,
-  use: {
-    headless: false
-  }
-}
-
-/**
- * Hybrid project configuration
- */
-export const hybridProject: Project = {
-  name: 'hybrid',
-  testMatch: /.*\.hybrid\.test\.ts$/,
+export const cyborgProject: Project = {
+  name: 'cyborg',
+  testMatch: /.*\.cyborg\.test\.ts$/,
   timeout: 0,
   fullyParallel: false,
   use: {
@@ -45,11 +32,11 @@ export const automatedProject: Project = {
 /**
  * All available projects
  */
-export const allProjects: Project[] = [manualProject, hybridProject, automatedProject]
+export const allProjects: Project[] = [cyborgProject, automatedProject]
 
 /**
  * Get multiple projects by names
- * Supports mixing different project types (e.g., automated + hybrid)
+ * Supports mixing different project types (e.g., automated + cyborg)
  */
 export function getProjectsByName(projectNames: string[]): Project[] {
   const uniqueProjects = new Set<Project>()
@@ -59,11 +46,8 @@ export function getProjectsByName(projectNames: string[]): Project[] {
       case 'automated':
         uniqueProjects.add(automatedProject)
         break
-      case 'manual':
-        uniqueProjects.add(manualProject)
-        break
-      case 'hybrid':
-        uniqueProjects.add(hybridProject)
+      case 'cyborg':
+        uniqueProjects.add(cyborgProject)
         break
     }
   }

@@ -121,6 +121,31 @@ wss.on('connection', (ws) => {
         }
       }
       
+      else if (msg.type === 'RUN_STAGE') {
+        const { spawn } = require('child_process');
+        const stage = spawn('npx', ['tsx', 'scripts/md-ts-director.ts'], {
+          cwd: process.cwd(),
+          stdio: 'pipe',
+          shell: true
+        });
+        
+        let output = '';
+        stage.stdout.on('data', (data) => {
+          output += data.toString();
+        });
+        stage.stderr.on('data', (data) => {
+          output += data.toString();
+        });
+        
+        stage.on('close', (code) => {
+          ws.send(JSON.stringify({
+            id: msg.id,
+            type: code === 0 ? 'SUCCESS' : 'ERROR',
+            data: { output, code }
+          }));
+        });
+      }
+      
     } catch (e) {
       ws.send(JSON.stringify({ id: msg?.id || 0, type: 'ERROR', error: String(e) }));
     }

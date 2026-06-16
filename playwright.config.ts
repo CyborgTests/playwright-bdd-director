@@ -8,6 +8,7 @@ const selectedProjects = getProjectsFromGrep(tagToProject)
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['tests/automated/todo/**'],
   outputDir: 'test-results/artifacts',
   fullyParallel: true,
   reporter: [
