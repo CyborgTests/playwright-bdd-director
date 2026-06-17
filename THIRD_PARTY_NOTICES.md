@@ -10,9 +10,6 @@ Review the licenses of the dependencies listed below before distribution.
 
 ### Testing & Playwright
 
-- **`@cyborgtests/test`** - MIT License  
-  Source: `https://www.npmjs.com/package/@cyborgtests/test`
-
 - **`@playwright/test`** - Apache License 2.0  
   Source: `https://www.npmjs.com/package/@playwright/test`
 
@@ -86,6 +83,14 @@ Review the licenses of the dependencies listed below before distribution.
 
 - **`glob`** - ISC License  
   Source: `https://www.npmjs.com/package/glob`
+
+- **`minimatch`** - ISC License  
+  Source: `https://www.npmjs.com/package/minimatch`
+
+## Direct dependencies (from `package.json`)
+
+- **`ws`** - MIT License  
+  Source: `https://www.npmjs.com/package/ws`
 
 ## Notes
 

@@ -1,8 +1,10 @@
-# 📜 Script Stage: Write the Script, We'll Play the Show
+# 🎭 Playwright BDD Director
 
-You write the script in Markdown. The Director stages it - validates structure, generates test skeletons and keeps manual, automated, and hybrid tests performing the same script.
+**Write the Script, We'll Play the Show**
 
-**One source of truth. No improvisation. Pure theater.**
+A Markdown-driven testing framework for Playwright that keeps cyborg (manual) and automated tests synchronized from a single source of truth.
+
+Part of [CyborgTests](https://github.com/CyborgTests) - a modern testing ecosystem combining human insight with automation power.
 
 ## 🚀 Quick Start
 
@@ -12,13 +14,13 @@ You write the script in Markdown. The Director stages it - validates structure, 
 2. Select your operating system and CPU architecture
 3. Download the suggested version
 4. Run the downloaded installer and follow the installation steps
-5. Open a terminal and verify that Node.js was installed successfully
+5. Open a terminal and verify that Node.js was installed successfully:
 
 ```bash
 node --version
 ```
 
-### 2. Download Script Stage
+### 2. Download Playwright BDD Director
 
 Clone with Git:
 
@@ -26,17 +28,16 @@ Clone with Git:
 2. Run the commands below:
 
 ```bash
-git clone https://github.com/AnPo73/script-stage
-cd script-stage
+git clone https://github.com/CyborgTests/playwright-bdd-director
+cd playwright-bdd-director
 ```
 
 or download ZIP:
 
-1. Open the repository page on GitHub
-2. Click **Code**
-3. Click **Download ZIP**
-4. Extract the archive to any folder
-5. Open a terminal in the extracted folder
+1. Open the [repository page](https://github.com/CyborgTests/playwright-bdd-director) on GitHub
+2. Click **Code** → **Download ZIP**
+3. Extract the archive to any folder
+4. Open a terminal in the extracted folder
 
 ### 3. Install dependencies
 
@@ -44,17 +45,42 @@ or download ZIP:
 npm install
 ```
 
-### 4. Install Playwright browsers
+### 4. Build the Director UI
+
+```bash
+npm run build
+```
+
+This builds the Director UI (React/Vite) and patches Playwright to embed it into the Playwright UI interface.
+
+### 5. Install Playwright browsers
 
 ```bash
 npx playwright install
 ```
 
-### 5. Create your first Markdown test suite
+### 6. Launch the UI
 
-1. Open the `test-suites` folder inside the project
-2. Create a file named `login.md`
-3. Paste the following content into the file:
+```bash
+npm run show
+```
+
+This opens the combined interface in your browser:
+
+- **Director UI** (built as part of this project) - file explorer, Monaco editor, staging controls, test runner
+- **Playwright UI** (built-in Playwright feature) - embedded for detailed test execution, traces, and screenshots
+
+Together they form a unified workspace for the full testing workflow.
+
+![Director UI - Combined interface](images/director-ui-combined.png)
+
+### 7. Create your first test suite
+
+In the Director UI:
+
+1. **File Explorer** - click **New File** button
+2. Enter filename: `login.md`
+3. **File Editor** - paste the following (saves automatically as you type):
 
 ```markdown
 ## [] Login Tests
@@ -70,62 +96,50 @@ npx playwright install
 #### Verify dashboard visible
 ```
 
-### 6. Prepare your test suite for execution
+### 8. Stage your tests
 
-This command validates structure, generates test files, and keeps everything in sync:
+Click **Stage** button in the Director UI toolbar (or run `npm run stage` in terminal).
 
-```bash
-npm run stage
-```
+This validates structure, generates test files, and keeps everything in sync.
 
-### 7. Run tests
+![Staging - Metrics output](images/staging-metrics.png)
 
-Choose one of two ways - they are alternatives, not sequential steps:
+### 9. Run tests
 
-**Option A - Visual UI** (recommended for most users):
+In the Director UI:
 
-```bash
-npm run show
-```
+1. **Test Runner** - shows all generated tests
+2. Select test type: **Cyborg**, **Auto**, **API**, or **UI**
+3. Click **Run** next to any test or **Run All**
 
-Opens the Playwright UI where you can browse all tests, filter by project (`manual`, `automated`, `hybrid`) or by name, and run any subset with a click. Results appear inline with step details and screenshots.
-
-**Option B - Terminal CLI** (for engineers, CI pipelines, or faster runs without UI overhead):
+**Alternative - Terminal CLI:**
 
 ```bash
-npm run play manual              # all manual tests
-npm run play auto                # all automated tests
-npm run play hybrid              # all hybrid tests
-npm run play api                 # all API tests
-npm run play api auth            # API tests for auth suite only
-npm run play api ui auth         # API + UI tests for auth suite
-npm run play manual hybrid auth  # manual + hybrid auth tests
-npm run play auth                # all auth tests regardless of type
+npm run play cyborg              # all cyborg (manual) tests
+npm run play api                 # all automated API tests
+npm run play ui                  # all automated UI tests
 ```
 
-Both options automatically run validation before executing tests.
+### 10. View detailed results
 
-### 8. View test results
-
-After tests finish, close the Playwright UI window - the terminal will become available again. Then open the HTML report:
+After tests finish, close the UI window - the terminal will become available again. Then open the HTML report:
 
 ```bash
 npm run review
 ```
 
-**For manual and hybrid tests:** the Cyborgtests panel opens automatically during the run. Complete each step by clicking pass/fail/skip - the panel closes on its own when done. Then close the Playwright UI window and run `npm run review`.
-
 ## ⚡ Markdown-Driven Testing Platform
 
-Script Stage is powered by Playwright and Cyborgtests.
+Playwright BDD Director is part of the [CyborgTests](https://github.com/CyborgTests) ecosystem - a suite of tools that combine human insight with automation power.
 
-It combines:
+It brings together:
 
 - Playwright for automated E2E, UI, and API testing
-- Cyborgtests for manual and hybrid testing
+- `@cyborgtests/test` for cyborg (manual) test execution
 - Markdown as the single source of truth
+- Built-in Director UI for visual test management
 
-The same Markdown spec keeps manual, automated, and hybrid test files synchronized.
+The same Markdown spec keeps cyborg and automated test files synchronized.
 
 ## 💡 Why Markdown-First Testing?
 
@@ -135,17 +149,16 @@ Manual QA, managers, and non-technical stakeholders can review and update test s
 
 ### 2. One spec file, multiple test implementations
 
-The Markdown file is the **specification** - it defines what needs to be tested. Based on it, Script Stage generates and keeps in sync:
+The Markdown file is the **specification** - it defines what needs to be tested. Based on it, Playwright BDD Director generates and keeps in sync:
 
-- **Manual test files** - ready to run immediately via Cyborgtests
+- **Cyborg test files** - ready to run immediately via Cyborgtests (manual execution)
 - **Automated test skeletons** - structure generated, logic implemented by you
-- **Hybrid test files** - mix of automation and manual checkpoints
 
 The MD file does not run tests - it keeps all implementations synchronized. When you change the spec, `npm run stage` propagates those changes across all test files automatically.
 
 ### 3. Works without automation
 
-Script Stage already provides value for manual testing - automation can be added later if needed.
+Playwright BDD Director already provides value for cyborg (manual) testing - automation can be added later if needed.
 
 ### 4. Built for Playwright
 
@@ -153,7 +166,7 @@ When automation is needed, the same Markdown structure scales naturally to Playw
 
 ## 🤖 AI-Friendly by Design
 
-Script Stage is designed to work naturally with AI coding assistants (GitHub Copilot, Cursor, Claude Code, etc.) inside your IDE.
+Playwright BDD Director is designed to work naturally with AI coding assistants (GitHub Copilot, Cursor, Claude Code, etc.) inside your IDE.
 
 The key advantage: **spec files and test files live in the same repository**. An AI assistant sees both at once - it can read `auth.md` and immediately understand what `auth.api.test.ts` is supposed to do, without any context switching.
 
@@ -173,53 +186,72 @@ This unlocks a practical workflow:
 4. npm run play auto → run tests
 ```
 
-## 📐 Script Stage vs Cucumber vs Pure Playwright
+## 📐 Playwright BDD Director vs Cucumber vs Pure Playwright
 
-| Feature            | Cucumber + PW | Pure Playwright | **Script Stage** |
-| ------------------ | ------------- | --------------- | ---------------- |
-| Main Runner        | Cucumber      | Playwright      | **Playwright**   |
-| Native PW Features | Partial       | Full            | **Full**         |
-| TypeScript Support | Medium        | Excellent       | **Excellent**    |
-| Debugging          | Harder        | Excellent       | **Excellent**    |
-| Readability        | High          | Medium          | **High**         |
-| AI Friendliness    | Medium        | High            | **Very High**    |
-| Runtime Complexity | High          | Low             | **Low**          |
-| Performance        | Medium        | High            | **High**         |
-| Maintenance Cost   | High          | Low             | Medium           |
-| Flexibility        | Medium        | High            | **Very High**    |
+| Feature            | Cucumber + PW | Pure Playwright | **PW BDD Director** |
+| ------------------ | ------------- | --------------- | ------------------- |
+| Main Runner        | Cucumber      | Playwright      | **Playwright**      |
+| Native PW Features | Partial       | Full            | **Full**            |
+| TypeScript Support | Medium        | Excellent       | **Excellent**       |
+| Debugging          | Harder        | Excellent       | **Excellent**       |
+| Readability        | High          | Medium          | **High**            |
+| AI Friendliness    | Medium        | High            | **Very High**       |
+| Runtime Complexity | High          | Low             | **Low**             |
+| Performance        | Medium        | High            | **High**            |
+| Maintenance Cost   | High          | Low             | Medium              |
+| Flexibility        | Medium        | High            | **Very High**       |
+| Visual UI          | No            | Basic           | **Advanced**        |
 
-**Script Stage** is a modern middle-ground:
+**Playwright BDD Director** is a modern middle-ground:
 
 - Keeps **readable human-friendly scenarios** like Cucumber
 - Keeps **native Playwright runner** with full TypeScript support
 - Removes Cucumber pain points: regex step matching, runtime complexity, shared context chaos, heavy abstraction layers
 - Adds **AI-native workflow** on top
 
-Best for: modern Playwright projects, AI-assisted automation, teams that want readable scenarios without Cucumber complexity.
+Best for: modern Playwright projects, AI-assisted automation, teams that want readable scenarios without Cucumber complexity, projects needing visual test management.
 
-## 👨‍💻 Commercial Automation Support
+## 🎨 Director UI
 
-Need a full Playwright E2E/API automation ecosystem on top of Script Stage?
+A combined visual interface - the Director UI (built in this project) together with Playwright UI (built-in Playwright feature) form a unified workspace:
 
-Commercial integration and automation services are available from the author:
+**Director UI (our part):**
+- **File Explorer** - browse and edit Markdown test suites with File Editor
+- **Staging Controls** - run `stage` visually, see metrics and generated files
 
-- **[LinkedIn - Andrii Pohanovskyi](https://linkedin.com/in/andrii-pohanovskyi)**
-- **[Email - poganovsky@gmail.com](mailto:poganovsky@gmail.com)**
+**Playwright UI (Playwright's part):**
+- View all tests, run individually or in batches with real-time status
+- Detailed test execution view with step-by-step breakdown
+- Traces, screenshots, and video on failure
+
+**Launch:**
+```bash
+npm run show
+```
+
+The combined UI makes it possible to manage the full testing workflow - from writing specs to reviewing results - without leaving the browser.
+
+![Director UI - File explorer and test runner](images/director-ui-combined.png)
 
 ## 🎯 Core Idea
 
 **1 Markdown file = 1 test suite**  
 **Multiple implementations = always synchronized**
 
-The Director (`npm run stage`):
+Staging the Play (`npm run stage`):
 
-1. Auto-fixes MD formatting issues
-2. Validates structure (duplicates, MD hierarchy, global IDs)
-3. Generates missing test skeletons (manual + auto)
-4. Archives orphaned tests (manual + empty auto)
-5. Auto-fixes manual tests to match Markdown
-6. Auto-fixes empty automated test skeletons (structure only, no logic yet)
-7. Formats and lints test files
+- Auto-fixes MD formatting issues
+- Validates structure (duplicates, MD hierarchy, global IDs)
+- Generates missing cyborg tests
+- Archives orphaned tests (cyborg + empty auto)
+- Auto-fixes cyborg tests to match Markdown
+- Auto-fixes empty automated test skeletons (structure only, no logic yet)
+- Formats and lints test files
+
+The Auto Tests Generator (`npm run autogen`):
+
+- Generates empty automated test skeletons for all specs that don't have them yet
+- Run on-demand when a developer is ready to start automating - no point generating skeletons before that
 
 The Dress Rehearsal (`npm run dress`):
 
@@ -239,7 +271,7 @@ The Dress Rehearsal (`npm run dress`):
              │
     ┌────────┴────────┐
     ▼                 ▼
-Manual Tests      Auto Skeletons
+Cyborg Tests      Auto Skeletons
 (auto-fixed)      (fill in logic)
     │                 │
     └─────────┬───────┘
@@ -260,8 +292,8 @@ Manual Tests      Auto Skeletons
 #### Step Title
 
 - Optional details
-  - Test data
-  - Expected results
+- Test data
+- Expected results
 
 #### Another Step
 ```
@@ -287,7 +319,7 @@ IDs are optional. Tests work without them (validator matches by full titles).
 
 **Suffix Support - Multiple Implementations:**
 
-With IDs, you can create multiple test types for one MD test case. Suffix after ID is ignored during validation, allowing manual, auto, and hybrid implementations to match the same MD test case.
+With IDs, you can create multiple test types for one MD test case. Suffix after ID is ignored during validation, allowing cyborg, auto, API, UI, and E2E implementations to match the same MD test case.
 
 **ID Format (brackets only):**
 
@@ -303,9 +335,9 @@ Use empty brackets `[]` when you only need suffixes to distinguish implementatio
 ```typescript
 // One MD test case: ### [] User Registration
 
-test('[MANUAL] User Registration', ...)  // Manual implementation (no dash)
+test('[CYBORG] User Registration', ...)  // Cyborg implementation (no dash)
 test('[AUTO] User Registration', ...)    // Automated implementation (no dash)
-test('[HYBRID] User Registration', ...)  // Hybrid implementation (no dash)
+test('[API] User Registration', ...)     // API implementation (no dash)
 ```
 
 All three match `[]` from MD. Useful when you don't need numbered IDs, just implementation types.
@@ -380,8 +412,8 @@ No ID:
 **Automatically fixed:**
 
 - MD formatting issues (trailing spaces, extra blank lines)
-- Manual test structure (suite/test case/step titles)
-- Missing test files (generates skeletons for manual + auto)
+- Cyborg test structure (suite/test case/step titles)
+- Missing test files (generates skeletons for cyborg + auto)
 
 **Must fix manually:**
 
@@ -393,7 +425,7 @@ No ID:
 
 When MD file is deleted:
 
-- **Manual tests** → archived to `tests/archived/` (preserves valuable manual work)
+- **Cyborg tests** → archived to `tests/archived/` (preserves valuable manual work)
 - **Empty automated tests** (API, UI, E2E, AUTO) → archived (no implementation to lose)
 - **Implemented automated tests** → left in place (can continue running)
 
@@ -405,18 +437,18 @@ Archive location: `tests/archived/<filename>`.
 
 ```typescript
 // MD: ### [TC01-01] User Registration
-test('[TC01-01-MANUAL] User Registration', ...)  // ✅ Matches [TC01-01]
+test('[TC01-01-CYBORG] User Registration', ...)  // ✅ Matches [TC01-01]
 test('[TC01-01-AUTO] User Registration', ...)    // ✅ Matches [TC01-01]
-test('[TC01-01-HYBRID] User Registration', ...)  // ✅ Matches [TC01-01]
+test('[TC01-01-API] User Registration', ...)     // ✅ Matches [TC01-01]
 ```
 
 **With empty ID (suffix only, no dash):**
 
 ```typescript
 // MD: ### [] User Registration
-test('[MANUAL] User Registration', ...)  // ✅ Matches []
+test('[CYBORG] User Registration', ...)  // ✅ Matches []
 test('[AUTO] User Registration', ...)    // ✅ Matches []
-test('[HYBRID] User Registration', ...)  // ✅ Matches []
+test('[API] User Registration', ...)     // ✅ Matches []
 ```
 
 Validator checks each `test()` separately against MD. Same file or different files - both are valid.
@@ -424,16 +456,18 @@ Validator checks each `test()` separately against MD. Same file or different fil
 ## 📁 Project Structure
 
 ```text
-script-stage/
+playwright-bdd-director/
 ├── test-suites/           # Markdown test suites (source of truth)
 │   └── *.md               # Test specifications
 ├── tests/                 # Test implementations
-│   ├── automated/         # Fully automated tests (API, UI, E2E)
+│   ├── automated/         # Fully automated tests
 │   │   ├── api/           # API tests
 │   │   ├── ui/            # UI tests
-│   │   └── e2e/           # E2E tests
-│   ├── hybrid/            # Hybrid tests
-│   └── archived/          # Orphaned tests (auto-created)
+│   │   ├── e2e/           # E2E tests
+│   │   └── todo/          # AUTO test skeletons (generated)
+│   ├── cyborg/            # Cyborg (manual) tests
+│   ├── archived/          # Orphaned tests (auto-created)
+│   └── unit/              # Framework unit tests
 ├── src/
 │   ├── framework/         # Core framework code
 │   │   ├── core/          # Parsers (md-parser, ts-parser, file-matcher)
@@ -454,7 +488,12 @@ script-stage/
 ├── scripts/               # CLI tools
 │   ├── play.ts            # Play CLI
 │   ├── dress-rehearsal.ts # Validation script
-│   └── md-ts-director.ts  # Staging pipeline
+│   ├── md-ts-director.ts  # Staging pipeline
+│   ├── auto-skeletons.ts  # AUTO skeleton generator
+│   └── patch-playwright.js # Playwright UI patch
+├── packages/              # Director UI & Playwright integration
+│   ├── director/          # Director UI (Vite + React)
+│   └── trace-viewer/      # Enhanced Playwright trace viewer
 └── tests/
     └── unit/              # Framework unit tests (290+ tests)
 ```
@@ -466,7 +505,7 @@ Repository includes a complete authentication example demonstrating:
 - `test-suites/auth.md` - test cases with IDs for API and UI flows
 - `tests/automated/api/auth.api.test.ts` - automated API tests
 - `tests/automated/ui/auth.ui.test.ts` - automated UI tests
-- `tests/hybrid/auth.hybrid.test.ts` - automated actions + manual verification
+- `tests/cyborg/auth.cyborg.test.ts` - cyborg (manual) tests
 
 All validate against the **same** `auth.md` - this demonstrates the framework.
 
@@ -476,11 +515,10 @@ All validate against the **same** `auth.md` - this demonstrates the framework.
 npm run stage             # Stage: validate → generate → auto-fix → archive → format → lint
 
 # All tests (via Play CLI)
-npm run play manual       # Play all manual tests (headed, workers=1)
+npm run play cyborg       # Play all cyborg tests (headed, workers=1)
 npm run play auto         # Play all automated tests (headless, parallel)
 npm run play api auth     # Play API auth tests only
 npm run play ui auth      # Play UI auth tests only
-npm run play hybrid       # Play all hybrid tests (headed, workers=1)
 npm run show              # Open Playwright UI mode (visual runner)
 ```
 
@@ -493,10 +531,10 @@ npm run show              # Open Playwright UI mode (visual runner)
 - **MD:** `<name>.md` (e.g., `auth.md`) in `test-suites/`
 - **Test:** `<name>.<TYPE>.test.ts` (framework extracts base name before first dot)
 - **Examples:**
-  - `auth.manual.test.ts` → `auth.md` ✅
+  - `auth.cyborg.test.ts` → `auth.md` ✅
   - `auth.api.test.ts` → `auth.md` ✅
   - `auth.ui.test.ts` → `auth.md` ✅
-  - `auth.hybrid.test.ts` → `auth.md` ✅
+  - `auth.auto.test.ts` → `auth.md` ✅
 
 **Base name extraction:** Uses `getTestFileBaseName()` helper (`fileName.split('.')[0]`).
 
@@ -510,23 +548,22 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable             | Default          | Description                     |
-| -------------------- | ---------------- | ------------------------------- |
-| `TEST_SUITES_DIR`    | `test-suites`    | Markdown test suites directory  |
-| `TESTS_DIR`          | `tests`          | Root tests directory            |
-| `TESTS_AUTO_DIR`     | `tests/todo`     | Generated auto test skeletons   |
-| `TESTS_MANUAL_DIR`   | `tests/manual`   | Generated manual test skeletons |
-| `TESTS_ARCHIVED_DIR` | `tests/archived` | Archived orphaned tests         |
-| `METRICS_ENABLED`    | `false`          | Enable metrics JSON output      |
-| `METRICS_FILE`       | `.metrics.json`  | Metrics output file path        |
+| Variable             | Default                | Description                     |
+| -------------------- | ---------------------- | ------------------------------- |
+| `TEST_SUITES_DIR`    | `test-suites`          | Markdown test suites directory  |
+| `TESTS_DIR`          | `tests`                | Root tests directory            |
+| `TESTS_AUTO_DIR`     | `tests/automated/todo` | Generated AUTO test skeletons   |
+| `TESTS_CYBORG_DIR`   | `tests/cyborg`         | Generated cyborg test skeletons |
+| `TESTS_ARCHIVED_DIR` | `tests/archived`       | Archived orphaned tests         |
+| `METRICS_ENABLED`    | `false`                | Enable metrics JSON output      |
+| `METRICS_FILE`       | `.metrics.json`        | Metrics output file path        |
 
 ### 3. Playwright Config
 
 **Projects** (`playwright.config.ts`):
 
 - `automated` - headless, parallel, trace + screenshot on failure
-- `hybrid` - headless: false, workers: 1
-- `manual` - headless: false, workers: 1
+- `cyborg` - headless: false, workers: 1
 
 Projects are selected dynamically based on the `--grep` tag argument.
 
@@ -579,29 +616,27 @@ npm run play <types...> [suites...]
 
 # Single type
 npm run play auto                   # All automated tests
-npm run play manual                 # All manual tests
+npm run play cyborg                 # All cyborg tests
 npm run play api                    # All API tests
-npm run play hybrid                 # All hybrid tests
+npm run play ui                     # All UI tests
 
 # Type + suite
-npm run play manual auth            # Manual auth tests only
+npm run play cyborg auth            # Cyborg auth tests only
 npm run play api auth               # API auth tests only
 npm run play ui auth                # UI auth tests only
 
 # Multiple types
 npm run play api ui                 # All API + UI tests
-npm run play manual hybrid          # All manual + hybrid tests
+npm run play cyborg auto            # All cyborg + automated tests
 
 # Multiple types + suite
 npm run play api ui auth            # API + UI tests for auth suite
-npm run play manual hybrid auth     # Manual + hybrid auth tests
 
 # Suite only (no type filter)
 npm run play auth                   # All auth tests (any type)
-npm run play auth todo              # All auth + todo tests (any type)
 ```
 
-**Supported test types:** `auto`, `manual`, `hybrid`, `api`, `ui`, `e2e`
+**Supported test types:** `auto`, `cyborg`, `api`, `ui`, `e2e`
 
 **Features:**
 
@@ -609,7 +644,7 @@ npm run play auth todo              # All auth + todo tests (any type)
 - Freely combinable types and suites
 - Argument order validation (types before suites)
 - Clean console output
-- Sequential execution for manual/hybrid tests
+- Sequential execution for cyborg tests
 - Help command: `npm run play -- --help`
 
 **Console Output:**
@@ -637,8 +672,8 @@ npm run stage
 ✨  Director staging the play...
 
 🔧  Fixed formatting: test-suites/auth.md
-✅  Generated: tests/manual/login.manual.test.ts
-🔧  Auto-fixed: tests/manual/auth.manual.test.ts
+✅  Generated: tests/cyborg/login.cyborg.test.ts
+🔧  Auto-fixed: tests/cyborg/auth.cyborg.test.ts
     Test suite title: "[TS01] Old Title" → "[TS01] Authentication Tests"
 
 📊  Director Metrics:
@@ -648,9 +683,9 @@ npm run stage
     Phases:
     • MD Formatting: 0/1 fixed (20ms)
     • Validation: 130ms
-    • Generation: 1 manual, 0 auto (5ms)
-    • Archiving: 0 manual, 0 auto (32ms)
-    • Auto-fix: 0 manual, 0 auto (11ms)
+    • Generation: 2 cyborg (20ms)
+    • Archiving: 0 cyborg, 0 auto (4ms)
+    • Auto-fix: 0 cyborg, 0 auto (19ms)
     • Format & Lint: 4773ms
 
     Total execution: 4983ms
@@ -676,9 +711,9 @@ Full staging pipeline (7 phases):
 
 1. **Fix MD formatting** - auto-corrects spacing, blank lines
 2. **Validate (critical errors)** - checks duplicates, MD structure, global IDs
-3. **Generate missing tests** - creates skeletons for manual + auto
-4. **Archive orphaned tests** - moves manual + empty auto/api/ui/e2e tests to `tests/archived/` when MD is deleted
-5. **Auto-fix manual tests** - syncs structure with MD
+3. **Generate missing tests** - creates skeletons for cyborg + auto
+4. **Archive orphaned tests** - moves cyborg + empty auto/api/ui/e2e tests to `tests/archived/` when MD is deleted
+5. **Auto-fix cyborg tests** - syncs structure with MD
 6. **Auto-fix empty automated tests** - updates auto tests without implementation (all steps are TODO/empty)
 7. **Format and lint** - runs Prettier + ESLint before final validation
 
@@ -698,8 +733,8 @@ Full staging pipeline (7 phases):
 
 **Generators (`src/framework/generation/`):**
 
-- `test-generator.ts` - generates missing manual/auto test skeletons
-- `auto-fixer.ts` - AST-based auto-fix of test structure to match MD; preserves `-AUTO`/`-MANUAL` suffixes
+- `test-generator.ts` - generates missing cyborg/auto test skeletons
+- `auto-fixer.ts` - AST-based auto-fix of test structure to match MD; preserves `-AUTO`/`-CYBORG` suffixes
 - `test-archiver.ts` - archives orphaned tests; detects all automated kinds (AUTO, API, UI, E2E)
 - `tags-updater.ts` - adds new suite tags to `src/test-constants/tags.ts`
 
@@ -732,7 +767,7 @@ Handles:
 
 - `test.describe()`, `test.describe.skip()`, custom fixture describes (`authTest.describe()`)
 - `test()`, `test.only()`, `test.skip()`, `test.fixme()`
-- `test.step()` and `manualStep()` (hybrid tests)
+- `test.step()` and `manualStep()` (cyborg tests)
 - ID suffix extraction (`[TC01-01-MANUAL]` matches `[TC01-01]`)
 - Multiple implementations per MD test case (manual + auto + hybrid)
 - Escape sequences in titles
@@ -742,8 +777,8 @@ Handles:
 ### 1. MD is the source of truth
 
 - **MD defines:** structure, titles, IDs, test case count
-- **TS implements:** how to execute (manual/auto/hybrid)
-- **Director ensures:** TS always follows MD (auto-fix for manual tests)
+- **TS implements:** how to execute (cyborg/auto/api/ui/e2e)
+- **Director ensures:** TS always follows MD (auto-fix for cyborg tests)
 - **Validation is strict:** if MD has ID → TS must have it; if MD has no ID → TS must not have it
 
 ### 2. MD = what to test, code = how to test
@@ -751,13 +786,13 @@ Handles:
 - MD shows test structure (high-level, readable by anyone)
 - Code shows implementation (details)
 - Validator keeps them synchronized
-- Auto-fixer updates manual tests automatically
-- Manual work preserved via archiving
+- Auto-fixer updates cyborg tests automatically
+- Cyborg work preserved via archiving
 
 ### 3. One MD file = One Test Suite
 
 - Multiple test cases per file
-- Multiple implementations per test case (manual, api, ui, e2e, hybrid)
+- Multiple implementations per test case (cyborg, api, ui, e2e, auto)
 - Logical grouping by feature/functionality
 
 ## 📊 Reports

@@ -9,13 +9,13 @@ import { getIcon } from '@/framework/utils/icons'
  *
  * Examples:
  *   npx tsx scripts/play.ts auto           # All automated tests
- *   npx tsx scripts/play.ts manual         # All manual tests
- *   npx tsx scripts/play.ts manual todo    # Manual tests for todo suite
- *   npx tsx scripts/play.ts hybrid         # All hybrid tests
+ *   npx tsx scripts/play.ts cyborg         # All cyborg tests
+ *   npx tsx scripts/play.ts cyborg auth    # Cyborg tests for auth suite
+ *   npx tsx scripts/play.ts api ui auth    # API + UI tests for auth suite
  */
 
 interface PlayConfig {
-  testTypes?: ('auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')[]
+  testTypes?: ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e')[]
   suiteNames?: string[]
   workers?: number
 }
@@ -103,33 +103,30 @@ Usage:
 
   Arguments must be in order: test types first, then suite names
   Example: npm run play api ui auth todo
-  Example: npm run play hybrid auth
+  Example: npm run play cyborg auth
 
 Test Types:
   auto      Run all automated tests (@auto)
-  manual    Run all manual tests (@manual)
-  hybrid    Run all hybrid tests (@hybrid)
+  cyborg    Run all cyborg tests (@cyborg)
   api       Run API tests (@api)
   ui        Run UI tests (@ui)
   e2e       Run E2E tests (@e2e)
 
 Examples:
   npm run play auto                 # All automated tests
-  npm run play manual               # All manual tests
-  npm run play manual todo          # Manual tests for todo suite
-  npm run play hybrid               # All hybrid tests
+  npm run play cyborg               # All cyborg tests
+  npm run play cyborg auth          # Cyborg tests for auth suite
   npm run play api auth             # API auth tests
   npm run play ui auth              # UI auth tests
   npm run play api ui auth todo     # API + UI tests for auth + todo suites
-  npm run play hybrid auto          # Hybrid + auto tests
-  npm run play hybrid auto auth     # Hybrid + auto auth tests
-  npm run play hybrid auth todo     # Hybrid tests for auth + todo suites
-  npm run play auth                # All auth tests (auto + manual + hybrid)
-  npm run play auth todo           # All auth + todo tests
+  npm run play cyborg auto          # Cyborg + auto tests
+  npm run play cyborg auto auth     # Cyborg + auto auth tests
+  npm run play auth                 # All auth tests (any type)
+  npm run play auth todo            # All auth + todo tests
 
 Note:
   - Dress rehearsal (validation) runs automatically before tests
-  - Manual and hybrid tests use fullyParallel: false (sequential execution)
+  - Cyborg tests use fullyParallel: false (sequential execution)
   - Auto tests use default worker count from playwright.config.ts
 `)
 }
@@ -150,17 +147,16 @@ function parseArgs(): PlayConfig | null {
     return {}
   }
 
-  const validTypes: readonly ('auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')[] = [
+  const validTypes: readonly ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e')[] = [
     'auto',
-    'manual',
-    'hybrid',
+    'cyborg',
     'api',
     'ui',
     'e2e'
   ]
   const providedTypes = args.filter(
-    (arg): arg is 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e' =>
-      validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')
+    (arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' =>
+      validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
   )
 
   // Validate argument order: all test types must come before suite names
@@ -170,7 +166,7 @@ function parseArgs(): PlayConfig | null {
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]
-      if (validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')) {
+      if (validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')) {
         lastTypeIndex = i
       } else if (firstSuiteIndex === -1) {
         firstSuiteIndex = i
@@ -185,7 +181,7 @@ function parseArgs(): PlayConfig | null {
       console.error('')
       console.error('  Correct usage: npm run play <types> <suites>')
       console.error('  Example: npm run play api ui auth todo')
-      console.error('  Example: npm run play hybrid auth')
+      console.error('  Example: npm run play cyborg auth')
       process.exit(1)
     }
   }
@@ -193,7 +189,7 @@ function parseArgs(): PlayConfig | null {
   // If we have valid test types, use them
   if (providedTypes.length > 0) {
     const suiteNames = args.filter(
-      (arg) => !validTypes.includes(arg as 'auto' | 'manual' | 'hybrid' | 'api' | 'ui' | 'e2e')
+      (arg) => !validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
     )
     return {
       testTypes: providedTypes,

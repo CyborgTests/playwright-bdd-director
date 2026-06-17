@@ -49,9 +49,9 @@ export function reportValidationErrors(result: ValidatorResult): void {
         `${getIcon('error')}  Failed: ${result.errors.validationFailures.length} file(s)\n`
       )
 
-      // Check for manual tests with test.step (these are not auto-fixed)
-      const hasManualWithTestStep = result.errors.validationFailures.some(
-        (f) => f.isManualWithTestStep
+      // Check for cyborg tests with test.step (these are not auto-fixed)
+      const hasCyborgWithTestStep = result.errors.validationFailures.some(
+        (f) => f.isCyborgWithTestStep
       )
 
       // Categorize errors by what can fix them
@@ -63,7 +63,7 @@ export function reportValidationErrors(result: ValidatorResult): void {
       )
       const hasStageFixableErrors = result.errors.validationFailures.some(
         (f) =>
-          !f.isManualWithTestStep &&
+          !f.isCyborgWithTestStep &&
           f.errors.some(
             (err) =>
               !err.includes('Tag Problems:') &&
@@ -78,9 +78,9 @@ export function reportValidationErrors(result: ValidatorResult): void {
       if (hasUnexpectedIdErrors) manualFixes.push('IDs')
 
       let fixMessage: string
-      if (hasManualWithTestStep && !hasStageFixableErrors && manualFixes.length === 0) {
+      if (hasCyborgWithTestStep && !hasStageFixableErrors && manualFixes.length === 0) {
         fixMessage =
-          'Fix: Manual review required (manual tests with test.step are not auto-updated)'
+          'Fix: Manual review required (cyborg tests with test.step are not auto-updated)'
       } else if (manualFixes.length > 0 && hasStageFixableErrors) {
         fixMessage = `Fix: npm run stage (structure), ${manualFixes.join(' and ')} manually`
       } else if (manualFixes.length > 0) {

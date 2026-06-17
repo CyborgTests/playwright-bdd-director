@@ -32,15 +32,15 @@
     "manual-testing",
     "cyborg-testing"
   ],
-  "author": "Andrii Pohanovskyi <poganovsky@gmail.com>",
+  "author": "Andrii Pohanovskyi <poganovsky@gmail.com> (CyborgTests)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AnPo73/script-stage"
+    "url": "https://github.com/CyborgTests/playwright-bdd-director"
   },
-  "homepage": "https://github.com/AnPo73/script-stage#readme",
+  "homepage": "https://github.com/CyborgTests/playwright-bdd-director#readme",
   "bugs": {
-    "url": "https://github.com/AnPo73/script-stage/issues"
+    "url": "https://github.com/CyborgTests/playwright-bdd-director/issues"
   },
   "devDependencies": {
     "@cyborgtests/test": "^0.3.0",

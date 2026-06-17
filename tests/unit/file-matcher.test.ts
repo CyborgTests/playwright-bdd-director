@@ -49,10 +49,10 @@ describe('matchFiles', () => {
       expect(result.errors).toHaveLength(0)
     })
 
-    it('should validate manual test file', () => {
+    it('should validate cyborg test file', () => {
       const md = createMD()
       const ts = createTS({
-        tags: ['TAG.TEST.MANUAL', 'TAG.SUITE.TEST_SUITE'],
+        tags: ['TAG.TEST.CYBORG', 'TAG.SUITE.TEST_SUITE'],
         testCases: [
           {
             id: 'tc-01',
@@ -63,25 +63,14 @@ describe('matchFiles', () => {
         ]
       })
 
-      const result = matchFiles('tests/test-suite.MANUAL.test.ts', md, ts)
+      const result = matchFiles('tests/test-suite.CYBORG.test.ts', md, ts)
 
       expect(result.valid).toBe(true)
       expect(result.errors).toHaveLength(0)
-      expect(result.isManualWithTestStep).toBe(false) // No test.step in manual test
+      expect(result.isCyborgWithTestStep).toBe(false) // No test.step in cyborg test
     })
 
-    it('should validate hybrid test file', () => {
-      const md = createMD()
-      const ts = createTS({
-        tags: ['TAG.TEST.HYBRID', 'TAG.SUITE.TEST_SUITE']
-      })
-
-      const result = matchFiles('tests/test-suite.HYBRID.test.ts', md, ts)
-
-      expect(result.valid).toBe(true)
-      expect(result.errors).toHaveLength(0)
-    })
-
+    
     it('should validate .api. test file as auto type', () => {
       const md = createMD()
       const ts = createTS()
@@ -207,10 +196,10 @@ describe('matchFiles', () => {
       expect(result.errors[0]).toContain('TAG.EXTRA.UNEXPECTED')
     })
 
-    it('should detect wrong file type tag (manual → auto)', () => {
+    it('should detect wrong file type tag (cyborg → auto)', () => {
       const md = createMD()
       const ts = createTS({
-        tags: ['TAG.TEST.MANUAL', 'TAG.SUITE.TEST_SUITE']
+        tags: ['TAG.TEST.CYBORG', 'TAG.SUITE.TEST_SUITE']
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -531,8 +520,8 @@ describe('matchFiles', () => {
     })
   })
 
-  describe('manual tests with test.step', () => {
-    it('should detect isManualWithTestStep when manual test has test.step', () => {
+  describe('cyborg tests with test.step', () => {
+    it('should detect isCyborgWithTestStep when cyborg test has test.step', () => {
       const md = createMD({
         suiteID: 'ts01',
         suiteTtl: 'Test Suite',
@@ -547,7 +536,7 @@ describe('matchFiles', () => {
       const ts = createTS({
         suiteID: 'ts01-MANUAL',
         suiteTtl: 'Test Suite',
-        tags: ['TAG.TEST.MANUAL', 'TAG.SUITE.TEST_SUITE'],
+        tags: ['TAG.TEST.CYBORG', 'TAG.SUITE.TEST_SUITE'],
         testCases: [
           {
             id: 'tc-01',
@@ -558,9 +547,9 @@ describe('matchFiles', () => {
         ]
       })
 
-      const result = matchFiles('tests/test-suite.MANUAL.test.ts', md, ts)
+      const result = matchFiles('tests/test-suite.CYBORG.test.ts', md, ts)
 
-      expect(result.isManualWithTestStep).toBe(true)
+      expect(result.isCyborgWithTestStep).toBe(true)
       expect(result.valid).toBe(false)
       // Should report step count mismatch
       expect(result.errors.some((e) => e.includes('Steps:'))).toBe(true)
@@ -569,7 +558,7 @@ describe('matchFiles', () => {
       expect(result.errors.some((e) => e.includes('Step #3:'))).toBe(false)
     })
 
-    it('should not flag isManualWithTestStep for manual tests with only manualStep', () => {
+    it('should not flag isCyborgWithTestStep for cyborg tests with only manualStep', () => {
       // Both MD and TS have same data - perfect match
       const md = createMD({
         suiteID: 'ts01',
@@ -585,7 +574,7 @@ describe('matchFiles', () => {
       const ts = createTS({
         suiteID: 'ts01-MANUAL',
         suiteTtl: 'Test Suite',
-        tags: ['TAG.TEST.MANUAL', 'TAG.SUITE.TEST_SUITE'], // TEST_SUITE for 'test-suite' filename
+        tags: ['TAG.TEST.CYBORG', 'TAG.SUITE.TEST_SUITE'], // TEST_SUITE for 'test-suite' filename
         testCases: [
           {
             id: 'tc-01',
@@ -596,9 +585,9 @@ describe('matchFiles', () => {
         ]
       })
 
-      const result = matchFiles('tests/test-suite.MANUAL.test.ts', md, ts)
+      const result = matchFiles('tests/test-suite.CYBORG.test.ts', md, ts)
 
-      expect(result.isManualWithTestStep).toBe(false)
+      expect(result.isCyborgWithTestStep).toBe(false)
       expect(result.valid).toBe(true)
     })
 
@@ -625,7 +614,7 @@ describe('matchFiles', () => {
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
 
-      expect(result.isManualWithTestStep).toBe(false)
+      expect(result.isCyborgWithTestStep).toBe(false)
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.includes('Steps:'))).toBe(true)
       // Auto tests should have detailed step validation

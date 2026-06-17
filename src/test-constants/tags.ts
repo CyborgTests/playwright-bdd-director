@@ -37,6 +37,7 @@ export const TAG = {
   SUITE: {
     AUTH: '@auth',
     NUMBER_1: '@1',
-    NUMBER_11: '@11'
+    NUMBER_11: '@11',
+    LOGIN: '@login'
   }
 } as const
