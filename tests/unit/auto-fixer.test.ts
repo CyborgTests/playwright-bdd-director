@@ -191,7 +191,10 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
-      expect(result.changes.some((c) => c.includes('Extra test case #2'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('Extra test case "[tc-02] Extra test"'))).toBe(
+        true
+      )
+      expect(parseTestFile(filePath).testCases).toHaveLength(2) // Code is never deleted
     })
 
     it('should handle missing test cases', () => {
@@ -211,8 +214,11 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
-      expect(result.changes.some((c) => c.includes('Missing test case #2'))).toBe(true)
-      expect(result.changes.some((c) => c.includes('Missing test'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('Added "[tc-02] Missing test"'))).toBe(true)
+      expect(parseTestFile(filePath).testCases.map((tc) => tc.ttl)).toEqual([
+        'Correct test case',
+        'Missing test'
+      ])
     })
   })
 
@@ -256,8 +262,7 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
-      expect(result.changes.some((c) => c.includes('TC#1 Step#3'))).toBe(true)
-      expect(result.changes.some((c) => c.includes('extra'))).toBe(true)
+      expect(result.changes.some((c) => c.includes('TC#1 extra step "Extra step"'))).toBe(true)
     })
 
     it('should add placeholder for missing steps', () => {
@@ -365,35 +370,29 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
   })
 
   describe('manual tests with test.step', () => {
-    it('should skip auto-fixing manual tests with test.step', () => {
+    it('should not touch steps of cyborg tests structured with test.step', () => {
       const content = `import { test } from '@playwright/test'
 import { TAG } from '@/test-constants/tags'
 
-test.describe('[MANUAL] Suite Title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }, () => {
-  test('[MANUAL] Test case', async () => {
-    await test.step('Step 1', async () => {}) // First step
-    await test.step('Step 2', async () => {}) // Second step with test.step
+test.describe('[CYBORG] Suite Title', { tag: [TAG.TEST.CYBORG, TAG.SUITE.TEST] }, () => {
+  test('[CYBORG] Old case', async () => {
+    await test.step('Step 1', async () => {})
+    await test.step('Step 2', async () => {})
   })
 })`
-      const filePath = createTSFile('test-suite.manual.test.ts', content)
+      const filePath = createTSFile('test-suite.cyborg.test.ts', content)
       const md = createMD({
         suiteID: '',
         suiteTtl: 'Suite Title',
-        testCases: [
-          {
-            id: '',
-            ttl: 'Test case',
-            stepTtls: ['Step 1', 'Step 2', 'New Step 3']
-          }
-        ]
+        testCases: [{ id: '', ttl: 'New case', stepTtls: ['Step 1', 'Step 2', 'New Step 3'] }]
       })
 
       const result = autoFixTestFile(filePath, md)
 
-      // Should not auto-fix manual tests with test.step
-      expect(result.fixed).toBe(false)
-      expect(result.changes.some((c) => c.includes('Skipped'))).toBe(true)
-      expect(result.changes.some((c) => c.includes('test.step'))).toBe(true)
+      const parsed = parseTestFile(filePath)
+      expect(result.fixed).toBe(true)
+      expect(parsed.testCases[0].ttl).toBe('New case')
+      expect(parsed.testCases[0].stepTtls).toEqual(['Step 1', 'Step 2'])
     })
 
     it('should auto-fix manual tests without test.step', () => {
@@ -548,5 +547,128 @@ describe('isEmptyAutoTest - tests without steps', () => {
     )
 
     expect(isEmptyAutoTest(filePath)).toBe(false)
+  })
+})
+
+describe('autoFixTestFile - alignment by title', () => {
+  const mdOf = (cases: Array<[string, string[]]>) => ({
+    suiteID: '',
+    suiteTtl: 'Suite',
+    testCases: cases.map(([ttl, stepTtls]) => ({ id: '', ttl, stepTtls }))
+  })
+
+  it('should insert MD case added in the middle without moving code to other titles', () => {
+    const filePath = createTSFile(
+      'middle.cyborg.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[CYBORG] Suite', () => {
+  test('[CYBORG] Login', async ({ page, manualStep }) => {
+    await test.step('Open login', async () => {
+      await page.goto('/login')
+      await manualStep('Check form')
+    })
+  })
+
+  test('[CYBORG] Logout', async ({ page, manualStep }) => {
+    await test.step('Click logout', async () => {
+      await page.click('#logout')
+      await manualStep('Check logged out')
+    })
+  })
+})`
+    )
+
+    autoFixTestFile(
+      filePath,
+      mdOf([
+        ['Login', ['Open login']],
+        ['Register', ['Fill form']],
+        ['Logout', ['Click logout']]
+      ])
+    )
+
+    const parsed = parseTestFile(filePath)
+    expect(parsed.testCases.map((tc) => tc.ttl)).toEqual(['Login', 'Register', 'Logout'])
+    expect(parsed.testCases[1].stepTtls).toEqual(['Fill form'])
+    const code = fs.readFileSync(filePath, 'utf-8')
+    expect(code.indexOf("page.click('#logout')")).toBeGreaterThan(code.indexOf('[CYBORG] Logout'))
+    expect(code).toContain("await manualStep('Fill form')")
+  })
+
+  it('should insert MD step added in the middle at its position', () => {
+    const filePath = createTSFile(
+      'steps.cyborg.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[CYBORG] Suite', () => {
+  test('[CYBORG] Case', async ({ manualStep }) => {
+    await manualStep('First')
+    await manualStep('Third')
+  })
+})`
+    )
+
+    autoFixTestFile(filePath, mdOf([['Case', ['First', 'Second', 'Third']]]))
+
+    expect(parseTestFile(filePath).testCases[0].stepTtls).toEqual(['First', 'Second', 'Third'])
+  })
+
+  it('should keep code of removed case and report it instead of renaming another case', () => {
+    const filePath = createTSFile(
+      'removed.cyborg.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[CYBORG] Suite', () => {
+  test('[CYBORG] A', async ({ manualStep }) => {
+    await manualStep('a')
+  })
+  test('[CYBORG] B', async ({ manualStep }) => {
+    await manualStep('b')
+  })
+  test('[CYBORG] C', async ({ manualStep }) => {
+    await manualStep('c')
+  })
+})`
+    )
+
+    const result = autoFixTestFile(
+      filePath,
+      mdOf([
+        ['A', ['a']],
+        ['C', ['c']]
+      ])
+    )
+
+    expect(parseTestFile(filePath).testCases.map((tc) => tc.ttl)).toEqual(['A', 'B', 'C'])
+    expect(result.changes.some((c) => c.includes('Extra test case "[CYBORG] B"'))).toBe(true)
+  })
+
+  it('should follow stable ID when MD title changes and case is inserted before it', () => {
+    const filePath = createTSFile(
+      'ids.auto.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[ts01-AUTO] Suite', () => {
+  test('[tc01-AUTO] Old title', async () => {
+    await test.step('Step', async () => {})
+  })
+})`
+    )
+
+    autoFixTestFile(filePath, {
+      suiteID: 'ts01',
+      suiteTtl: 'Suite',
+      testCases: [
+        { id: 'tc00', ttl: 'Inserted', stepTtls: ['Step'] },
+        { id: 'tc01', ttl: 'New title', stepTtls: ['Step'] }
+      ]
+    })
+
+    const parsed = parseTestFile(filePath)
+    expect(parsed.testCases.map((tc) => [tc.id, tc.ttl])).toEqual([
+      ['tc00-AUTO', 'Inserted'],
+      ['tc01-AUTO', 'New title']
+    ])
   })
 })

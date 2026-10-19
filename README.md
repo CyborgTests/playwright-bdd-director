@@ -419,6 +419,14 @@ No ID:
 - MD formatting issues (trailing spaces, extra blank lines)
 - Cyborg test structure (suite/test case/step titles)
 - Missing test files (generates skeletons for cyborg + auto)
+- Missing test cases and steps (inserted as skeletons at their MD position)
+
+Test cases and steps are matched **by title or ID, not by position**: adding a case in the middle of MD inserts a skeleton there and never moves existing code under another title. A renamed case is updated in place only when the match is unambiguous (or the ID is the same). Cyborg tests structured with `test.step()` keep their steps as written - only test cases are synced.
+
+**Reported, never changed automatically:**
+
+- Test cases/steps removed from MD (code is kept for manual review)
+- Test cases/steps reordered in MD (reorder manually)
 
 **Must fix manually:**
 
@@ -757,6 +765,7 @@ Full staging pipeline (7 phases):
 
 - `test-generator.ts` - generates missing cyborg/auto test skeletons
 - `auto-fixer.ts` - AST-based auto-fix of test structure to match MD; preserves `-AUTO`/`-CYBORG` suffixes
+- `title-aligner.ts` - matches test cases/steps to MD by title/ID (inserts, extras, moves) so auto-fix never relies on position
 - `test-archiver.ts` - archives orphaned tests; detects all automated kinds (AUTO, API, UI, E2E)
 - `tags-updater.ts` - adds new suite tags to `src/test-constants/tags.ts`
 

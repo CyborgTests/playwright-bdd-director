@@ -10,6 +10,17 @@ import { addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
 type TestType = 'AUTO' | 'CYBORG'
 
+/**
+ * Test case title for generated code: MD ID gets the type suffix
+ * (no ID → title only, `[]` → `[CYBORG] title`, `[tc01]` → `[tc01-CYBORG] title`)
+ */
+export function buildTestCaseTtl(id: string | null, ttl: string, type: TestType): string {
+  const suffix = SUFFIXES[type]
+  if (id === null) return ttl
+  if (id === '') return `[${suffix.slice(1)}] ${ttl}`
+  return `[${id}${suffix}] ${ttl}`
+}
+
 export function generateTestFile(baseName: string, type: TestType): boolean {
   const mdData = parseMDFile(baseName)
 
@@ -49,18 +60,7 @@ export function generateTestFile(baseName: string, type: TestType): boolean {
   // Generate test cases
   const testCases = mdData.testCases
     .map((tc) => {
-      let testTtl: string
-      if (tc.id === null) {
-        // No ID in MD - use title only
-        testTtl = tc.ttl
-      } else if (tc.id === '') {
-        // Empty ID [] - use suffix without dash (CYBORG, AUTO)
-        testTtl = `[${suffix.slice(1)}] ${tc.ttl}`
-      } else {
-        // Non-empty ID - use suffix with dash (tc01-01-CYBORG)
-        testTtl = `[${tc.id}${suffix}] ${tc.ttl}`
-      }
-      const testTtlLiteral = JSON.stringify(testTtl)
+      const testTtlLiteral = JSON.stringify(buildTestCaseTtl(tc.id, tc.ttl, type))
       const steps = tc.stepTtls
         .map((step) => {
           const stepLiteral = JSON.stringify(step)
