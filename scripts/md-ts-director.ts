@@ -7,7 +7,11 @@ import { CONFIG } from '@/framework/config'
 import { matchFiles } from '@/framework/core/file-matcher'
 import { clearMDCache } from '@/framework/core/md-parser'
 import { parseTestFile } from '@/framework/core/ts-parser'
-import { autoFixTestFile, isEmptyAutoTest } from '@/framework/generation/auto-fixer'
+import {
+  type AutoFixResult,
+  autoFixTestFile,
+  isEmptyAutoTest
+} from '@/framework/generation/auto-fixer'
 import { archiveOrphanedTests } from '@/framework/generation/test-archiver'
 import { generateCyborgTestFile } from '@/framework/generation/test-generator'
 import {
@@ -68,6 +72,29 @@ function main() {
   // Phase 7: Format and lint tests
   const phase7 = formatAndLintTests()
 
+  // Output file details before final validation: it exits on errors, when details matter most
+  // Fixed formatting files
+  if (phase1.fixedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('fix')}  Fixed formatting:`)
+    phase1.fixedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
+  // Output generated files
+  if (phase3.generatedFiles.length > 0) {
+    console.log('')
+    console.log(`${getIcon('success')}  Generated files:`)
+    phase3.generatedFiles.forEach((file) => console.log(`    • ${file}`))
+  }
+
+  // Output auto-fix details: applied changes first, then files left for manual review
+  printAutoFixResults(`${getIcon('fix')}  Auto-fixed CYBORG:`, phase5.fixedFiles)
+  printAutoFixResults(`${getIcon('fix')}  Auto-fixed AUTO:`, phase6.fixedFiles)
+  printAutoFixResults(`${getIcon('warning')}  Needs manual review:`, [
+    ...phase5.reviewFiles,
+    ...phase6.reviewFiles
+  ])
+
   // Final validation
   const finalValidation = validate()
   reportValidationErrors(finalValidation)
@@ -94,38 +121,25 @@ function main() {
   console.log(formatDirectorMetrics(directorMetrics))
   saveMetrics(directorMetrics)
 
-  // Output fixed formatting files
-  if (phase1.fixedFiles.length > 0) {
-    console.log('')
-    console.log(`${getIcon('fix')}  Fixed formatting:`)
-    phase1.fixedFiles.forEach((file) => console.log(`    • ${file}`))
-  }
-
-  // Output generated files
-  if (phase3.generatedFiles.length > 0) {
-    console.log('')
-    console.log(`${getIcon('success')}  Generated files:`)
-    phase3.generatedFiles.forEach((file) => console.log(`    • ${file}`))
-  }
-
-  // Output auto-fixed cyborg files
-  if (phase5.fixedFiles.length > 0) {
-    console.log('')
-    console.log(`${getIcon('fix')}  Auto-fixed CYBORG:`)
-    phase5.fixedFiles.forEach((file) => console.log(`    • ${file}`))
-  }
-
-  // Output auto-fixed auto files
-  if (phase6.fixedFiles.length > 0) {
-    console.log('')
-    console.log(`${getIcon('fix')}  Auto-fixed AUTO:`)
-    phase6.fixedFiles.forEach((file) => console.log(`    • ${file}`))
-  }
-
   console.log(
     `\n${getIcon('success')}  Stage is set! ${finalValidation.validationResults.length} file(s) ready.\n`
   )
   process.exit(0)
+}
+
+/**
+ * Print each file with its applied changes and warnings (warnings of fixed files included)
+ */
+function printAutoFixResults(heading: string, results: AutoFixResult[]): void {
+  if (results.length === 0) return
+
+  console.log('')
+  console.log(heading)
+  for (const result of results) {
+    console.log(`    • ${result.filePath}`)
+    result.changes.forEach((change) => console.log(`        ${change}`))
+    result.warnings.forEach((warning) => console.log(`        ${getIcon('warning')}  ${warning}`))
+  }
 }
 
 /**
@@ -241,7 +255,8 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
 function autoFixCyborgTestFiles(validation: ValidatorResult): {
   timeMs: number
   cyborg: number
-  fixedFiles: string[]
+  fixedFiles: AutoFixResult[]
+  reviewFiles: AutoFixResult[]
 } {
   return processTestFiles(validation, 'CYBORG', false)
 }
@@ -252,7 +267,8 @@ function autoFixCyborgTestFiles(validation: ValidatorResult): {
 function autoFixEmptyAutoTestFiles(validation: ValidatorResult): {
   timeMs: number
   auto: number
-  fixedFiles: string[]
+  fixedFiles: AutoFixResult[]
+  reviewFiles: AutoFixResult[]
 } {
   return processTestFiles(validation, 'AUTO', true)
 }
@@ -267,11 +283,17 @@ function processTestFiles(
   validation: ValidatorResult,
   fileType: 'CYBORG' | 'AUTO',
   onlyEmpty: boolean
-): { timeMs: number; cyborg: number; auto: number; fixedFiles: string[] } {
+): {
+  timeMs: number
+  cyborg: number
+  auto: number
+  fixedFiles: AutoFixResult[]
+  reviewFiles: AutoFixResult[]
+} {
   const startTime = Date.now()
   const testFiles = glob.sync(`${CONFIG.paths.testsDir}/**/*.ts`, { nodir: true })
-  let fixed = 0
-  const fixedFiles: string[] = []
+  const fixedFiles: AutoFixResult[] = []
+  const reviewFiles: AutoFixResult[] = []
 
   for (const testFile of testFiles) {
     const fileName = path.basename(testFile)
@@ -297,8 +319,9 @@ function processTestFiles(
       if (!result.valid) {
         const fixResult = autoFixTestFile(testFile, markdownData)
         if (fixResult.fixed) {
-          fixed++
-          fixedFiles.push(testFile)
+          fixedFiles.push(fixResult)
+        } else if (fixResult.warnings.length > 0) {
+          reviewFiles.push(fixResult)
         }
       }
     } catch (error: unknown) {
@@ -309,9 +332,10 @@ function processTestFiles(
 
   return {
     timeMs: Date.now() - startTime,
-    cyborg: fileType === 'CYBORG' ? fixed : 0,
-    auto: fileType === 'AUTO' ? fixed : 0,
-    fixedFiles
+    cyborg: fileType === 'CYBORG' ? fixedFiles.length : 0,
+    auto: fileType === 'AUTO' ? fixedFiles.length : 0,
+    fixedFiles,
+    reviewFiles
   }
 }
 

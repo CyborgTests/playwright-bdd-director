@@ -3,7 +3,6 @@ import { Block, CallExpression, Node, Statement, SyntaxKind } from 'ts-morph'
 
 import { ParsedMD } from '../core/md-parser'
 import { matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
-import { getIcon } from '../utils/icons'
 import {
   findDescribeCall,
   findStepCalls,
@@ -16,9 +15,15 @@ import { alignByTitle, type AlignOp } from './title-aligner'
 
 export interface AutoFixResult {
   filePath: string
+  /** True when the file was rewritten (`changes` is not empty) */
   fixed: boolean
+  /** Applied modifications */
   changes: string[]
+  /** Mismatches left for manual review (extra or reordered cases/steps); never modify the file */
+  warnings: string[]
 }
+
+type FixReport = Pick<AutoFixResult, 'changes' | 'warnings'>
 
 type FileType = 'AUTO' | 'CYBORG'
 
@@ -38,14 +43,14 @@ function hasTestStepCalls(describeCall: CallExpression): boolean {
  * title/ID (see title-aligner), so MD insertions never shift titles onto other tests' code.
  */
 export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFixResult {
-  const changes: string[] = []
+  const report: FixReport = { changes: [], warnings: [] }
   const project = getSharedProject()
   const sourceFile = project.addSourceFileAtPath(testFilePath)
 
   // 1. Find describe call
   const describeCall = findDescribeCall(sourceFile)
   if (!describeCall) {
-    return { filePath: testFilePath, fixed: false, changes: [] }
+    return { filePath: testFilePath, fixed: false, changes: [], warnings: [] }
   }
 
   const fileType: FileType = path.basename(testFilePath).toLowerCase().includes('.cyborg.')
@@ -55,19 +60,19 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
     fileType === 'CYBORG' && hasTestStepCalls(describeCall) ? 'cyborg-test-step' : 'default'
 
   // 2. Fix suite ttl
-  fixSuiteTtl(describeCall, mdData, changes)
+  fixSuiteTtl(describeCall, mdData, report.changes)
 
   // 3. Fix test cases (and their steps, unless steps are hand-structured)
-  fixTestCases(describeCall, mdData, { fileType, stepStyle }, changes)
+  fixTestCases(describeCall, mdData, { fileType, stepStyle }, report)
 
-  // 4. Save changes if any were made
-  if (changes.length > 0) {
+  // 4. Save only real changes - warnings alone leave the file untouched
+  const fixed = report.changes.length > 0
+  if (fixed) {
     sourceFile.formatText() // Auto-format with Prettier-like formatting
     sourceFile.saveSync()
-    return { filePath: testFilePath, fixed: true, changes }
   }
 
-  return { filePath: testFilePath, fixed: false, changes: [] }
+  return { filePath: testFilePath, fixed, ...report }
 }
 
 /**
@@ -133,7 +138,7 @@ function fixTestCases(
   describeCall: CallExpression,
   mdData: ParsedMD,
   options: FixOptions,
-  changes: string[]
+  report: FixReport
 ): void {
   const testCalls = findTestCalls(describeCall)
   const describeBody = getCallbackBlock(describeCall)
@@ -152,27 +157,25 @@ function fixTestCases(
 
   for (const op of ops) {
     if (op.kind === 'extra') {
-      changes.push(
-        `${getIcon('warning')}  Extra test case "${currentTtls[op.current]}" (not in MD) - manual review needed`
+      report.warnings.push(
+        `Extra test case "${currentTtls[op.current]}" (not in MD) - manual review needed`
       )
       continue
     }
 
     const mdTestCase = mdData.testCases[op.expected]
     if (op.kind === 'moved') {
-      changes.push(
-        `${getIcon('warning')}  Test case "${mdTestCase.ttl}" order differs from MD - reorder manually`
-      )
+      report.warnings.push(`Test case "${mdTestCase.ttl}" order differs from MD - reorder manually`)
       continue
     }
 
     if (op.kind === 'insert') {
       const ttl = newTtl(mdTestCase.id, mdTestCase.ttl)
       if (inserter.insert(op.after, buildTestCaseCode(ttl, mdTestCase.stepTtls, options))) {
-        changes.push(`Test case #${op.expected + 1}: Added "${ttl}" (skeleton)`)
+        report.changes.push(`Test case #${op.expected + 1}: Added "${ttl}" (skeleton)`)
       } else {
-        changes.push(
-          `${getIcon('warning')}  Missing test case #${op.expected + 1}: "${mdTestCase.ttl}" - manual addition needed`
+        report.warnings.push(
+          `Missing test case #${op.expected + 1}: "${mdTestCase.ttl}" - manual addition needed`
         )
       }
       continue
@@ -185,11 +188,11 @@ function fixTestCases(
     if (currentTtl && !isTitleMatch(currentTtl, expectedTtl)) {
       const newTtl = preserveSuffix(currentTtl, expectedTtl)
       testCall.getArguments()[0]?.replaceWithText(`'${escapeString(newTtl)}'`)
-      changes.push(`Test case #${op.expected + 1} title: "${currentTtl}" → "${newTtl}"`)
+      report.changes.push(`Test case #${op.expected + 1} title: "${currentTtl}" → "${newTtl}"`)
     }
 
     if (options.stepStyle === 'default') {
-      fixTestSteps(testCall, mdTestCase.stepTtls, options.fileType, changes, op.expected + 1)
+      fixTestSteps(testCall, mdTestCase.stepTtls, options.fileType, report, op.expected + 1)
     }
   }
 }
@@ -230,7 +233,7 @@ function fixTestSteps(
   testCall: CallExpression,
   expectedSteps: string[],
   fileType: FileType,
-  changes: string[],
+  report: FixReport,
   testCaseIndex: number
 ): void {
   const stepCalls = findStepCalls(testCall)
@@ -244,16 +247,16 @@ function fixTestSteps(
 
   for (const op of alignByTitle(currentSteps, expectedSteps, (a, b) => a === b)) {
     if (op.kind === 'extra') {
-      changes.push(
-        `  ${getIcon('warning')}  TC#${testCaseIndex} extra step "${currentSteps[op.current]}" - manual review needed`
+      report.warnings.push(
+        `TC#${testCaseIndex} extra step "${currentSteps[op.current]}" - manual review needed`
       )
       continue
     }
 
     const expectedStep = expectedSteps[op.expected]
     if (op.kind === 'moved') {
-      changes.push(
-        `  ${getIcon('warning')}  TC#${testCaseIndex} step "${expectedStep}" order differs from MD - reorder manually`
+      report.warnings.push(
+        `TC#${testCaseIndex} step "${expectedStep}" order differs from MD - reorder manually`
       )
       continue
     }
@@ -261,18 +264,22 @@ function fixTestSteps(
     if (op.kind === 'insert') {
       const code = useTestStep ? buildTestStepCode(expectedStep) : buildManualStepCode(expectedStep)
       const added = inserter.insert(op.after, code)
-      changes.push(
-        added
-          ? `  TC#${testCaseIndex} Step#${op.expected + 1}: Added "${expectedStep}" (placeholder)`
-          : `  ${getIcon('warning')}  TC#${testCaseIndex} Step#${op.expected + 1} missing: "${expectedStep}"`
-      )
+      if (added) {
+        report.changes.push(
+          `  TC#${testCaseIndex} Step#${op.expected + 1}: Added "${expectedStep}" (placeholder)`
+        )
+      } else {
+        report.warnings.push(
+          `TC#${testCaseIndex} Step#${op.expected + 1} missing: "${expectedStep}" - manual addition needed`
+        )
+      }
       continue
     }
 
     const currentStep = currentSteps[op.current]
     if (currentStep && currentStep !== expectedStep) {
       stepCalls[op.current].getArguments()[0]?.replaceWithText(`'${escapeString(expectedStep)}'`)
-      changes.push(
+      report.changes.push(
         `  TC#${testCaseIndex} Step#${op.expected + 1}: "${currentStep}" → "${expectedStep}"`
       )
     }

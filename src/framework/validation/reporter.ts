@@ -49,7 +49,7 @@ export function reportValidationErrors(result: ValidatorResult): void {
         `${getIcon('error')}  Failed: ${result.errors.validationFailures.length} file(s)\n`
       )
 
-      // Check for cyborg tests with test.step (these are not auto-fixed)
+      // Cyborg tests with test.step: stage syncs their test cases, but never their steps
       const hasCyborgWithTestStep = result.errors.validationFailures.some(
         (f) => f.isCyborgWithTestStep
       )
@@ -80,7 +80,7 @@ export function reportValidationErrors(result: ValidatorResult): void {
       let fixMessage: string
       if (hasCyborgWithTestStep && !hasStageFixableErrors && manualFixes.length === 0) {
         fixMessage =
-          'Fix: Manual review required (cyborg tests with test.step are not auto-updated)'
+          'Fix: npm run stage (test cases), test.step steps and extra/reordered cases manually'
       } else if (manualFixes.length > 0 && hasStageFixableErrors) {
         fixMessage = `Fix: npm run stage (structure), ${manualFixes.join(' and ')} manually`
       } else if (manualFixes.length > 0) {

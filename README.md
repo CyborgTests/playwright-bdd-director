@@ -428,6 +428,8 @@ Test cases and steps are matched **by title or ID, not by position**: adding a c
 - Test cases/steps removed from MD (code is kept for manual review)
 - Test cases/steps reordered in MD (reorder manually)
 
+`stage` lists every applied change under **Auto-fixed** and these warnings with ⚠️; a file with warnings only is left untouched and listed under **Needs manual review**.
+
 **Must fix manually:**
 
 - Tags (file type, suite tags from basename)
@@ -703,8 +705,10 @@ npm run stage
 
 🔧  Fixed formatting: test-suites/auth.md
 ✅  Generated: tests/cyborg/login.cyborg.test.ts
-🔧  Auto-fixed: tests/cyborg/auth.cyborg.test.ts
-    Test suite title: "[TS01] Old Title" → "[TS01] Authentication Tests"
+🔧  Auto-fixed CYBORG:
+    • tests/cyborg/auth.cyborg.test.ts
+        Test suite title: "[TS01] Old Title" → "[TS01] Authentication Tests"
+        ⚠️  Extra test case "[TS01-TC09] Draft" (not in MD) - manual review needed
 
 📊  Director Metrics:
     Total files: 1

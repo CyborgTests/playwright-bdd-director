@@ -191,7 +191,7 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
-      expect(result.changes.some((c) => c.includes('Extra test case "[tc-02] Extra test"'))).toBe(
+      expect(result.warnings.some((w) => w.includes('Extra test case "[tc-02] Extra test"'))).toBe(
         true
       )
       expect(parseTestFile(filePath).testCases).toHaveLength(2) // Code is never deleted
@@ -262,7 +262,9 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
 
       const result = autoFixTestFile(filePath, md)
 
-      expect(result.changes.some((c) => c.includes('TC#1 extra step "Extra step"'))).toBe(true)
+      expect(result.warnings.some((w) => w.includes('TC#1 extra step "Extra step"'))).toBe(true)
+      expect(result.fixed).toBe(false)
+      expect(fs.readFileSync(filePath, 'utf-8')).toBe(content)
     })
 
     it('should add placeholder for missing steps', () => {
@@ -641,7 +643,31 @@ test.describe('[CYBORG] Suite', () => {
     )
 
     expect(parseTestFile(filePath).testCases.map((tc) => tc.ttl)).toEqual(['A', 'B', 'C'])
-    expect(result.changes.some((c) => c.includes('Extra test case "[CYBORG] B"'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('Extra test case "[CYBORG] B"'))).toBe(true)
+  })
+
+  it('should save changes and report warnings separately when both occur', () => {
+    const filePath = createTSFile(
+      'mixed.cyborg.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[CYBORG] Old suite', () => {
+  test('[CYBORG] A', async ({ manualStep }) => {
+    await manualStep('a')
+  })
+  test('[CYBORG] B', async ({ manualStep }) => {
+    await manualStep('b')
+  })
+})`
+    )
+
+    const result = autoFixTestFile(filePath, mdOf([['A', ['a']]]))
+
+    expect(result.fixed).toBe(true)
+    expect(result.changes).toEqual(['Test suite title: "[CYBORG] Old suite" → "[CYBORG] Suite"'])
+    expect(result.warnings).toEqual([
+      'Extra test case "[CYBORG] B" (not in MD) - manual review needed'
+    ])
   })
 
   it('should follow stable ID when MD title changes and case is inserted before it', () => {
