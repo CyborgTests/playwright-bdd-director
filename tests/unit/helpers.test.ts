@@ -1,10 +1,14 @@
+import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 import {
   getErrorMessage,
   getMarkdownBaseName,
+  getSuiteKey,
+  getSuiteSubDir,
   getTestFileBaseName,
   hasAutomatedTestFile,
+  isCyborgDisabledFor,
   isMatchingTestFile,
   matchIDWithSuffix,
   parseIDAndTitle
@@ -322,5 +326,46 @@ describe('hasAutomatedTestFile', () => {
     expect(
       hasAutomatedTestFile(['tests/auth.MANUAL.test.ts', 'tests/auth.API.test.ts'], 'auth')
     ).toBe(true)
+  })
+})
+
+describe('getSuiteKey / getSuiteSubDir', () => {
+  it('should return MD path inside test suites without extension', () => {
+    expect(getSuiteKey('test-suites/auth.md', 'test-suites')).toBe('auth')
+    expect(getSuiteKey('test-suites/e2e/shop/checkout.md', 'test-suites')).toBe('e2e/shop/checkout')
+  })
+
+  it('should use / separators on any platform', () => {
+    expect(getSuiteKey(path.join('test-suites', 'e2e', 'checkout.md'), 'test-suites')).toBe(
+      'e2e/checkout'
+    )
+  })
+
+  it('should return MD folder or empty string for root', () => {
+    expect(getSuiteSubDir('test-suites/auth.md', 'test-suites')).toBe('')
+    expect(getSuiteSubDir('test-suites/e2e/shop/checkout.md', 'test-suites')).toBe('e2e/shop')
+  })
+})
+
+describe('isCyborgDisabledFor', () => {
+  const isDisabled = (md: string, noCyborg: string[]) =>
+    isCyborgDisabledFor(md, noCyborg, 'test-suites')
+
+  it('should be false when nothing is listed', () => {
+    expect(isDisabled('test-suites/api/users.md', [])).toBe(false)
+  })
+
+  it('should cover all MDs of listed folder, including nested ones', () => {
+    expect(isDisabled('test-suites/api/users.md', ['api'])).toBe(true)
+    expect(isDisabled('test-suites/api/v2/users.md', ['api'])).toBe(true)
+  })
+
+  it('should cover single listed MD only', () => {
+    expect(isDisabled('test-suites/e2e/checkout.md', ['e2e/checkout'])).toBe(true)
+    expect(isDisabled('test-suites/e2e/cart.md', ['e2e/checkout'])).toBe(false)
+  })
+
+  it('should not match by name prefix', () => {
+    expect(isDisabled('test-suites/api-legacy/users.md', ['api'])).toBe(false)
   })
 })

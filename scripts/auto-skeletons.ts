@@ -6,7 +6,7 @@ import path from 'path'
 import { CONFIG } from '@/framework/config'
 import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 import { generateAutoTestFile } from '@/framework/generation/test-generator'
-import { getErrorMessage, getMarkdownBaseName } from '@/framework/utils/helpers'
+import { getErrorMessage, getMarkdownBaseName, getSuiteSubDir } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
 const dryRun = process.argv.includes('--dry-run')
@@ -20,13 +20,14 @@ try {
 
 /**
  * Generate AUTO test skeletons for all markdown files without an automated test
+ * (MD subfolders are mirrored under the skeletons dir)
  * `--dry-run` lists skeletons without writing them
  */
 function main() {
   console.log(`${getIcon('start')}  Generating AUTO test skeletons${dryRun ? ' (dry run)' : ''}...`)
   console.log('')
 
-  const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/*.md`)
+  const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/**/*.md`)
   let generated = 0
   let skipped = 0
   const generatedFiles: string[] = []
@@ -46,8 +47,9 @@ function main() {
       continue
     }
 
-    if (dryRun || generateAutoTestFile(baseName)) {
-      generatedFiles.push(`${baseName}.auto.test.ts`)
+    const subDir = getSuiteSubDir(markdownFile)
+    if (dryRun || generateAutoTestFile(baseName, subDir)) {
+      generatedFiles.push(path.posix.join(subDir, `${baseName}.auto.test.ts`))
       generated++
     }
   }

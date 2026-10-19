@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { CONFIG } from '../config'
 import { AUTOMATED_KINDS } from '../constants/test-files'
 
 export interface ParsedID {
@@ -20,6 +21,38 @@ export function getErrorMessage(error: unknown): string {
  */
 export function getMarkdownBaseName(mdFilePath: string): string {
   return path.basename(mdFilePath, '.md')
+}
+
+/**
+ * MD path inside test suites dir, `/`-separated, without `.md`
+ * Example: "test-suites/e2e/checkout.md" -> "e2e/checkout"
+ */
+export function getSuiteKey(mdFilePath: string, testSuitesDir = CONFIG.paths.testSuites): string {
+  return path.relative(testSuitesDir, mdFilePath).split(/[\\/]/).join('/').replace(/\.md$/, '')
+}
+
+/**
+ * Folder of MD inside test suites dir, mirrored by generated test files ("" for root)
+ * Example: "test-suites/e2e/checkout.md" -> "e2e"
+ */
+export function getSuiteSubDir(
+  mdFilePath: string,
+  testSuitesDir = CONFIG.paths.testSuites
+): string {
+  return path.posix.dirname(getSuiteKey(mdFilePath, testSuitesDir)).replace(/^\.$/, '')
+}
+
+/**
+ * MD gets no cyborg twin from stage: it or one of its folders is listed in `noCyborg`
+ * (entries are suite keys - "api" disables the folder, "e2e/checkout" a single MD)
+ */
+export function isCyborgDisabledFor(
+  mdFilePath: string,
+  noCyborg: readonly string[] = CONFIG.noCyborg,
+  testSuitesDir = CONFIG.paths.testSuites
+): boolean {
+  const suiteKey = getSuiteKey(mdFilePath, testSuitesDir)
+  return noCyborg.some((entry) => suiteKey === entry || suiteKey.startsWith(`${entry}/`))
 }
 
 /**

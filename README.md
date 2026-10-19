@@ -560,7 +560,8 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 ### 1. File Naming
 
-- **MD:** `<name>.md` (e.g., `auth.md`) in `test-suites/`
+- **MD:** `<name>.md` (e.g., `auth.md`) in `test-suites/` or its subfolders; the base name must be unique across all of them
+- **Subfolders** are mirrored by generated files: `test-suites/e2e/checkout.md` → `tests/cyborg/e2e/checkout.cyborg.test.ts` (and `tests/automated/todo/e2e/…` for `autogen`)
 - **Test:** `<name>.<TYPE>.test.ts` (framework extracts base name before first dot)
 - **Examples:**
   - `auth.cyborg.test.ts` → `auth.md` ✅
@@ -589,6 +590,8 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 | `TESTS_ARCHIVED_DIR` | `tests/archived`       | Archived orphaned tests         |
 | `METRICS_ENABLED`    | `false`                | Enable metrics JSON output      |
 | `METRICS_FILE`       | `.metrics.json`        | Metrics output file path        |
+
+**Suites without cyborg tests:** list them in `CONFIG.noCyborg` (paths inside `test-suites/` without `.md`): a folder (`'api'`) covers all its MDs, a file (`'e2e/checkout'`) a single MD. `stage` neither generates nor auto-fixes cyborg files for them - they pair with automated tests only. An existing cyborg file is still checked by `dress`, so delete it.
 
 ### 3. Playwright Config
 

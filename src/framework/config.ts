@@ -12,6 +12,12 @@ export const CONFIG = {
     tagsFile: 'src/test-constants/tags.ts',
     packageJson: 'package.json'
   },
+  /**
+   * Suites that get no cyborg twin from stage (nobody walks them by hand, e.g. API suites) and
+   * pair with automated tests only. Entries are paths inside testSuites without `.md`:
+   * a folder ("api") covers all its MDs, a file ("e2e/checkout") a single MD.
+   */
+  noCyborg: [] as readonly string[],
   metrics: {
     enabled: process.env.METRICS_ENABLED === 'true',
     saveTo: process.env.METRICS_FILE ?? '.metrics.json'

@@ -34,6 +34,22 @@ const path = require('path');
 const testSuitesDir = path.resolve(process.cwd(), 'test-suites');
 if (!fs.existsSync(testSuitesDir)) fs.mkdirSync(testSuitesDir, { recursive: true });
 
+// Suite files in test-suites and its subfolders; names are '/'-separated relative paths
+function listSuiteFiles(dir, prefix) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const name = prefix + entry.name;
+    if (entry.isDirectory()) return listSuiteFiles(path.join(dir, entry.name), name + '/');
+    return entry.name.endsWith('.md') || entry.name.endsWith('.feature') ? [name] : [];
+  });
+}
+
+// Absolute path for UI file name ('test-suites/' prefix optional); null when it leaves test-suites
+function resolveSuitePath(name) {
+  const relative = name.startsWith('test-suites/') ? name.slice('test-suites/'.length) : name;
+  const filePath = path.resolve(testSuitesDir, relative);
+  return filePath.startsWith(testSuitesDir + path.sep) ? filePath : null;
+}
+
 // WebSocket server on random free port
 const wss = new WebSocketServer({ port: 0 });
 
@@ -72,7 +88,7 @@ wss.on('connection', (ws) => {
       msg = JSON.parse(data.toString());
       
       if (msg.type === 'GET_FILES') {
-        const files = fs.readdirSync(testSuitesDir).filter(f => f.endsWith('.md') || f.endsWith('.feature')).map(name => ({
+        const files = listSuiteFiles(testSuitesDir, '').map(name => ({
           name, path: 'test-suites/' + name,
           content: fs.readFileSync(path.join(testSuitesDir, name), 'utf-8'),
           status: 'idle', isModified: false, scenarios: []
@@ -81,38 +97,36 @@ wss.on('connection', (ws) => {
       }
       
       else if (msg.type === 'CREATE_FILE') {
-        // Extract just the filename if path includes test-suites/
-        let filename = msg.data.name;
-        if (filename.startsWith('test-suites/')) {
-          filename = filename.replace('test-suites/', '');
+        const filePath = resolveSuitePath(msg.data.name);
+        if (!filePath) {
+          ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Path is outside test-suites' }));
+          return;
         }
-        const filePath = path.join(testSuitesDir, filename);
         if (fs.existsSync(filePath)) {
           ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'File already exists' }));
         } else {
+          fs.mkdirSync(path.dirname(filePath), { recursive: true });
           fs.writeFileSync(filePath, msg.data.content || '', 'utf-8');
           ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));
         }
       }
       
       else if (msg.type === 'SAVE_FILE') {
-        // Extract just the filename if path includes test-suites/
-        let filename = msg.data.name;
-        if (filename.startsWith('test-suites/')) {
-          filename = filename.replace('test-suites/', '');
+        const filePath = resolveSuitePath(msg.data.name);
+        if (!filePath) {
+          ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Path is outside test-suites' }));
+          return;
         }
-        const filePath = path.join(testSuitesDir, filename);
         fs.writeFileSync(filePath, msg.data.content, 'utf-8');
         ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));
       }
       
       else if (msg.type === 'DELETE_FILE') {
-        // Extract just the filename if path includes test-suites/
-        let filename = msg.data.name;
-        if (filename.startsWith('test-suites/')) {
-          filename = filename.replace('test-suites/', '');
+        const filePath = resolveSuitePath(msg.data.name);
+        if (!filePath) {
+          ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Path is outside test-suites' }));
+          return;
         }
-        const filePath = path.join(testSuitesDir, filename);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
           ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));

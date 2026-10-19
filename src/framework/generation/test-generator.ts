@@ -21,10 +21,17 @@ export function buildTestCaseTtl(id: string | null, ttl: string, type: TestType)
   return `[${id}${suffix}] ${ttl}`
 }
 
-export function generateTestFile(baseName: string, type: TestType): boolean {
+/**
+ * @param subDir - MD folder inside test suites (see getSuiteSubDir), mirrored under output root:
+ * test-suites/e2e/x.md → tests/cyborg/e2e/x.cyborg.test.ts
+ */
+export function generateTestFile(baseName: string, type: TestType, subDir = ''): boolean {
   const mdData = parseMDFile(baseName)
 
-  const outputDir = type === 'AUTO' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsCyborg
+  const outputDir = path.join(
+    type === 'AUTO' ? CONFIG.paths.testsAutomated : CONFIG.paths.testsCyborg,
+    subDir
+  )
 
   // Create output directory if needed
   if (!fs.existsSync(outputDir)) {
@@ -117,10 +124,10 @@ ${testCases}
 }
 
 // Convenience wrappers
-export function generateAutoTestFile(baseName: string): boolean {
-  return generateTestFile(baseName, 'AUTO')
+export function generateAutoTestFile(baseName: string, subDir = ''): boolean {
+  return generateTestFile(baseName, 'AUTO', subDir)
 }
 
-export function generateCyborgTestFile(baseName: string): boolean {
-  return generateTestFile(baseName, 'CYBORG')
+export function generateCyborgTestFile(baseName: string, subDir = ''): boolean {
+  return generateTestFile(baseName, 'CYBORG', subDir)
 }

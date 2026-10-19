@@ -23,7 +23,9 @@ import {
 import {
   getErrorMessage,
   getMarkdownBaseName,
+  getSuiteSubDir,
   getTestFileBaseName,
+  isCyborgDisabledFor,
   isMatchingTestFile
 } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
@@ -210,15 +212,18 @@ function generateMissingTestFiles(validation: ValidatorResult): {
   const generatedFiles: string[] = []
 
   for (const markdownFile of validation.markdownFiles) {
+    if (isCyborgDisabledFor(markdownFile)) continue // CONFIG.noCyborg: automated tests only
+
     const baseName = getMarkdownBaseName(markdownFile)
     const candidates = glob.sync(`${CONFIG.paths.testsDir}/**/${baseName}*.ts`)
 
     const cyborgTestFiles = candidates.filter((f) => isMatchingTestFile(f, baseName, 'CYBORG'))
 
     if (cyborgTestFiles.length === 0) {
-      if (generateCyborgTestFile(baseName)) {
+      const subDir = getSuiteSubDir(markdownFile)
+      if (generateCyborgTestFile(baseName, subDir)) {
         generatedCyborg++
-        generatedFiles.push(`${baseName}.cyborg.test.ts`)
+        generatedFiles.push(path.posix.join(subDir, `${baseName}.cyborg.test.ts`))
       }
     }
   }
@@ -301,6 +306,7 @@ function processTestFiles(
 
     const markdownFile = validation.markdownByBaseName.get(baseName)
     if (!markdownFile) continue
+    if (fileType === 'CYBORG' && isCyborgDisabledFor(markdownFile)) continue
 
     const markdownData = validation.parsedMDMap.get(markdownFile)
     if (!markdownData) continue
