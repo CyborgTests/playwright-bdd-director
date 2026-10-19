@@ -216,15 +216,18 @@ Best for: modern Playwright projects, AI-assisted automation, teams that want re
 A combined visual interface - the Director UI (built in this project) together with Playwright UI (built-in Playwright feature) form a unified workspace:
 
 **Director UI (our part):**
+
 - **File Explorer** - browse and edit Markdown test suites with File Editor
 - **Staging Controls** - run `stage` visually, see metrics and generated files
 
 **Playwright UI (Playwright's part):**
+
 - View all tests, run individually or in batches with real-time status
 - Detailed test execution view with step-by-step breakdown
 - Traces, screenshots, and video on failure
 
 **Launch:**
+
 ```bash
 npm run show
 ```
@@ -252,6 +255,7 @@ The Auto Tests Generator (`npm run autogen`):
 
 - Generates empty automated test skeletons for all specs that don't have them yet
 - Run on-demand when a developer is ready to start automating - no point generating skeletons before that
+- `npm run autogen -- --dry-run` lists the skeletons it would create without writing them
 
 The Dress Rehearsal (`npm run dress`):
 
@@ -305,6 +309,7 @@ Cyborg Tests      Auto Skeletons
 ### → Test Case
 #### → Test Step
 Lists (-) → Comments (ignored by validator)
+--- → Optional separator between test cases (ignored by validator)
 ```
 
 ### 3. IDs - Optional but Powerful
@@ -452,6 +457,23 @@ test('[API] User Registration', ...)     // ✅ Matches []
 ```
 
 Validator checks each `test()` separately against MD. Same file or different files - both are valid.
+
+### 6. How Test Files Are Read
+
+- A suite may span several top-level `test.describe` blocks (or be wrapped in an exported function); title and tags come from the first one
+- Nested describes (`test.describe`, `.serial`, `.parallel`, `.skip`, `.fixme`, `.only`) only group tests - their titles are not MD entities
+- Tests declared in a loop (`for...of`, `forEach`) count once, as written
+- `test.use()`, `test.describe.configure()` and runtime modifiers (`test.skip(condition, reason)`, `test.slow()`) are not test cases
+- **Named hooks are test cases**: `test.beforeAll('Create data', ...)` / `test.afterAll('Delete data', ...)` match MD test cases, and their `test.step()` titles match MD steps. Use them for setup/teardown that must run for any `--grep` subset. Unnamed hooks stay plain setup/teardown
+
+```typescript
+// MD: ### Create data → #### Create user | ### User Login | ### Delete data
+test.beforeAll('Create data', async () => {
+  await test.step('Create user', async () => { ... })
+})
+test('User Login', async () => { ... })
+test.afterAll('Delete data', async () => { ... })
+```
 
 ## 📁 Project Structure
 

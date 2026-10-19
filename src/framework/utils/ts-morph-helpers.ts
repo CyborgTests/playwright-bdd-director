@@ -1,4 +1,4 @@
-import { CallExpression, Project, SourceFile, SyntaxKind } from 'ts-morph'
+import { CallExpression, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
 
 import { AST_IDENTIFIERS } from '@/framework/constants/test-files'
 
@@ -32,11 +32,72 @@ export function findDescribeCall(sourceFile: SourceFile): CallExpression | undef
 }
 
 /**
- * Find all test() calls within describe block
- * Supports: test(), test.only(), test.skip(), test.fixme(), authTest(), customTest(), and any fixture
- * Excludes: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, *.describe
+ * *.describe(), *.describe.serial/parallel/skip/fixme/only() - but not *.describe.configure()
+ */
+const DESCRIBE_EXPRESSION = /\.describe(\.(serial|parallel|skip|fixme|only))?$/
+
+/**
+ * True for describe calls, including an alias whose every initializer branch is a describe
+ * expression, e.g. `const describeFn = isSmoke ? test.describe.skip : test.describe`
+ */
+export function isDescribeCall(callExpression: CallExpression): boolean {
+  const expression = callExpression.getExpression()
+  if (DESCRIBE_EXPRESSION.test(expression.getText())) return true
+
+  if (!Node.isIdentifier(expression)) return false
+  const initializer = expression
+    .getSourceFile()
+    .getDescendantsOfKind(SyntaxKind.VariableDeclaration)
+    .find((declaration) => declaration.getName() === expression.getText())
+    ?.getInitializer()
+  if (!initializer) return false
+  const branches = Node.isConditionalExpression(initializer)
+    ? [initializer.getWhenTrue(), initializer.getWhenFalse()]
+    : [initializer]
+  return branches.every((branch) => DESCRIBE_EXPRESSION.test(branch.getText()))
+}
+
+/**
+ * Outermost describe calls of file (no enclosing describe), in source order. One MD suite may be
+ * split into several describes, or wrapped in an exported function - validator reads them all.
+ */
+export function findOutermostDescribeCalls(sourceFile: SourceFile): CallExpression[] {
+  return sourceFile
+    .getDescendantsOfKind(SyntaxKind.CallExpression)
+    .filter(
+      (call) =>
+        isDescribeCall(call) &&
+        !call
+          .getAncestors()
+          .some((node) => node.isKind(SyntaxKind.CallExpression) && isDescribeCall(node))
+    )
+}
+
+/**
+ * Find all test() calls within describe block, in source order
+ * Supports: test(), test.only(), test.skip(), test.fixme(), authTest(), customTest(), any fixture,
+ * named test.beforeAll/afterAll('title', fn) (see isNamedHook) and tests declared in a loop
+ * Excludes: test.beforeEach/afterEach, unnamed beforeAll/afterAll, test.use, runtime modifiers
+ * (test.skip(condition, reason), test.slow(), test.setTimeout()), nested describes
  */
 export function findTestCalls(describeCall: CallExpression): CallExpression[] {
+  return getDescribeBodyCalls(describeCall).filter(isTestCaseCall)
+}
+
+/**
+ * Same as findTestCalls, but also descends into nested describes (grouping only - their titles
+ * are not MD entities), keeping source order
+ */
+export function findTestCallsDeep(describeCall: CallExpression): CallExpression[] {
+  return getDescribeBodyCalls(describeCall).flatMap((call) =>
+    isDescribeCall(call) ? findTestCallsDeep(call) : isTestCaseCall(call) ? [call] : []
+  )
+}
+
+/**
+ * Statement-level call expressions of describe callback body (not nested in other calls)
+ */
+function getDescribeBodyCalls(describeCall: CallExpression): CallExpression[] {
   const args = describeCall.getArguments()
 
   // Support both:
@@ -50,38 +111,82 @@ export function findTestCalls(describeCall: CallExpression): CallExpression[] {
     callback.asKind(SyntaxKind.ArrowFunction)?.getBody() ??
     callback.asKind(SyntaxKind.FunctionExpression)?.getBody()
 
-  if (!body) return []
+  const statements = body?.asKind(SyntaxKind.Block)?.getStatements() ?? []
+  return statements.flatMap(getStatementCalls)
+}
 
-  // Get only direct statement-level call expressions (not nested in other calls)
-  const statements = body.asKind(SyntaxKind.Block)?.getStatements() ?? []
-
-  const testCalls: CallExpression[] = []
-
-  for (const statement of statements) {
-    // Only expression statements that are direct test() calls
-    const expressionStatement = statement.asKind(SyntaxKind.ExpressionStatement)
-    if (!expressionStatement) continue
-
-    const callExpression = expressionStatement.getExpression().asKind(SyntaxKind.CallExpression)
-    if (!callExpression) continue
-
-    const expression = callExpression.getExpression().getText()
-
-    // Match: test, test.only, test.skip, test.fixme, authTest, customTest, and any fixture
-    // Exclude: test.beforeEach, test.afterEach, test.beforeAll, test.afterAll, *.describe
-    const isTestCall =
-      !expression.includes('.') ||
-      (expression.includes('.') &&
-        !expression.startsWith('test.before') &&
-        !expression.startsWith('test.after') &&
-        !expression.endsWith('.describe'))
-
-    if (isTestCall) {
-      testCalls.push(callExpression)
-    }
+/**
+ * Call of a describe-body statement. A loop at describe level (`for (const x of xs) test(...)`,
+ * `xs.forEach((x) => { test(...) })`) declares one parametrized Test Case - its body statements
+ * are read as if written inline.
+ */
+function getStatementCalls(statement: Node): CallExpression[] {
+  const loop =
+    statement.asKind(SyntaxKind.ForOfStatement) ??
+    statement.asKind(SyntaxKind.ForInStatement) ??
+    statement.asKind(SyntaxKind.ForStatement)
+  if (loop) {
+    const loopBody = loop.getStatement()
+    const loopStatements = loopBody.asKind(SyntaxKind.Block)?.getStatements() ?? [loopBody]
+    return loopStatements.flatMap(getStatementCalls)
   }
 
-  return testCalls
+  const callExpression = statement
+    .asKind(SyntaxKind.ExpressionStatement)
+    ?.getExpression()
+    .asKind(SyntaxKind.CallExpression)
+  if (!callExpression) return []
+
+  if (callExpression.getExpression().getText().endsWith('.forEach')) {
+    const callback = callExpression.getArguments()[0]
+    const callbackBody =
+      callback?.asKind(SyntaxKind.ArrowFunction)?.getBody() ??
+      callback?.asKind(SyntaxKind.FunctionExpression)?.getBody()
+    const callbackStatements = callbackBody?.asKind(SyntaxKind.Block)?.getStatements() ?? []
+    return callbackStatements.flatMap(getStatementCalls)
+  }
+
+  return [callExpression]
+}
+
+function isTestCaseCall(callExpression: CallExpression): boolean {
+  if (isNamedHook(callExpression)) return true
+  if (isDescribeCall(callExpression)) return false
+
+  const expression = callExpression.getExpression().getText()
+  const isHookOrConfig =
+    expression.startsWith('test.before') ||
+    expression.startsWith('test.after') ||
+    expression.startsWith('test.use')
+  return !isHookOrConfig && hasTestBody(callExpression)
+}
+
+/**
+ * Named `test.beforeAll('title', fn)` / `test.afterAll('title', fn)` counts as MD Test Case: an
+ * automated suite can keep API setup/teardown in a hook (runs for any --grep subset) while its
+ * test.step titles still map 1:1 to MD steps. Unnamed hooks stay plain setup/teardown.
+ */
+function isNamedHook(callExpression: CallExpression): boolean {
+  const expression = callExpression.getExpression().getText()
+  if (!expression.endsWith('.beforeAll') && !expression.endsWith('.afterAll')) return false
+  const firstArg = callExpression.getArguments()[0]
+  return (
+    !!firstArg &&
+    (firstArg.isKind(SyntaxKind.StringLiteral) ||
+      firstArg.isKind(SyntaxKind.NoSubstitutionTemplateLiteral))
+  )
+}
+
+/**
+ * Test declaration = (title, [details,] body). Runtime modifiers such as conditional
+ * `test.skip(condition, reason)`, `test.skip(({ browserName }) => ..., reason)`, `test.slow()` or
+ * `test.setTimeout(ms)` have no body after a non-function first argument, so they are not Test Cases
+ */
+function hasTestBody(callExpression: CallExpression): boolean {
+  const args = callExpression.getArguments()
+  const isFunction = (node: Node | undefined): boolean =>
+    !!node && (node.isKind(SyntaxKind.ArrowFunction) || node.isKind(SyntaxKind.FunctionExpression))
+  return args.length >= 2 && !isFunction(args[0]) && isFunction(args[args.length - 1])
 }
 
 /**

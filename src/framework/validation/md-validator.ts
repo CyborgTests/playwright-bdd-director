@@ -1,6 +1,11 @@
 import fs from 'fs'
 
-import { getHeadingLevel, isHeading, MD_HEADINGS } from '@/framework/constants/markdown'
+import {
+  getHeadingLevel,
+  isHeading,
+  MD_HEADINGS,
+  MD_HORIZONTAL_RULE
+} from '@/framework/constants/markdown'
 
 import {
   buildCannotReadError,
@@ -42,7 +47,7 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
 
   const lines = content.split('\n')
 
-  // Validate each line: must be one of 5 formats
+  // Validate each line: must be one of 6 formats
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const trimmed = line.trim()
@@ -51,16 +56,19 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     // 1. Empty line
     if (trimmed === '') continue
 
-    // 2. H2 (##...)
+    // 2. Horizontal rule (---)
+    if (trimmed === MD_HORIZONTAL_RULE) continue
+
+    // 3. H2 (##...)
     if (isHeading(trimmed, 2)) continue
 
-    // 3. H3 (### ...)
+    // 4. H3 (### ...)
     if (isHeading(trimmed, 3)) continue
 
-    // 4. H4 (#### ...)
+    // 5. H4 (#### ...)
     if (isHeading(trimmed, 4)) continue
 
-    // 5. List/comment (- ...)
+    // 6. List/comment (- ...)
     if (trimmed.startsWith('- ')) continue
 
     // Everything else is invalid
@@ -190,7 +198,8 @@ export function autoFixMDFormatting(filePath: string): boolean {
 
   const isComment = (line: string): boolean => {
     const trimmed = line.trim()
-    return trimmed.length > 0 && getHeadingLevel(trimmed) === null
+    // Horizontal rule is a separator, not a comment - blank lines around it are kept
+    return trimmed.length > 0 && trimmed !== MD_HORIZONTAL_RULE && getHeadingLevel(trimmed) === null
   }
 
   const isBlank = (line: string): boolean => {

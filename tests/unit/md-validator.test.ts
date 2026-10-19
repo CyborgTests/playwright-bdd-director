@@ -168,6 +168,23 @@ Invalid line without proper format
 
     expect(errors).toHaveLength(0)
   })
+  it('should accept horizontal rule between test cases', () => {
+    const content = `## Suite
+
+### First
+
+#### Step
+
+---
+
+### Second
+
+#### Step
+`
+    const filePath = createMDFile('hr.md', content)
+
+    expect(validateMDStructure(filePath)).toEqual([])
+  })
 })
 
 describe('autoFixMDFormatting', () => {
@@ -186,6 +203,28 @@ describe('autoFixMDFormatting', () => {
     fs.writeFileSync(filePath, content, 'utf-8')
     return filePath
   }
+
+  it('should keep blank lines around horizontal rule', () => {
+    const content = `## Suite
+
+### First
+
+#### Step
+
+- detail
+
+---
+
+### Second
+
+#### Step
+`
+    const filePath = createMDFile('hr-fix.md', content)
+
+    autoFixMDFormatting(filePath)
+
+    expect(fs.readFileSync(filePath, 'utf-8')).toBe(content)
+  })
 
   it('should fix spacing in headers', () => {
     const content = `##Test Suite

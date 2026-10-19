@@ -509,3 +509,44 @@ test.describe('Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, () => {
     expect(result).toBe(false)
   })
 })
+
+describe('isEmptyAutoTest - tests without steps', () => {
+  const header = `import { test } from '@playwright/test'\n\n`
+
+  it('should return false when test without steps has real code', () => {
+    const filePath = createTSFile(
+      'no-steps-code.ts',
+      `${header}test.describe('Suite', () => {
+  test('Test', async ({ page }) => {
+    await page.goto('/')
+  })
+})`
+    )
+
+    expect(isEmptyAutoTest(filePath)).toBe(false)
+  })
+
+  it('should return true when test without steps has only comments', () => {
+    const filePath = createTSFile(
+      'no-steps-empty.ts',
+      `${header}test.describe('Suite', () => {
+  test('Test', async () => {
+    // TODO: implement
+  })
+})`
+    )
+
+    expect(isEmptyAutoTest(filePath)).toBe(true)
+  })
+
+  it('should return false when file only delegates to other functions', () => {
+    const filePath = createTSFile(
+      'delegating.ts',
+      `${header}test.describe('Suite', () => {
+  registrationTests(test)
+})`
+    )
+
+    expect(isEmptyAutoTest(filePath)).toBe(false)
+  })
+})

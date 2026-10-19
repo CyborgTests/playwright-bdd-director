@@ -3,6 +3,9 @@
  * Single source of truth for MD structure
  */
 
+/** Horizontal rule - optional visual separator between test cases */
+export const MD_HORIZONTAL_RULE = '---'
+
 export const MD_HEADINGS = {
   SUITE: {
     LEVEL: 2,

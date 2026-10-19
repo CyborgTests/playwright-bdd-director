@@ -562,3 +562,105 @@ test.describe.skip('[ts01] Skipped Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST
     })
   })
 })
+
+describe('parseTestFile - suite structure', () => {
+  const header = `import { test } from '@playwright/test'\nimport { TAG } from '@/constants/tags'\n\n`
+  const titles = (content: string) =>
+    parseTestFile(createTSFile('structure.ts', header + content)).testCases.map((tc) => tc.ttl)
+
+  it('should read test cases from all top-level describes', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'multi-describe.ts',
+        `${header}test.describe('Suite', { tag: [TAG.TEST.AUTO] }, () => {
+  test('First', async () => {})
+})
+
+test.describe('Suite part 2', () => {
+  test('Second', async () => {})
+})`
+      )
+    )
+
+    expect(result.suiteTtl).toBe('Suite')
+    expect(result.tags).toEqual(['TAG.TEST.AUTO'])
+    expect(result.testCases.map((tc) => tc.ttl)).toEqual(['First', 'Second'])
+  })
+
+  it('should read test cases from nested and serial describes in source order', () => {
+    expect(
+      titles(`test.describe('Suite', () => {
+  test('First', async () => {})
+  test.describe.serial('Group', () => {
+    test('Second', async () => {})
+  })
+  test('Third', async () => {})
+})`)
+    ).toEqual(['First', 'Second', 'Third'])
+  })
+
+  it('should read describe wrapped in exported function', () => {
+    expect(
+      titles(`export function suite(): void {
+  test.describe('Suite', () => {
+    test('Only', async () => {})
+  })
+}`)
+    ).toEqual(['Only'])
+  })
+
+  it('should resolve describe alias', () => {
+    expect(
+      titles(`const describeFn = process.env.SMOKE ? test.describe.skip : test.describe
+
+describeFn('Suite', () => {
+  test('Only', async () => {})
+})`)
+    ).toEqual(['Only'])
+  })
+
+  it('should ignore runtime modifiers, test.use and describe.configure', () => {
+    expect(
+      titles(`test.describe('Suite', () => {
+  test.describe.configure({ mode: 'serial' })
+  test.use({ viewport: { width: 1, height: 1 } })
+  test.skip(process.env.CI === 'true', 'local only')
+  test.skip(({ browserName }) => browserName === 'webkit', 'no webkit')
+  test.slow()
+  test('Real', async () => {})
+})`)
+    ).toEqual(['Real'])
+  })
+
+  it('should read tests declared in for...of and forEach loops', () => {
+    expect(
+      titles(`test.describe('Suite', () => {
+  for (const user of ['a']) {
+    test('Loop test', async () => {})
+  }
+  ;['b'].forEach(() => {
+    test('ForEach test', async () => {})
+  })
+})`)
+    ).toEqual(['Loop test', 'ForEach test'])
+  })
+
+  it('should count named beforeAll/afterAll as test cases with steps, ignore unnamed hooks', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'hooks.ts',
+        `${header}test.describe('Suite', () => {
+  test.beforeAll(async () => {})
+  test.beforeAll('Create data', async () => {
+    await test.step('Create user', async () => {})
+  })
+  test('Main', async () => {})
+  test.afterAll('Delete data', async () => {})
+})`
+      )
+    )
+
+    expect(result.testCases.map((tc) => tc.ttl)).toEqual(['Create data', 'Main', 'Delete data'])
+    expect(result.testCases[0].stepTtls).toEqual(['Create user'])
+  })
+})

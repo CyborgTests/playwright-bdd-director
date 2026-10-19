@@ -30,6 +30,8 @@ export function archiveOrphanedTests(
 
   for (const testFile of testFiles) {
     if (!testFile) continue
+    // Already archived - skip, otherwise it is "moved" onto itself and counted on every stage run
+    if (path.resolve(path.dirname(testFile)) === path.resolve(archivedDir)) continue
 
     const fileName = path.basename(testFile)
     const baseName = getTestFileBaseName(fileName)

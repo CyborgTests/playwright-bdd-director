@@ -292,48 +292,38 @@ export function isEmptyAutoTest(testFilePath: string): boolean {
   const testCalls = findTestCalls(describeCall)
   if (testCalls.length === 0) return false
 
-  // Check all test cases
   for (const testCall of testCalls) {
     const stepCalls = findStepCalls(testCall)
 
-    // If no steps, consider as empty
-    if (stepCalls.length === 0) continue
+    // No steps: the test body itself must be empty, otherwise it holds real implementation
+    if (stepCalls.length === 0) {
+      const testArgs = testCall.getArguments()
+      if (hasRealCode(testArgs[testArgs.length - 1])) return false
+      continue
+    }
 
-    // Check each step
     for (const stepCall of stepCalls) {
-      const arrowFunction = stepCall.getArguments()[1]
-      if (!arrowFunction || !Node.isArrowFunction(arrowFunction)) continue
-
-      const body = arrowFunction.getBody()
-      if (!body) continue
-
-      // Get block statements
-      const block = Node.isBlock(body) ? body : null
-      if (!block) {
-        // No block = inline expression (not empty)
-        return false
-      }
-
-      const statements = block.getStatements()
-
-      // Check if all statements are comments or empty
-      for (const stmt of statements) {
-        // Skip empty statements
-        if (stmt.getKind() === SyntaxKind.EmptyStatement) continue
-
-        // Check if it's just a comment
-        const text = stmt.getText().trim()
-
-        // Allow only comments: /* ... */ or // ...
-        const isComment = text.startsWith('/*') || text.startsWith('//') || text.length === 0
-
-        if (!isComment) {
-          // Found real code - not an empty test
-          return false
-        }
-      }
+      if (hasRealCode(stepCall.getArguments()[1])) return false
     }
   }
 
   return true
+}
+
+/**
+ * True when function body contains anything but comments / empty statements.
+ * Inline arrow expression (no block) counts as real code.
+ */
+function hasRealCode(fn: Node | undefined): boolean {
+  if (!fn || (!Node.isArrowFunction(fn) && !Node.isFunctionExpression(fn))) return false
+
+  const body = fn.getBody()
+  if (!body) return false
+  if (!Node.isBlock(body)) return true
+
+  return body.getStatements().some((stmt) => {
+    if (stmt.getKind() === SyntaxKind.EmptyStatement) return false
+    const text = stmt.getText().trim()
+    return !(text.startsWith('/*') || text.startsWith('//') || text.length === 0)
+  })
 }

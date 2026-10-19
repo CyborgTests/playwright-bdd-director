@@ -3,9 +3,9 @@ import { CallExpression, SyntaxKind } from 'ts-morph'
 import { PATTERNS } from '../constants/test-files'
 import { parseIDAndTitle } from '../utils/helpers'
 import {
-  findDescribeCall,
+  findOutermostDescribeCalls,
   findStepCalls,
-  findTestCalls,
+  findTestCallsDeep,
   getSharedProject,
   getStringLiteralValue
 } from '../utils/ts-morph-helpers'
@@ -34,8 +34,12 @@ export function parseTestFile(filePath: string): ParsedTest {
   const project = getSharedProject()
   const sourceFile = project.addSourceFileAtPath(filePath)
 
-  // 1. Find test.describe() call
-  const describeCall = findDescribeCall(sourceFile)
+  /**
+   * 1. Find outermost test.describe() calls: one MD suite may span several describes (or be
+   * wrapped in an exported function). Suite title and tags come from the first one.
+   */
+  const describeCalls = findOutermostDescribeCalls(sourceFile)
+  const describeCall = describeCalls[0]
   if (!describeCall) {
     throw new Error(`No test.describe() found in ${filePath}`)
   }
@@ -51,8 +55,8 @@ export function parseTestFile(filePath: string): ParsedTest {
   // 2.5. Extract tags from test.describe()
   const tags = extractTagsFromDescribe(describeCall)
 
-  // 3. Find all test() calls within describe
-  const testCalls = findTestCalls(describeCall)
+  // 3. Find all test() calls within describes, nested describes included
+  const testCalls = describeCalls.flatMap(findTestCallsDeep)
   const testCases: ParsedTestCase[] = []
 
   for (const testCall of testCalls) {

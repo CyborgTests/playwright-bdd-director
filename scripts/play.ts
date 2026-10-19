@@ -70,7 +70,10 @@ function runDressRehearsal(): void {
   try {
     execSync('tsx scripts/dress-rehearsal.ts', { stdio: 'pipe' })
     console.log(`${getIcon('success')}  Validation passed\n`)
-  } catch (_error) {
+  } catch (error: unknown) {
+    // Show dress output - otherwise failure gives no hint which file or step broke
+    const { stdout, stderr } = error as { stdout?: Buffer; stderr?: Buffer }
+    console.error(`${stdout ?? ''}${stderr ?? ''}`)
     console.error(`${getIcon('error')}  Dress rehearsal failed. Fix errors before running tests.`)
     process.exit(1)
   }
