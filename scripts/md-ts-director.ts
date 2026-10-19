@@ -9,7 +9,7 @@ import { clearMDCache } from '@/framework/core/md-parser'
 import { parseTestFile } from '@/framework/core/ts-parser'
 import { autoFixTestFile, isEmptyAutoTest } from '@/framework/generation/auto-fixer'
 import { archiveOrphanedTests } from '@/framework/generation/test-archiver'
-import { generateAutoTestFile, generateCyborgTestFile } from '@/framework/generation/test-generator'
+import { generateCyborgTestFile } from '@/framework/generation/test-generator'
 import {
   collectValidationMetrics,
   type DirectorMetrics,
@@ -20,7 +20,6 @@ import {
   getErrorMessage,
   getMarkdownBaseName,
   getTestFileBaseName,
-  hasAutomatedTestFile,
   isMatchingTestFile
 } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
@@ -132,7 +131,12 @@ function main() {
 /**
  * Phase 1: Auto-fix MD formatting
  */
-function fixMarkdownFormatting(): { timeMs: number; count: number; manual: number; fixedFiles: string[] } {
+function fixMarkdownFormatting(): {
+  timeMs: number
+  count: number
+  manual: number
+  fixedFiles: string[]
+} {
   const startTime = Date.now()
   const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/**/*.md`)
   let fixed = 0
@@ -234,14 +238,22 @@ function archiveOrphanedTestFiles(validation: ValidatorResult): {
 /**
  * Phase 5: Auto-fix manual test files
  */
-function autoFixCyborgTestFiles(validation: ValidatorResult): { timeMs: number; cyborg: number; fixedFiles: string[] } {
+function autoFixCyborgTestFiles(validation: ValidatorResult): {
+  timeMs: number
+  cyborg: number
+  fixedFiles: string[]
+} {
   return processTestFiles(validation, 'CYBORG', false)
 }
 
 /**
  * Phase 6: Auto-fix empty automated test files
  */
-function autoFixEmptyAutoTestFiles(validation: ValidatorResult): { timeMs: number; auto: number; fixedFiles: string[] } {
+function autoFixEmptyAutoTestFiles(validation: ValidatorResult): {
+  timeMs: number
+  auto: number
+  fixedFiles: string[]
+} {
   return processTestFiles(validation, 'AUTO', true)
 }
 

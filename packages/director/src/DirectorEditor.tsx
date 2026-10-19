@@ -20,8 +20,8 @@ import { CodeMirrorWrapper } from '@web/components/codeMirrorWrapper'
 import { Toolbar } from '@web/components/toolbar'
 import { ToolbarButton } from '@web/components/toolbarButton'
 import React from 'react'
-import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
+import ReactMarkdown from 'react-markdown'
 
 import type { TestFile } from './DirectorModel'
 
@@ -37,7 +37,11 @@ function buildMarkdownComponents(content: string): Components {
     (tag: keyof typeof HEADING_INDENT, bold = false): Components['h2'] =>
     ({ children, ...props }) => {
       headingIndentRef.current = HEADING_INDENT[tag] ?? 0
-      return React.createElement(tag, props, bold ? React.createElement('strong', null, children) : children)
+      return React.createElement(
+        tag,
+        props,
+        bold ? React.createElement('strong', null, children) : children
+      )
     }
 
   void content
@@ -46,11 +50,19 @@ function buildMarkdownComponents(content: string): Components {
     h3: makeHeading('h3', true),
     h4: makeHeading('h4', true),
     ul: ({ children, ...props }) => {
-      return <ul {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>{children}</ul>
+      return (
+        <ul {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>
+          {children}
+        </ul>
+      )
     },
     ol: ({ children, ...props }) => {
-      return <ol {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>{children}</ol>
-    },
+      return (
+        <ol {...props} style={{ paddingLeft: LIST_BASE_INDENT + headingIndentRef.current }}>
+          {children}
+        </ol>
+      )
+    }
   }
 }
 
@@ -59,13 +71,13 @@ export interface DirectorEditorProps {
   onContentChange: (content: string) => void
 }
 
-export const DirectorEditor: React.FC<DirectorEditorProps> = ({
-  file,
-  onContentChange
-}) => {
+export const DirectorEditor: React.FC<DirectorEditorProps> = ({ file, onContentChange }) => {
   const [mode, setMode] = React.useState<EditorMode>('editor')
   const [editedContent, setEditedContent] = React.useState<string>(file?.content || '')
-  const markdownComponents = React.useMemo(() => buildMarkdownComponents(editedContent), [editedContent])
+  const markdownComponents = React.useMemo(
+    () => buildMarkdownComponents(editedContent),
+    [editedContent]
+  )
 
   React.useEffect(() => {
     setEditedContent(file?.content || '')
@@ -111,7 +123,6 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({
             onClick={() => setMode('preview')}
           />
         </div>
-
       </Toolbar>
 
       <div className="director-editor-content">

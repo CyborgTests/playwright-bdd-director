@@ -3,13 +3,10 @@ import { execSync } from 'child_process'
 import { glob } from 'glob'
 import path from 'path'
 
-import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 import { CONFIG } from '@/framework/config'
+import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 import { generateAutoTestFile } from '@/framework/generation/test-generator'
-import {
-  getErrorMessage,
-  getMarkdownBaseName
-} from '@/framework/utils/helpers'
+import { getErrorMessage, getMarkdownBaseName } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
 try {

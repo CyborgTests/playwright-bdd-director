@@ -1,6 +1,5 @@
 import path from 'path'
 
-import { AUTOMATED_KINDS } from '../constants/test-files'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
 import { getTestFileBaseName, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
 import { ParsedMD } from './md-parser'

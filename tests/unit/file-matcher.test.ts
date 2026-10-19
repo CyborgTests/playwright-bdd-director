@@ -70,7 +70,6 @@ describe('matchFiles', () => {
       expect(result.isCyborgWithTestStep).toBe(false) // No test.step in cyborg test
     })
 
-    
     it('should validate .api. test file as auto type', () => {
       const md = createMD()
       const ts = createTS()

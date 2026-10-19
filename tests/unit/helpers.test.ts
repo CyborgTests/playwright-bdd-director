@@ -228,21 +228,21 @@ describe('matchIDWithSuffix', () => {
 })
 
 describe('isMatchingTestFile', () => {
-  describe('MANUAL tests', () => {
-    it('should match MANUAL test file', () => {
-      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'MANUAL')).toBe(true)
+  describe('CYBORG tests', () => {
+    it('should match CYBORG test file', () => {
+      expect(isMatchingTestFile('tests/todo.CYBORG.test.ts', 'todo', 'CYBORG')).toBe(true)
     })
 
-    it('should match MANUAL test file with path', () => {
-      expect(isMatchingTestFile('tests/auth/login.MANUAL.test.ts', 'login', 'MANUAL')).toBe(true)
+    it('should match CYBORG test file with path', () => {
+      expect(isMatchingTestFile('tests/auth/login.CYBORG.test.ts', 'login', 'CYBORG')).toBe(true)
     })
 
     it('should not match different base name', () => {
-      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'login', 'MANUAL')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.CYBORG.test.ts', 'login', 'CYBORG')).toBe(false)
     })
 
-    it('should not match AUTO test when looking for MANUAL', () => {
-      expect(isMatchingTestFile('tests/todo.AUTO.test.ts', 'todo', 'MANUAL')).toBe(false)
+    it('should not match AUTO test when looking for CYBORG', () => {
+      expect(isMatchingTestFile('tests/todo.AUTO.test.ts', 'todo', 'CYBORG')).toBe(false)
     })
   })
 
@@ -251,40 +251,40 @@ describe('isMatchingTestFile', () => {
       expect(isMatchingTestFile('tests/todo.AUTO.test.ts', 'todo', 'AUTO')).toBe(true)
     })
 
-    it('should not match MANUAL test when looking for AUTO', () => {
-      expect(isMatchingTestFile('tests/todo.MANUAL.test.ts', 'todo', 'AUTO')).toBe(false)
+    it('should not match CYBORG test when looking for AUTO', () => {
+      expect(isMatchingTestFile('tests/todo.CYBORG.test.ts', 'todo', 'AUTO')).toBe(false)
     })
   })
 
   describe('invalid formats', () => {
     it('should not match file without .test', () => {
-      expect(isMatchingTestFile('tests/todo.MANUAL.ts', 'todo', 'MANUAL')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.CYBORG.ts', 'todo', 'CYBORG')).toBe(false)
     })
 
     it('should not match file without .ts', () => {
-      expect(isMatchingTestFile('tests/todo.MANUAL.test.js', 'todo', 'MANUAL')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.CYBORG.test.js', 'todo', 'CYBORG')).toBe(false)
     })
 
     it('should not match file with wrong structure', () => {
-      expect(isMatchingTestFile('tests/todo.ts', 'todo', 'MANUAL')).toBe(false)
+      expect(isMatchingTestFile('tests/todo.ts', 'todo', 'CYBORG')).toBe(false)
     })
   })
 
   describe('edge cases', () => {
     it('should handle complex base names', () => {
       expect(
-        isMatchingTestFile('tests/user-auth-flow.MANUAL.test.ts', 'user-auth-flow', 'MANUAL')
+        isMatchingTestFile('tests/user-auth-flow.CYBORG.test.ts', 'user-auth-flow', 'CYBORG')
       ).toBe(true)
     })
 
     it('should handle nested paths', () => {
-      expect(isMatchingTestFile('tests/auth/login/main.MANUAL.test.ts', 'main', 'MANUAL')).toBe(
+      expect(isMatchingTestFile('tests/auth/login/main.CYBORG.test.ts', 'main', 'CYBORG')).toBe(
         true
       )
     })
 
     it('should be case-sensitive for base name', () => {
-      expect(isMatchingTestFile('tests/Todo.MANUAL.test.ts', 'todo', 'MANUAL')).toBe(false)
+      expect(isMatchingTestFile('tests/Todo.CYBORG.test.ts', 'todo', 'CYBORG')).toBe(false)
     })
   })
 })

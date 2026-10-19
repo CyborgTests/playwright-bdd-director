@@ -213,10 +213,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             <button className="button" onClick={() => setShowNewFileDialog(false)}>
               Cancel
             </button>
-            <button
-              className="button success"
-              onClick={handleConfirmNewFile}
-            >
+            <button className="button success" onClick={handleConfirmNewFile}>
               Create
             </button>
           </div>
@@ -253,10 +250,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             >
               Cancel
             </button>
-            <button
-              className="button danger"
-              onClick={handleConfirmDelete}
-            >
+            <button className="button danger" onClick={handleConfirmDelete}>
               Delete
             </button>
           </div>

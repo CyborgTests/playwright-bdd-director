@@ -154,9 +154,8 @@ function parseArgs(): PlayConfig | null {
     'ui',
     'e2e'
   ]
-  const providedTypes = args.filter(
-    (arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' =>
-      validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
+  const providedTypes = args.filter((arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' =>
+    validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
   )
 
   // Validate argument order: all test types must come before suite names

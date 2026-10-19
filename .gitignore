@@ -41,3 +41,21 @@ yarn-error.log*
 
 # Runtime files
 .director-port
+
+# AI specification - local only, never committed
+AGENTS.md
+CLAUDE.md
+.agents/
+.claude/
+.codex/
+.cursor/
+.devin/
+.mcp.json
+.playwright-mcp/
+playwright-mcp.config.json
+scripts/hooks/
+scripts/codex-preflight.js
+scripts/ensure-skills-link.js
+scripts/mcp-playwright.js
+scripts/spec-drift-audit.js
+tests/unit/ai-hooks.test.ts

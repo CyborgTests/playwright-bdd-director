@@ -70,7 +70,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
       await createFile(fullName, '# New Test\n\n')
       addOutputEntry('success', `Created: ${fullName}`)
       // Refresh file list without reload
-      const updatedFiles = await getFiles() as TestFile[]
+      const updatedFiles = (await getFiles()) as TestFile[]
       onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to create ${fullName}: ${e}`)
@@ -87,7 +87,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
         setSelectedFile(null)
       }
       // Refresh file list without reload
-      const updatedFiles = await getFiles() as TestFile[]
+      const updatedFiles = (await getFiles()) as TestFile[]
       onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to delete ${file.name}: ${e}`)
@@ -96,7 +96,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
 
   // Handle stage - run real npm run stage via WebSocket
   const handleStage = async () => {
-    const mdFiles = files.filter(f => f.name.endsWith('.md'))
+    const mdFiles = files.filter((f) => f.name.endsWith('.md'))
     if (mdFiles.length === 0) {
       addOutputEntry('error', 'No Markdown files to stage')
       return
@@ -110,8 +110,8 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
       const result = await runStage()
 
       // Add output lines from stage command
-      const lines = result.output.split('\n').filter(l => l.trim())
-      lines.forEach(line => {
+      const lines = result.output.split('\n').filter((l) => l.trim())
+      lines.forEach((line) => {
         if (line.includes('error') || line.includes('Error')) {
           addOutputEntry('error', line)
         } else if (line.includes('success') || line.includes('✅') || line.includes('fixed')) {
@@ -130,11 +130,11 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
 
       // Refresh files after stage (may have generated new test files)
       const { getFiles } = await import('./wsClient')
-      const updatedFiles = await getFiles() as TestFile[]
+      const updatedFiles = (await getFiles()) as TestFile[]
       onFilesRefresh?.(updatedFiles)
 
       // Notify all files were staged
-      mdFiles.forEach(file => onStage(file))
+      mdFiles.forEach((file) => onStage(file))
     } catch (e) {
       addOutputEntry('error', `Stage failed: ${e}`)
     }
@@ -196,12 +196,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
                 onClear={handleClearOutput}
               />
             }
-            main={
-              <DirectorEditor
-                file={selectedFile}
-                onContentChange={handleContentChange}
-              />
-            }
+            main={<DirectorEditor file={selectedFile} onContentChange={handleContentChange} />}
           />
         }
       />

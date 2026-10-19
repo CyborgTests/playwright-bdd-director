@@ -12,15 +12,10 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": ["node", "@playwright/test"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "tests/manual/auth.manual.test.ts.backup",
-    "tests/automated/api/auth.api.test.ts.backup"
-  ],
-  "exclude": ["node_modules", "dist"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist", "packages"]
 }
