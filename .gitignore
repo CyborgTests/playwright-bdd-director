@@ -42,20 +42,8 @@ yarn-error.log*
 # Runtime files
 .director-port
 
-# AI specification - local only, never committed
-AGENTS.md
-CLAUDE.md
-.agents/
-.claude/
-.codex/
-.cursor/
-.devin/
-.mcp.json
+# AI specification is committed; these parts stay local
+.claude/skills
+.claude/settings.local.json
+CLAUDE.local.md
 .playwright-mcp/
-playwright-mcp.config.json
-scripts/hooks/
-scripts/codex-preflight.js
-scripts/ensure-skills-link.js
-scripts/mcp-playwright.js
-scripts/spec-drift-audit.js
-tests/unit/ai-hooks.test.ts

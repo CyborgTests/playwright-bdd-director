@@ -1,3 +1,5 @@
+import type { TestFile } from './DirectorModel'
+
 let ws: WebSocket | null = null
 let messageId = 0
 const pendingRequests = new Map<
@@ -57,8 +59,8 @@ function sendRequest(type: string, data?: unknown, timeoutMs = 5000): Promise<un
   })
 }
 
-export async function getFiles() {
-  return sendRequest('GET_FILES')
+export async function getFiles(): Promise<TestFile[]> {
+  return (await sendRequest('GET_FILES')) as TestFile[]
 }
 
 export async function createFile(name: string, content: string) {

@@ -50,6 +50,7 @@ export default tseslint.config(
       'packages/playwright/**',
       'packages/playwright-core/**',
       'packages/protocol/**',
+      'packages/recorder/**',
       'packages/trace/**',
       'packages/trace-viewer/**',
       'packages/web/**',

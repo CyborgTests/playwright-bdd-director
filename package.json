@@ -20,7 +20,7 @@
     "lint:tests": "eslint tests",
     "lint:fix": "eslint --fix .",
     "lint:fix:tests": "eslint --fix tests",
-    "postinstall": "node scripts/patch-playwright.js",
+    "postinstall": "node scripts/patch-playwright.js && node scripts/ensure-skills-link.js --soft",
     "build": "cd packages/director && npm run build && cd ../trace-viewer && npm run build && cd ../.. && npm run postinstall"
   },
   "keywords": [
@@ -48,6 +48,7 @@
     "@faker-js/faker": "^10.4.0",
     "@playwright/mcp": "^0.0.83",
     "@playwright/test": "1.60.0",
+    "@types/codemirror": "^5.60.18",
     "@types/node": "^25.6.2",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",

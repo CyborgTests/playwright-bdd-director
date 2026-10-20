@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(**)",
+      "Exec(npm run)",
+      "Exec(npx playwright)",
+      "Exec(npx vitest)",
+      "Exec(npx eslint)",
+      "Exec(npx prettier)",
+      "Exec(npx tsc)",
+      "Exec(node scripts/hooks/dispatch.js)",
+      "Exec(node scripts/spec-drift-audit.js)",
+      "Exec(ls)",
+      "Exec(grep)",
+      "Exec(find)",
+      "Exec(git status)",
+      "Exec(git diff)",
+      "Exec(git log)",
+      "Fetch(domain:playwright.dev)",
+      "Fetch(domain:github.com)"
+    ],
+    "deny": ["Write(.env)", "Write(.env.*)", "Write(node_modules/**)", "Exec(sudo)"]
+  },
+  "read_config_from": {
+    "cursor": true,
+    "windsurf": true,
+    "claude": true
+  }
+}

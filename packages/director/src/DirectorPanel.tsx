@@ -70,7 +70,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
       await createFile(fullName, '# New Test\n\n')
       addOutputEntry('success', `Created: ${fullName}`)
       // Refresh file list without reload
-      const updatedFiles = (await getFiles()) as TestFile[]
+      const updatedFiles = await getFiles()
       onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to create ${fullName}: ${e}`)
@@ -87,7 +87,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
         setSelectedFile(null)
       }
       // Refresh file list without reload
-      const updatedFiles = (await getFiles()) as TestFile[]
+      const updatedFiles = await getFiles()
       onFilesRefresh?.(updatedFiles)
     } catch (e) {
       addOutputEntry('error', `Failed to delete ${file.name}: ${e}`)
@@ -130,7 +130,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
 
       // Refresh files after stage (may have generated new test files)
       const { getFiles } = await import('./wsClient')
-      const updatedFiles = (await getFiles()) as TestFile[]
+      const updatedFiles = await getFiles()
       onFilesRefresh?.(updatedFiles)
 
       // Notify all files were staged

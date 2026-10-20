@@ -1,0 +1,21 @@
+---
+description: Core instructions and rules pointer for Cursor AI working on Playwright BDD Director.
+globs: '**/*'
+alwaysApply: true
+---
+
+# Cursor Pointer
+
+Follow the canonical specification files:
+
+1. **Core context**: [AGENTS.md](../../AGENTS.md) — repo layers, commands, boundaries, Definition of Done.
+2. **Rules** — read the ones whose `paths` match the files you touch:
+   - [ai-spec-architecture.md](../../.claude/rules/ai-spec-architecture.md) — AI spec components, budgets, placement
+   - [ai-spec-formats.md](../../.claude/rules/ai-spec-formats.md) — rule / skill / subagent / hook formats
+   - [typescript.md](../../.claude/rules/typescript.md) — style, types, naming, comments, annotations
+   - [playwright-tests.md](../../.claude/rules/playwright-tests.md) — test layer: POM, fixtures, assertions, anti-patterns
+   - [api-testing.md](../../.claude/rules/api-testing.md) — API clients, APIExpect, schemas
+   - [md-specs.md](../../.claude/rules/md-specs.md) — Markdown suite format, IDs, MD ↔ TS sync
+   - [framework-code.md](../../.claude/rules/framework-code.md) — framework, unit tests, Director UI, Playwright forks
+3. **Procedures**: [.agents/skills/](../../.agents/skills/) — run [senior-aqa-reviewer](../../.agents/skills/senior-aqa-reviewer/SKILL.md) before handing off test code.
+4. **Guards**: before editing a file or running a risky command, run `node scripts/codex-preflight.js edit <path>` / `bash "<command>"` (exit 2 = abort, 3 = ask the user).

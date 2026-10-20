@@ -1,0 +1,11 @@
+# Forked Playwright packages keep upstream formatting (same list as ESLint ignores)
+packages/injected/
+packages/isomorphic/
+packages/playwright/
+packages/playwright-core/
+packages/protocol/
+packages/recorder/
+packages/trace/
+packages/trace-viewer/
+packages/web/
+packages/*/dist/

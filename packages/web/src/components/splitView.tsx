@@ -42,7 +42,8 @@ export const SplitView: React.FC<SplitViewProps> = ({
   sidebar,
   main
 }) => {
-  const defaultSize = Math.max(minSidebarSize, sidebarSize) * window.devicePixelRatio
+  const defaultSize =
+    Math.max(minSidebarSize, sidebarSize ?? minSidebarSize) * window.devicePixelRatio
   const [hSize, setHSize] = useSetting<number>(
     settingName ? settingName + '.' + orientation + ':size' : undefined,
     defaultSize
@@ -98,7 +99,10 @@ export const SplitView: React.FC<SplitViewProps> = ({
     <div className={clsx('split-view', orientation, sidebarIsFirst && 'sidebar-first')} ref={ref}>
       <div className="split-view-main">{main}</div>
       {!sidebarHidden && (
-        <div style={sidebarSize !== undefined ? { flexBasis: size } : { flex: 1 }} className="split-view-sidebar">
+        <div
+          style={sidebarSize !== undefined ? { flexBasis: size } : { flex: 1 }}
+          className="split-view-sidebar"
+        >
           {sidebar}
         </div>
       )}

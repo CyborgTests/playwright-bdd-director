@@ -1,0 +1,3 @@
+[mcp_servers.playwright]
+command = "node"
+args = ["scripts/mcp-playwright.js", "--headless", "--device", "Desktop Chrome"]

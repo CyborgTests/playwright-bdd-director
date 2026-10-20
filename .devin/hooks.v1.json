@@ -1,0 +1,22 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "edit|write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/dispatch.js edit"
+        }
+      ]
+    },
+    {
+      "matcher": "exec",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node scripts/hooks/dispatch.js bash"
+        }
+      ]
+    }
+  ]
+}

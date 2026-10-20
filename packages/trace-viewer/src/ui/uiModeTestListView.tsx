@@ -142,8 +142,8 @@ export const TestListView: React.FC<{
     let selectedTest: reporterTypes.TestCase | undefined
     // @ts-ignore - Type conflict between packages/playwright and node_modules/playwright
     if (selectedTreeItem?.kind === 'test') selectedTest = selectedTreeItem.test
-    // @ts-ignore - Type conflict between packages/playwright and node_modules/playwright
     else if (selectedTreeItem?.kind === 'case' && selectedTreeItem.tests.length === 1)
+      // @ts-ignore - Type conflict between packages/playwright and node_modules/playwright
       selectedTest = selectedTreeItem.tests[0]
     onItemSelected({ treeItem: selectedTreeItem, testCase: selectedTest, testFile })
   }, [testModel, selectedTreeItem, onItemSelected])

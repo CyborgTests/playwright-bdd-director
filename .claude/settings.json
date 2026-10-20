@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run stage)",
+      "Bash(npm run dress)",
+      "Bash(npm run autogen:*)",
+      "Bash(npm run play:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npm run test:coverage)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:*)",
+      "Bash(node scripts/spec-drift-audit.js:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright show-trace:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npx tsc --noEmit:*)",
+      "Bash(node scripts/hooks/dispatch.js:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git check-ignore:*)",
+      "WebFetch(domain:playwright.dev)",
+      "WebFetch(domain:github.com)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/dispatch.js\" edit"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/dispatch.js\" bash"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/dispatch.js\" edit"
+          }
+        ]
+      }
+    ]
+  }
+}
