@@ -12,35 +12,29 @@ import { getIcon } from '@/framework/utils/icons'
  *   npx tsx scripts/play.ts cyborg         # All cyborg tests
  *   npx tsx scripts/play.ts cyborg auth    # Cyborg tests for auth suite
  *   npx tsx scripts/play.ts api ui auth    # API + UI tests for auth suite
+ *   npx tsx scripts/play.ts ui @smoke      # UI tests tagged @smoke in spec
  */
 
 interface PlayConfig {
   testTypes?: ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e')[]
   suiteNames?: string[]
+  tags?: string[] // spec tags as written: '@smoke'
   workers?: number
 }
 
 /**
- * Build grep pattern from test type and optional suite name
+ * Build grep pattern from test types, suite names and spec tags: alternatives inside a group,
+ * groups in tag order of test title (TAG.TEST/TYPE, TAG.SUITE, then spec tags)
  */
 function buildGrepPattern(config: PlayConfig): string {
-  if (!config.testTypes || config.testTypes.length === 0) {
-    if (config.suiteNames && config.suiteNames.length > 0) {
-      const suiteTags = config.suiteNames.map((s) => `@${s}`).join('|')
-      return `"${suiteTags}"`
-    }
-    // Run all tests - no grep filter
-    return ''
-  }
+  const groups = [config.testTypes, config.suiteNames, config.tags]
+    .filter((names): names is string[] => !!names && names.length > 0)
+    .map((names) => names.map((name) => (name.startsWith('@') ? name : `@${name}`)).join('|'))
 
-  const typeTags = config.testTypes.map((t) => `@${t}`).join('|')
-
-  if (config.suiteNames && config.suiteNames.length > 0) {
-    const suiteTags = config.suiteNames.map((s) => `@${s}`).join('|')
-    return `"(${typeTags}).*(${suiteTags})"`
-  }
-
-  return `"${typeTags}"`
+  // Run all tests - no grep filter
+  if (groups.length === 0) return ''
+  if (groups.length === 1) return `"${groups[0]}"`
+  return `"${groups.map((group) => `(${group})`).join('.*')}"`
 }
 
 /**
@@ -102,9 +96,10 @@ function showUsage(): void {
 ${getIcon('info')}  Play CLI - Run Playwright tests with tag-based filtering
 
 Usage:
-  npm run play <types> <suites>
+  npm run play <types> <suites> <@tags>
 
   Arguments must be in order: test types first, then suite names
+  Spec tags (Tags: line in MD, @tag in Gherkin) start with @ and may go anywhere
   Example: npm run play api ui auth todo
   Example: npm run play cyborg auth
 
@@ -126,6 +121,8 @@ Examples:
   npm run play cyborg auto auth     # Cyborg + auto auth tests
   npm run play auth                 # All auth tests (any type)
   npm run play auth todo            # All auth + todo tests
+  npm run play @smoke               # All tests tagged @smoke in spec
+  npm run play ui auth @smoke       # UI auth tests tagged @smoke
 
 Note:
   - Dress rehearsal (validation) runs automatically before tests
@@ -138,13 +135,23 @@ Note:
  * Parse CLI arguments
  */
 function parseArgs(): PlayConfig | null {
-  const args = process.argv.slice(2)
+  const allArgs = process.argv.slice(2)
 
-  if (args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
+  if (allArgs[0] === 'help' || allArgs[0] === '--help' || allArgs[0] === '-h') {
     showUsage()
     return null
   }
 
+  // Spec tags may go anywhere - they narrow selected types / suites further
+  const tags = allArgs.filter((arg) => arg.startsWith('@'))
+  const config = parseTypesAndSuites(allArgs.filter((arg) => !arg.startsWith('@')))
+  return tags.length > 0 ? { ...config, tags } : config
+}
+
+/**
+ * Test types and suite names (types first)
+ */
+function parseTypesAndSuites(args: string[]): PlayConfig {
   // If no args, run all tests
   if (args.length === 0) {
     return {}

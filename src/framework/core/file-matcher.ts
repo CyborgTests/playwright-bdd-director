@@ -82,10 +82,11 @@ function validateIdField(mdId: string | null, tsId: string | null, context: stri
 
 /**
  * Validate that test file has required tags based on filename
- * Checks for TEST tag (auto/cyborg) and SUITE tag
+ * Checks for TEST tag (auto/cyborg) and SUITE tag constants, and spec tags ("@smoke" strings)
  */
-function validateTags(testFile: string, tags: string[]): string[] {
-  const errors: string[] = []
+function validateTags(testFile: string, allTags: string[], specTags: string[]): string[] {
+  const { constants: tags, specTags: tsSpecTags } = splitTags(allTags)
+  const errors: string[] = diffSpecTags(tsSpecTags, specTags)
   const fileName = path.basename(testFile)
   const fileType = getFileType(fileName)
 
@@ -122,6 +123,29 @@ function validateTags(testFile: string, tags: string[]): string[] {
   }
 
   return errors
+}
+
+/**
+ * Tags as read by ts-parser: string literals ("@smoke") come from the spec, the rest are
+ * TAG.* constants of the framework
+ */
+export function splitTags(tags: string[]): { constants: string[]; specTags: string[] } {
+  return {
+    constants: tags.filter((tag) => !tag.startsWith('@')),
+    specTags: tags.filter((tag) => tag.startsWith('@'))
+  }
+}
+
+/**
+ * Spec tags of a test / describe must be exactly the spec ones (order does not matter)
+ */
+function diffSpecTags(actual: string[], expected: string[]): string[] {
+  return [
+    ...expected.filter((tag) => !actual.includes(tag)).map((tag) => `• Missing tag '${tag}'`),
+    ...actual
+      .filter((tag) => !expected.includes(tag))
+      .map((tag) => `• Unexpected tag '${tag}' (not in spec)`)
+  ]
 }
 
 /**
@@ -228,6 +252,13 @@ function validateTestCases(
       problems.push(`• Title: "${typeScriptTestCase.ttl}" → "${markdownTestCase.ttl}"`)
     }
 
+    // Hook implementation takes no tags - it runs with any selected test of the suite
+    problems.push(
+      ...(typeScriptTestCase.isHook
+        ? []
+        : diffSpecTags(splitTags(typeScriptTestCase.tags).specTags, markdownTestCase.tags))
+    )
+
     // Check step count
     if (markdownTestCase.stepTtls.length !== typeScriptTestCase.stepTtls.length) {
       const diff = typeScriptTestCase.stepTtls.length - markdownTestCase.stepTtls.length
@@ -302,7 +333,7 @@ export function matchFiles(
   const errors: string[] = []
 
   // 1. Validate tags
-  const tagErrors = validateTags(testFile, typeScriptData.tags)
+  const tagErrors = validateTags(testFile, typeScriptData.tags, markdownData.suiteTags)
   if (tagErrors.length > 0) {
     errors.push(`Tag Problems:\n  ${tagErrors.join('\n  ')}`)
   }

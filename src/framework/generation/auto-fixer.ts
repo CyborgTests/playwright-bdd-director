@@ -1,6 +1,7 @@
 import path from 'path'
 import { Block, CallExpression, Node, Statement, SyntaxKind } from 'ts-morph'
 
+import { splitTags } from '../core/file-matcher'
 import { ParsedMD } from '../core/md-parser'
 import { isBackgroundTitle, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
 import {
@@ -8,9 +9,10 @@ import {
   findStepCalls,
   findTestCalls,
   getSharedProject,
-  getStringLiteralValue
+  getStringLiteralValue,
+  isHookCall
 } from '../utils/ts-morph-helpers'
-import { buildTestCaseTtl } from './test-generator'
+import { buildTagDetails, buildTestCaseTtl } from './test-generator'
 import { alignByTitle, type AlignOp } from './title-aligner'
 
 export interface AutoFixResult {
@@ -59,8 +61,9 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
   const stepStyle: StepStyle =
     fileType === 'CYBORG' && hasTestStepCalls(describeCall) ? 'cyborg-test-step' : 'default'
 
-  // 2. Fix suite ttl
+  // 2. Fix suite ttl and spec tags
   fixSuiteTtl(describeCall, mdData, report.changes)
+  fixSpecTags(describeCall, mdData.suiteTags, 'Test suite', report.changes)
 
   // 3. Fix test cases (and their steps, unless steps are hand-structured)
   fixTestCases(describeCall, mdData, { fileType, stepStyle }, report)
@@ -171,7 +174,8 @@ function fixTestCases(
 
     if (op.kind === 'insert') {
       const ttl = newTtl(mdTestCase.id, mdTestCase.ttl)
-      if (inserter.insert(op.after, buildTestCaseCode(ttl, mdTestCase.stepTtls, options))) {
+      const code = buildTestCaseCode(ttl, mdTestCase.stepTtls, mdTestCase.tags, options)
+      if (inserter.insert(op.after, code)) {
         report.changes.push(`Test case #${op.expected + 1}: Added "${ttl}" (skeleton)`)
       } else {
         report.warnings.push(
@@ -189,6 +193,9 @@ function fixTestCases(
       const newTtl = preserveSuffix(currentTtl, expectedTtl)
       testCall.getArguments()[0]?.replaceWithText(`'${escapeString(newTtl)}'`)
       report.changes.push(`Test case #${op.expected + 1} title: "${currentTtl}" → "${newTtl}"`)
+    }
+    if (!isHookCall(testCall)) {
+      fixSpecTags(testCall, mdTestCase.tags, `Test case #${op.expected + 1}`, report.changes)
     }
 
     if (options.stepStyle === 'default') {
@@ -286,7 +293,12 @@ function fixTestSteps(
   }
 }
 
-function buildTestCaseCode(ttl: string, steps: string[], options: FixOptions): string {
+function buildTestCaseCode(
+  ttl: string,
+  steps: string[],
+  tags: string[],
+  options: FixOptions
+): string {
   const isCyborg = options.fileType === 'CYBORG'
   const stepCode = steps.map((step) =>
     !isCyborg
@@ -296,8 +308,57 @@ function buildTestCaseCode(ttl: string, steps: string[], options: FixOptions): s
         : buildManualStepCode(step)
   )
   const params = isCyborg ? '{ manualStep }' : ''
-  const testFn = isBackgroundTitle(parseIDAndTitle(ttl).ttl) ? 'test.beforeEach' : 'test'
-  return `${testFn}('${escapeString(ttl)}', async (${params}) => {\n${stepCode.join('\n')}\n})`
+  const isBackground = isBackgroundTitle(parseIDAndTitle(ttl).ttl)
+  const testFn = isBackground ? 'test.beforeEach' : 'test'
+  const details = !isBackground && tags.length > 0 ? `${buildTagDetails(tags)}, ` : ''
+  return `${testFn}('${escapeString(ttl)}', ${details}async (${params}) => {\n${stepCode.join('\n')}\n})`
+}
+
+/**
+ * Sync spec tags ('@smoke' strings) in details of describe / test call with the spec, keeping
+ * TAG.* constants and other details. Adds the details object or `tag` property when missing,
+ * removes an emptied one. Order-only differences are left as is.
+ */
+function fixSpecTags(
+  call: CallExpression,
+  expected: string[],
+  label: string,
+  changes: string[]
+): void {
+  const args = call.getArguments()
+  const details = args.length === 3 ? args[1].asKind(SyntaxKind.ObjectLiteralExpression) : undefined
+  if (args.length === 3 && !details) return // details passed as variable - dress reports it
+
+  const tagProperty = details?.getProperty('tag')?.asKind(SyntaxKind.PropertyAssignment)
+  const initializer = tagProperty?.getInitializer()
+  const elements = initializer
+    ? (initializer.asKind(SyntaxKind.ArrayLiteralExpression)?.getElements() ?? [initializer])
+    : []
+  const values = elements.map(
+    (element) => element.asKind(SyntaxKind.StringLiteral)?.getLiteralValue() ?? element.getText()
+  )
+  const current = splitTags(values).specTags
+  const isSame =
+    current.length === expected.length && expected.every((tag) => current.includes(tag))
+  if (isSame) return
+
+  const tagElements = [
+    ...elements.filter((_, i) => !values[i].startsWith('@')).map((element) => element.getText()),
+    ...expected.map((tag) => `'${tag}'`)
+  ]
+  const tagArray = `[${tagElements.join(', ')}]`
+
+  if (tagProperty && tagElements.length === 0) {
+    tagProperty.remove()
+    if (details?.getProperties().length === 0) call.removeArgument(details)
+  } else if (tagProperty) {
+    tagProperty.setInitializer(tagArray)
+  } else if (details) {
+    details.addPropertyAssignment({ name: 'tag', initializer: tagArray })
+  } else {
+    call.insertArgument(1, `{ tag: ${tagArray} }`)
+  }
+  changes.push(`${label} tags: [${current.join(', ')}] → [${expected.join(', ')}]`)
 }
 
 function buildTestStepCode(step: string): string {

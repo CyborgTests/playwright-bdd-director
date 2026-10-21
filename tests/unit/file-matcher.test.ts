@@ -4,19 +4,26 @@ import { matchFiles } from '@/framework/core/file-matcher'
 import type { ParsedMD } from '@/framework/core/md-parser'
 import type { ParsedTest } from '@/framework/core/ts-parser'
 
-// Coverage-only fields of ParsedTestCase - matching ignores them
-const COVERAGE_DEFAULTS = { stepHasManual: [], modifier: null, hasImplementation: true }
+// ParsedTestCase fields irrelevant to these cases (coverage info, plain test - not a hook)
+const COVERAGE_DEFAULTS = {
+  stepHasManual: [],
+  modifier: null,
+  hasImplementation: true,
+  isHook: false
+}
 
 // Test data factories
 function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
   return {
     suiteID: 'ts01',
     suiteTtl: 'Test Suite',
+    suiteTags: [],
     testCases: [
       {
         id: 'tc-01',
         ttl: 'Test case 1',
-        stepTtls: ['[step-01] Step 1', '[step-02] Step 2']
+        stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
+        tags: []
       }
     ],
     ...overrides
@@ -34,7 +41,8 @@ function createTS(overrides?: Partial<ParsedTest>): ParsedTest {
         ttl: 'Test case 1',
         stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
         stepCallKinds: ['test.step', 'test.step'],
-        ...COVERAGE_DEFAULTS
+        ...COVERAGE_DEFAULTS,
+        tags: []
       }
     ],
     ...overrides
@@ -63,7 +71,8 @@ describe('matchFiles', () => {
             ttl: 'Test case 1',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
             stepCallKinds: ['manualStep', 'manualStep'],
-            ...COVERAGE_DEFAULTS // No test.step
+            ...COVERAGE_DEFAULTS,
+            tags: [] // No test.step
           }
         ]
       })
@@ -217,15 +226,36 @@ describe('matchFiles', () => {
     it('should detect extra test cases in TS', () => {
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [] }
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [] }
         ]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS },
-          { id: 'tc-03', ttl: 'Test 3', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-01',
+            ttl: 'Test 1',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          },
+          {
+            id: 'tc-02',
+            ttl: 'Test 2',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          },
+          {
+            id: 'tc-03',
+            ttl: 'Test 3',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -239,13 +269,20 @@ describe('matchFiles', () => {
     it('should detect missing test cases in TS', () => {
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [] }
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [] }
         ]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-01',
+            ttl: 'Test 1',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -258,7 +295,7 @@ describe('matchFiles', () => {
 
     it('should not validate individual test cases when count mismatches', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test 1', stepTtls: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
@@ -267,9 +304,17 @@ describe('matchFiles', () => {
             ttl: 'Wrong Title',
             stepTtls: [],
             stepCallKinds: [],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-02',
+            ttl: 'Test 2',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -288,11 +333,18 @@ describe('matchFiles', () => {
   describe('test case validation', () => {
     it('should detect test case ID mismatch', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-02', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-02',
+            ttl: 'Test',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -304,11 +356,18 @@ describe('matchFiles', () => {
 
     it('should detect test case title mismatch', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Correct Title', stepTtls: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Correct Title', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Wrong Title', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-01',
+            ttl: 'Wrong Title',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -322,11 +381,18 @@ describe('matchFiles', () => {
 
     it('should validate test case ID with suffix (tc-01 → tc-01-AUTO)', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01-AUTO', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-01-AUTO',
+            ttl: 'Test',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -337,7 +403,7 @@ describe('matchFiles', () => {
 
     it('should handle test cases without IDs', () => {
       const md = createMD({
-        testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [] }]
+        testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
@@ -346,7 +412,8 @@ describe('matchFiles', () => {
             ttl: 'Test without ID',
             stepTtls: [],
             stepCallKinds: [],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -358,7 +425,7 @@ describe('matchFiles', () => {
 
     it('should handle test cases with empty IDs', () => {
       const md = createMD({
-        testCases: [{ id: '', ttl: 'Test with empty ID', stepTtls: [] }]
+        testCases: [{ id: '', ttl: 'Test with empty ID', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
@@ -367,7 +434,8 @@ describe('matchFiles', () => {
             ttl: 'Test with empty ID',
             stepTtls: [],
             stepCallKinds: [],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -386,7 +454,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['Step 1', 'Step 2']
+            stepTtls: ['Step 1', 'Step 2'],
+            tags: []
           }
         ]
       })
@@ -397,7 +466,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2', 'Step 3'],
             stepCallKinds: ['test.step', 'test.step', 'test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -415,7 +485,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['Step 1', 'Step 2', 'Step 3']
+            stepTtls: ['Step 1', 'Step 2', 'Step 3'],
+            tags: []
           }
         ]
       })
@@ -426,7 +497,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2'],
             stepCallKinds: ['test.step', 'test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -444,7 +516,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['[step-01] Step 1']
+            stepTtls: ['[step-01] Step 1'],
+            tags: []
           }
         ]
       })
@@ -455,7 +528,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['[step-02] Step 1'],
             stepCallKinds: ['test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -472,7 +546,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['[step-01] Correct Step']
+            stepTtls: ['[step-01] Correct Step'],
+            tags: []
           }
         ]
       })
@@ -483,7 +558,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['[step-01] Wrong Step'],
             stepCallKinds: ['test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -500,7 +576,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['Step without ID']
+            stepTtls: ['Step without ID'],
+            tags: []
           }
         ]
       })
@@ -511,7 +588,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['Step without ID'],
             stepCallKinds: ['test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -531,7 +609,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Correct Test',
-            stepTtls: ['Correct Step']
+            stepTtls: ['Correct Step'],
+            tags: []
           }
         ]
       })
@@ -545,7 +624,8 @@ describe('matchFiles', () => {
             ttl: 'Wrong Test',
             stepTtls: ['Wrong Step'],
             stepCallKinds: ['test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -569,7 +649,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test case',
-            stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3']
+            stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3'],
+            tags: []
           }
         ]
       })
@@ -583,7 +664,8 @@ describe('matchFiles', () => {
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
             stepCallKinds: ['manualStep', 'test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -608,7 +690,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test case',
-            stepTtls: ['[step-01] Step 1', '[step-02] Step 2']
+            stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
+            tags: []
           }
         ]
       })
@@ -622,7 +705,8 @@ describe('matchFiles', () => {
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
             stepCallKinds: ['manualStep', 'manualStep'],
-            ...COVERAGE_DEFAULTS // Only manualStep, no test.step
+            ...COVERAGE_DEFAULTS,
+            tags: [] // Only manualStep, no test.step
           }
         ]
       })
@@ -639,7 +723,8 @@ describe('matchFiles', () => {
           {
             id: 'tc-01',
             ttl: 'Test',
-            stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3']
+            stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3'],
+            tags: []
           }
         ]
       })
@@ -650,7 +735,8 @@ describe('matchFiles', () => {
             ttl: 'Test',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
             stepCallKinds: ['test.step', 'test.step'],
-            ...COVERAGE_DEFAULTS
+            ...COVERAGE_DEFAULTS,
+            tags: []
           }
         ]
       })
@@ -677,11 +763,18 @@ describe('matchFiles', () => {
 
     it('should handle test cases with empty step arrays', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+          {
+            id: 'tc-01',
+            ttl: 'Test',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS,
+            tags: []
+          }
         ]
       })
 
@@ -709,5 +802,44 @@ describe('matchFiles', () => {
       // Should still validate tags based on basename
       expect(result.valid).toBe(false) // Will fail because suite tag extraction
     })
+  })
+})
+
+describe('matchFiles - spec tags', () => {
+  const testFile = 'tests/automated/test-suite.auto.test.ts'
+
+  it('should accept spec tags in any order next to TAG constants', () => {
+    const md = createMD({ suiteTags: ['@shop', '@regression'] })
+    md.testCases[0].tags = ['@smoke']
+    const ts = createTS({ tags: ['TAG.TEST.AUTO', 'TAG.SUITE.TEST_SUITE', '@regression', '@shop'] })
+    ts.testCases[0].tags = ['@smoke']
+
+    expect(matchFiles(testFile, md, ts).errors).toEqual([])
+  })
+
+  it('should report missing and unexpected suite and test case tags', () => {
+    const md = createMD({ suiteTags: ['@shop'] })
+    md.testCases[0].tags = ['@smoke']
+    const ts = createTS({ tags: ['TAG.TEST.AUTO', 'TAG.SUITE.TEST_SUITE', '@old'] })
+    ts.testCases[0].tags = ['@flaky']
+
+    const errors = matchFiles(testFile, md, ts).errors.join('\n')
+
+    expect(errors).toContain("• Missing tag '@shop'")
+    expect(errors).toContain("• Unexpected tag '@old' (not in spec)")
+    expect(errors).toContain("• Missing tag '@smoke'")
+    expect(errors).toContain("• Unexpected tag '@flaky' (not in spec)")
+    expect(errors).not.toContain('Unexpected tags:')
+  })
+})
+
+describe('matchFiles - spec tags on hooks', () => {
+  it('should not require tags of test case implemented by a hook', () => {
+    const md = createMD()
+    md.testCases[0].tags = ['@smoke']
+    const ts = createTS()
+    ts.testCases[0] = { ...ts.testCases[0], isHook: true }
+
+    expect(matchFiles('tests/automated/test-suite.auto.test.ts', md, ts).errors).toEqual([])
   })
 })

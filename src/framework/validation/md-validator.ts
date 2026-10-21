@@ -4,7 +4,8 @@ import {
   getHeadingLevel,
   isHeading,
   MD_HEADINGS,
-  MD_HORIZONTAL_RULE
+  MD_HORIZONTAL_RULE,
+  MD_TAGS_PREFIX
 } from '@/framework/constants/markdown'
 
 import {
@@ -70,6 +71,9 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
 
     // 6. List/comment (- ...)
     if (trimmed.startsWith('- ')) continue
+
+    // 7. Tags line (placement and tag format are checked by md-parser)
+    if (trimmed.startsWith(MD_TAGS_PREFIX)) continue
 
     // Everything else is invalid
     errors.push({

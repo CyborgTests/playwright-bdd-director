@@ -60,13 +60,15 @@ describe('parseMDFile', () => {
           '[01-01-01] Open login page',
           '[01-01-02] Enter username and password',
           '[01-01-03] Click submit button'
-        ]
+        ],
+        tags: []
       })
 
       expect(result.testCases[1]).toEqual({
         id: 'TC-02',
         ttl: 'Login with invalid credentials',
-        stepTtls: ['[01-02-01] Open login page', '[01-02-02] Enter invalid credentials']
+        stepTtls: ['[01-02-01] Open login page', '[01-02-02] Enter invalid credentials'],
+        tags: []
       })
     })
 
@@ -131,13 +133,15 @@ describe('parseMDFile', () => {
       expect(result.testCases[0]).toEqual({
         id: null,
         ttl: 'Login with valid credentials',
-        stepTtls: ['Open login page', 'Enter username and password', 'Click submit button']
+        stepTtls: ['Open login page', 'Enter username and password', 'Click submit button'],
+        tags: []
       })
 
       expect(result.testCases[1]).toEqual({
         id: null,
         ttl: 'Login with invalid credentials',
-        stepTtls: ['Open login page']
+        stepTtls: ['Open login page'],
+        tags: []
       })
     })
 
@@ -447,5 +451,87 @@ Some text but no test cases
       const result = parseMDFile(filePath)
       expect(result.suiteTtl).toBe('Suite')
     })
+  })
+})
+
+describe('parseMDFile - tags', () => {
+  it('should read Tags lines under suite and test case headings', () => {
+    const filePath = createMDFile(
+      'tags.md',
+      `## Shop
+
+Tags: @shop @regression
+
+### Buy product
+
+Tags: @smoke, @JIRA-12
+- Tags inside a bullet are details, not tags
+
+#### Open product
+
+### Empty cart
+
+#### Open cart
+`
+    )
+
+    const result = parseMDFile(filePath)
+
+    expect(result.suiteTags).toEqual(['@shop', '@regression'])
+    expect(result.testCases.map((tc) => tc.tags)).toEqual([['@smoke', '@JIRA-12'], []])
+  })
+
+  it('should reject Tags line after steps', () => {
+    const filePath = createMDFile(
+      'tags-late.md',
+      `## Shop
+
+### Buy product
+
+#### Open product
+
+Tags: @smoke
+`
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('Tags line in wrong place: "Tags: @smoke"')
+  })
+
+  it('should reject tag without @', () => {
+    const filePath = createMDFile(
+      'tags-bad.md',
+      `## Shop
+
+Tags: smoke
+
+### Buy product
+
+#### Open product
+`
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('Invalid tag "smoke"')
+  })
+})
+
+describe('parseMDFile - Background tags', () => {
+  it('should reject Tags line under Background like Gherkin does', () => {
+    const filePath = createMDFile(
+      'bg-tags.md',
+      `## Shop
+
+### Background
+
+Tags: @smoke
+
+#### Open home page
+
+### Buy product
+
+#### Open product
+`
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('Background cannot have tags: "Tags: @smoke"')
   })
 })

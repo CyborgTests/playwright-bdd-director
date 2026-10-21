@@ -5,13 +5,20 @@ import { CONFIG } from '@/framework/config'
 import { MD_EXAMPLES, MD_HEADINGS, SPEC_FILE_EXTENSION } from '@/framework/constants/markdown'
 
 import {
+  buildBackgroundTagsError,
   buildFileNotFoundError,
   buildInvalidCharsError,
   buildInvalidFormatError,
   buildMissingElementError,
-  buildPathTraversalError
+  buildPathTraversalError,
+  buildTagsPlacementError
 } from '../errors/error-builders'
-import { assertUniqueTestCaseIds } from '../utils/helpers'
+import {
+  assertUniqueTestCaseIds,
+  assertValidTags,
+  isBackgroundTitle,
+  parseTagsLine
+} from '../utils/helpers'
 import { parseGherkinFile } from './gherkin-parser'
 
 // Regex constants (compiled once, reused many times)
@@ -21,11 +28,13 @@ export interface TestCase {
   id: string | null // TC-001, "" for empty brackets [], or null for no brackets
   ttl: string // User login with valid credentials
   stepTtls: string[]
+  tags: string[] // "Tags: @smoke" under ### heading (Gherkin: Rule + Scenario tags)
 }
 
 export interface ParsedMD {
   suiteID: string // "" for [], "TS01" for [TS01], or "" for no brackets
   suiteTtl: string // Authentication
+  suiteTags: string[] // "Tags: @smoke" under ## heading (Gherkin: Feature tags)
   testCases: TestCase[]
 }
 
@@ -46,6 +55,7 @@ export function clearMDCache(): void {
  * Format with IDs (in brackets):
  * ## [TS01] Suite Title
  * ### [TC01-01] Test case ttl
+ * Tags: @smoke @critical (optional, right under ## or ### heading)
  * #### Step ttl
  * Optional comment text (ignored by validator)
  *
@@ -76,11 +86,28 @@ export function parseMDFile(fileName: string): ParsedMD {
 
   let suiteID = ''
   let suiteTtl = ''
+  const suiteTags: string[] = []
   const testCases: TestCase[] = []
   let currentTestCase: TestCase | null = null
 
   for (const line of lines) {
     const trimmed = line.trim()
+
+    // Tags line belongs to the heading right above it: suite (before first case) or case (before steps)
+    const tags = parseTagsLine(trimmed)
+    if (tags) {
+      assertValidTags(tags, mdPath)
+      if (suiteTtl && !currentTestCase) {
+        suiteTags.push(...tags)
+      } else if (currentTestCase && isBackgroundTitle(currentTestCase.ttl)) {
+        throw new Error(buildBackgroundTagsError(trimmed, mdPath))
+      } else if (currentTestCase && currentTestCase.stepTtls.length === 0) {
+        currentTestCase.tags.push(...tags)
+      } else {
+        throw new Error(buildTagsPlacementError(trimmed, mdPath))
+      }
+      continue
+    }
 
     // Suite ttl: ## [TS01] Title or ## Title -> extract ID + ttl (ID is optional)
     if (trimmed.startsWith(MD_HEADINGS.SUITE.PREFIX) && !suiteTtl) {
@@ -124,7 +151,8 @@ export function parseMDFile(fileName: string): ParsedMD {
       currentTestCase = {
         id: tcMatchWithID[1].trim(), // "" for [], "TC01-01" for [TC01-01]
         ttl: tcMatchWithID[2].trim(),
-        stepTtls: []
+        stepTtls: [],
+        tags: []
       }
       continue
     } else if (tcMatchNoID && trimmed.startsWith(MD_HEADINGS.TEST_CASE.PREFIX)) {
@@ -137,7 +165,8 @@ export function parseMDFile(fileName: string): ParsedMD {
       currentTestCase = {
         id: null, // null = no brackets at all
         ttl: tcMatchNoID[1].trim(),
-        stepTtls: []
+        stepTtls: [],
+        tags: []
       }
       continue
     }
@@ -178,7 +207,7 @@ export function parseMDFile(fileName: string): ParsedMD {
 
   assertUniqueTestCaseIds(testCases, mdPath)
 
-  return { suiteID, suiteTtl, testCases }
+  return { suiteID, suiteTtl, suiteTags, testCases }
 }
 
 function resolveMDPath(fileName: string): string | null {

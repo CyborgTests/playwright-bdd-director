@@ -1,11 +1,18 @@
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
-import { type Background, type FeatureChild, IdGenerator, type Step } from '@cucumber/messages'
+import {
+  type Background,
+  type FeatureChild,
+  IdGenerator,
+  type Step,
+  type Tag
+} from '@cucumber/messages'
 import fs from 'fs'
 
 import { BACKGROUND_TTL } from '../constants/markdown'
 import { buildMissingElementError } from '../errors/error-builders'
 import {
   assertUniqueTestCaseIds,
+  assertValidTags,
   getErrorMessage,
   isBackgroundTitle,
   parseIDAndTitle
@@ -20,7 +27,8 @@ import type { ParsedMD, TestCase } from './md-parser'
  * - Background → test case "Background" (or "Background: name"), implemented by a named
  *   test.beforeEach (see isBackgroundTitle)
  * - Rule groups its scenarios only (flattened in source order)
- * - descriptions, tags, data tables and doc strings are details, ignored like MD bullet lines
+ * - tags: Feature → suite tags, Rule + Scenario → test case tags (Background has none)
+ * - descriptions, data tables and doc strings are details, ignored like MD bullet lines
  * - `[ID]` in Feature / Scenario names follows the MD convention
  */
 export function parseGherkinFile(featurePath: string): ParsedMD {
@@ -37,7 +45,7 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
   }
 
   const suite = parseIDAndTitle(feature.name.trim())
-  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath))
+  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath, []))
 
   if (testCases.every((tc) => isBackgroundTitle(tc.ttl))) {
     throw new Error(
@@ -47,7 +55,10 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
 
   assertUniqueTestCaseIds(testCases, featurePath)
 
-  return { suiteID: suite.id ?? '', suiteTtl: suite.ttl, testCases }
+  const suiteTags = toTagNames(feature.tags)
+  assertValidTags([...suiteTags, ...testCases.flatMap((tc) => tc.tags)], featurePath)
+
+  return { suiteID: suite.id ?? '', suiteTtl: suite.ttl, suiteTags, testCases }
 }
 
 function parseGherkinDocument(featurePath: string) {
@@ -65,12 +76,13 @@ function parseGherkinDocument(featurePath: string) {
   }
 }
 
-function toTestCases(child: FeatureChild, featurePath: string): TestCase[] {
+function toTestCases(child: FeatureChild, featurePath: string, ruleTags: string[]): TestCase[] {
   if (child.background) return [toBackgroundCase(child.background)]
 
   if (child.scenario) {
     const { id, ttl } = parseIDAndTitle(child.scenario.name.trim())
-    return [{ id, ttl, stepTtls: child.scenario.steps.map(toStepTtl) }]
+    const tags = [...new Set([...ruleTags, ...toTagNames(child.scenario.tags)])]
+    return [{ id, ttl, stepTtls: child.scenario.steps.map(toStepTtl), tags }]
   }
 
   if (child.rule) {
@@ -80,7 +92,8 @@ function toTestCases(child: FeatureChild, featurePath: string): TestCase[] {
           `  Fix: Move the Background to Feature level`
       )
     }
-    return child.rule.children.flatMap((ruleChild) => toTestCases(ruleChild, featurePath))
+    const tags = toTagNames(child.rule.tags)
+    return child.rule.children.flatMap((ruleChild) => toTestCases(ruleChild, featurePath, tags))
   }
 
   return []
@@ -91,8 +104,13 @@ function toBackgroundCase(background: Background): TestCase {
   return {
     id: null,
     ttl: name ? `${BACKGROUND_TTL}: ${name}` : BACKGROUND_TTL,
-    stepTtls: background.steps.map(toStepTtl)
+    stepTtls: background.steps.map(toStepTtl),
+    tags: []
   }
+}
+
+function toTagNames(tags: readonly Tag[]): string[] {
+  return tags.map((tag) => tag.name)
 }
 
 function toStepTtl(step: Step): string {

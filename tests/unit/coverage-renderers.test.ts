@@ -26,6 +26,7 @@ const CASES: CaseCoverage[] = [
     id: 'TC-01',
     ttl: 'Add <b>"item"</b> | cart',
     isBackground: false,
+    tags: [],
     cells: {
       cyborg: 'implemented',
       api: 'missing',
@@ -39,6 +40,7 @@ const CASES: CaseCoverage[] = [
     id: null,
     ttl: 'Checkout',
     isBackground: false,
+    tags: [],
     cells: {
       cyborg: 'implemented',
       api: 'disabled',

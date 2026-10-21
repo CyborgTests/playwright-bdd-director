@@ -11,19 +11,23 @@ test.describe(
       })
     })
 
-    test('Open "Signup / Login" page from header', async ({ homePage, loginPage }) => {
-      await test.step('When user clicks "Signup / Login" button in header', async () => {
-        await homePage.clickSignupLoginBtn()
-      })
+    test(
+      'Open "Signup / Login" page from header',
+      { tag: ['@smoke'] },
+      async ({ homePage, loginPage }) => {
+        await test.step('When user clicks "Signup / Login" button in header', async () => {
+          await homePage.clickSignupLoginBtn()
+        })
 
-      await test.step('Then "Login to your account" form is visible', async () => {
-        await loginPage.expectLoginFormVisible()
-      })
+        await test.step('Then "Login to your account" form is visible', async () => {
+          await loginPage.expectLoginFormVisible()
+        })
 
-      await test.step('And "New User Signup!" form is visible', async () => {
-        await loginPage.expectSignupFormVisible()
-      })
-    })
+        await test.step('And "New User Signup!" form is visible', async () => {
+          await loginPage.expectSignupFormVisible()
+        })
+      }
+    )
 
     test('Return to home page from "Signup / Login" page', async ({ homePage }) => {
       await test.step('Given user clicks "Signup / Login" button in header', async () => {

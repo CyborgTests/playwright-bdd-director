@@ -7,7 +7,7 @@ test.describe('[CYBORG] Site Navigation', { tag: [TAG.TEST.CYBORG, TAG.SUITE.NAV
     await manualStep('Given user opens the home page')
   })
 
-  test('Open "Signup / Login" page from header', async ({ manualStep }) => {
+  test('Open "Signup / Login" page from header', { tag: ['@smoke'] }, async ({ manualStep }) => {
     await manualStep('When user clicks "Signup / Login" button in header')
     await manualStep('Then "Login to your account" form is visible')
     await manualStep('And "New User Signup!" form is visible')

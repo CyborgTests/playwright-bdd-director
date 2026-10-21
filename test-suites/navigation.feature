@@ -4,6 +4,7 @@ Feature: Site Navigation
   Background:
     Given user opens the home page
 
+  @smoke
   Scenario: Open "Signup / Login" page from header
     When user clicks "Signup / Login" button in header
     Then "Login to your account" form is visible

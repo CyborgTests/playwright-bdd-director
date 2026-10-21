@@ -37,6 +37,7 @@ export interface CaseCoverage {
   id: string | null
   ttl: string
   isBackground: boolean // shown, but not counted in summary
+  tags: string[] // spec tags of suite and test case
   cells: Record<CoverageLayer, CellStatus>
   cyborgSteps: StepCount | null // steps of cyborg test without manualStep()
 }
@@ -138,6 +139,7 @@ export function buildCoverageMatrix(
         id: mdCase.id,
         ttl: mdCase.ttl,
         isBackground: isBackgroundTitle(mdCase.ttl),
+        tags: [...new Set([...parsed.suiteTags, ...mdCase.tags])],
         cells,
         cyborgSteps: cyborgCase ? countAutomatedSteps(cyborgCase) : null
       }
@@ -159,6 +161,23 @@ export function buildCoverageMatrix(
     summary: summarize(suites.flatMap((suite) => suite.cases)),
     errors
   }
+}
+
+/**
+ * Keep test cases with any of the spec tags (Background stays with the suite cases it serves);
+ * suites without such cases are dropped, summaries recounted
+ */
+export function filterCoverageByTags(matrix: CoverageMatrix, tags: string[]): CoverageMatrix {
+  const suites = matrix.suites
+    .map((suite) => {
+      const cases = suite.cases.filter((tc) => tc.tags.some((tag) => tags.includes(tag)))
+      const background = cases.length > 0 ? suite.cases.filter((tc) => tc.isBackground) : []
+      const kept = suite.cases.filter((tc) => cases.includes(tc) || background.includes(tc))
+      return { ...suite, cases: kept, summary: summarize(kept) }
+    })
+    .filter((suite) => suite.cases.length > 0)
+
+  return { ...matrix, suites, summary: summarize(suites.flatMap((suite) => suite.cases)) }
 }
 
 /**

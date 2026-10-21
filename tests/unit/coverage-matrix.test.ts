@@ -3,7 +3,11 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildCoverageMatrix, type CoverageMatrix } from '@/framework/reporting/coverage-matrix'
+import {
+  buildCoverageMatrix,
+  type CoverageMatrix,
+  filterCoverageByTags
+} from '@/framework/reporting/coverage-matrix'
 import { resetSharedProject } from '@/framework/utils/ts-morph-helpers'
 
 let testDir: string
@@ -201,5 +205,40 @@ describe('buildCoverageMatrix', () => {
 
   it('should report 0% for no cases instead of NaN', () => {
     expect(build([], []).summary.automatedPercent).toBe(0)
+  })
+})
+
+describe('filterCoverageByTags', () => {
+  it('should keep tagged cases with their Background and recount summaries', () => {
+    const spec = writeFile(
+      'test-suites/nav.feature',
+      `@nav
+Feature: Nav
+
+  Background:
+    Given home page is open
+
+  @smoke
+  Scenario: Open login
+    When user clicks "Login"
+
+  Scenario: Open cart
+    When user clicks "Cart"
+`
+    )
+    const other = writeFile('test-suites/shop.md', SPEC)
+
+    const matrix = build([spec, other], [])
+    const filtered = filterCoverageByTags(matrix, ['@smoke'])
+
+    expect(matrix.suites[0].cases.map((tc) => tc.tags)).toEqual([
+      ['@nav'],
+      ['@nav', '@smoke'],
+      ['@nav']
+    ])
+    expect(filtered.suites.map((s) => s.cases.map((tc) => tc.ttl))).toEqual([
+      ['Background', 'Open login']
+    ])
+    expect(filtered.summary.totalCases).toBe(1)
   })
 })

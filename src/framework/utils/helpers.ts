@@ -1,9 +1,15 @@
 import path from 'path'
 
 import { CONFIG } from '../config'
-import { BACKGROUND_TTL, SPEC_FILE_EXTENSION } from '../constants/markdown'
+import {
+  BACKGROUND_TTL,
+  MD_TAGS_PREFIX,
+  SPEC_FILE_EXTENSION,
+  SPEC_TAG_PATTERN
+} from '../constants/markdown'
 import { AUTOMATED_KINDS } from '../constants/test-files'
 import type { TestCase } from '../core/md-parser'
+import { buildInvalidTagError } from '../errors/error-builders'
 
 export interface ParsedID {
   id: string | null // null=no brackets, ""=[], "TC-01"=[TC-01]
@@ -43,6 +49,26 @@ export function getSuiteKey(mdFilePath: string, testSuitesDir = CONFIG.paths.tes
  */
 export function isBackgroundTitle(ttl: string): boolean {
   return ttl === BACKGROUND_TTL || ttl.startsWith(`${BACKGROUND_TTL}:`)
+}
+
+/**
+ * Tags of MD "Tags:" line (space or comma separated), null for any other line
+ * Example: "Tags: @smoke, @critical" -> ["@smoke", "@critical"]
+ */
+export function parseTagsLine(line: string): string[] | null {
+  if (!line.startsWith(MD_TAGS_PREFIX)) return null
+  return line
+    .slice(MD_TAGS_PREFIX.length)
+    .split(/[\s,]+/)
+    .filter(Boolean)
+}
+
+/**
+ * @throws Error for a tag outside SPEC_TAG_PATTERN (no leading @, spaces, quotes...)
+ */
+export function assertValidTags(tags: string[], specPath: string): void {
+  const invalid = tags.find((tag) => !SPEC_TAG_PATTERN.test(tag))
+  if (invalid !== undefined) throw new Error(buildInvalidTagError(invalid, specPath))
 }
 
 /**

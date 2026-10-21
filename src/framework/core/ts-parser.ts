@@ -7,7 +7,8 @@ import {
   findStepCalls,
   findTestCallsDeep,
   getSharedProject,
-  getStringLiteralValue
+  getStringLiteralValue,
+  isHookCall
 } from '../utils/ts-morph-helpers'
 
 export interface ParsedTestCase {
@@ -18,6 +19,8 @@ export interface ParsedTestCase {
   stepHasManual: boolean[] // manualStep() itself or test.step() wrapping a manualStep()
   modifier: TestModifier | null // test.skip/fixme() or inside describe.skip/fixme()
   hasImplementation: boolean // body calls something besides steps (not an empty skeleton)
+  tags: string[] // test('title', { tag: [...] }, fn) - see extractTags
+  isHook: boolean // named beforeAll/afterAll or Background beforeEach - has no tags (isHookCall)
 }
 
 export type StepCallKind = 'manualStep' | 'test.step'
@@ -27,7 +30,7 @@ export interface ParsedTest {
   suiteID: string | null // "" for [], "TS01" for [TS01], or null for no brackets
   suiteTtl: string
   testCases: ParsedTestCase[]
-  tags: string[]
+  tags: string[] // tags of first describe - see extractTags
 }
 
 /**
@@ -57,7 +60,7 @@ export function parseTestFile(filePath: string): ParsedTest {
   const { id: suiteID, ttl: suiteTtl } = parseIDAndTitle(suiteText)
 
   // 2.5. Extract tags from test.describe()
-  const tags = extractTagsFromDescribe(describeCall)
+  const tags = extractTags(describeCall)
 
   // 3. Find all test() calls within describes, nested describes included
   const testCalls = describeCalls.flatMap(findTestCallsDeep)
@@ -92,7 +95,9 @@ export function parseTestFile(filePath: string): ParsedTest {
       stepCallKinds,
       stepHasManual,
       modifier: inferModifier(testCall),
-      hasImplementation: hasImplementationCalls(testCall)
+      hasImplementation: hasImplementationCalls(testCall),
+      tags: extractTags(testCall),
+      isHook: isHookCall(testCall)
     })
   }
 
@@ -154,33 +159,27 @@ function hasImplementationCalls(testCall: CallExpression): boolean {
 }
 
 /**
- * Extract tags from test.describe() call
- * Example: test.describe('title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TODO] }, () => {})
+ * Tags from details object of test.describe() / test() call: `{ tag: [TAG.TEST.AUTO, '@smoke'] }`
+ * or `{ tag: '@smoke' }`. String literals give their value ("@smoke"), other expressions their
+ * source text ("TAG.TEST.AUTO").
  */
-function extractTagsFromDescribe(describeCall: CallExpression): string[] {
-  const args = describeCall.getArguments()
+function extractTags(call: CallExpression): string[] {
+  const args = call.getArguments()
+  if (args.length !== 3) return []
 
-  // If 3 args, middle one is options object with tags
-  if (args.length === 3) {
-    const optionsArg = args[1]
-    if (!optionsArg) return []
+  const tagProperty = args[1]?.asKind(SyntaxKind.ObjectLiteralExpression)?.getProperty('tag')
+  const initializer = tagProperty?.asKind(SyntaxKind.PropertyAssignment)?.getInitializer()
+  if (!initializer) return []
 
-    // Find 'tag' property in options object
-    const objectLiteral = optionsArg.asKind(SyntaxKind.ObjectLiteralExpression)
-    if (!objectLiteral) return []
-
-    const tagProperty = objectLiteral.getProperty('tag')
-    if (!tagProperty) return []
-
-    // Get array elements
-    const initializer = tagProperty.asKind(SyntaxKind.PropertyAssignment)?.getInitializer()
-    const arrayLiteral = initializer?.asKind(SyntaxKind.ArrayLiteralExpression)
-    if (!arrayLiteral) return []
-
-    return arrayLiteral.getElements().map((el) => el.getText())
-  }
-
-  return []
+  const elements = initializer.asKind(SyntaxKind.ArrayLiteralExpression)?.getElements() ?? [
+    initializer
+  ]
+  return elements.map(
+    (element) =>
+      element.asKind(SyntaxKind.StringLiteral)?.getLiteralValue() ??
+      element.asKind(SyntaxKind.NoSubstitutionTemplateLiteral)?.getLiteralValue() ??
+      element.getText()
+  )
 }
 
 /**

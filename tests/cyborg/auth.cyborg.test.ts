@@ -58,7 +58,7 @@ test.describe('[CYBORG] Authentication Tests', { tag: [TAG.TEST.CYBORG, TAG.SUIT
     })
   })
 
-  test('User Login', async ({ authenticatedUser, manualStep }) => {
+  test('User Login', { tag: ['@smoke'] }, async ({ authenticatedUser, manualStep }) => {
     const { loginPage, testUser } = authenticatedUser
 
     await test.step('Navigate to and Verify "Signup/Login" Page', async () => {

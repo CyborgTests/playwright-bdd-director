@@ -13,7 +13,8 @@ paths:
 
 - `## ` suite, `### ` test case, `#### ` step. Bullet lines (`- …`) under any heading are free-form details/test data, `---` is an optional separator — both ignored by the validator.
 - One MD file = one suite. Base name is unique across `test-suites/**` and becomes the suite tag (`auth.md` → `TAG.SUITE.AUTH` = `@auth`).
-- Gherkin `.feature` is an alternative spec format with the same contract: Feature → suite, Scenario → case, step → step with its keyword kept (`Given user …`); tags, tables, doc strings are details. Steps are written in tests, as for MD (README "Gherkin").
+- `Tags: @smoke @JIRA-1` right under a `##`/`###` heading tags the suite / case (Playwright tags, strings next to `TAG.*` in tests).
+- Gherkin `.feature` is an alternative spec format with the same contract: Feature → suite, Scenario → case, step → step with its keyword kept (`Given user …`); `@tag` → tags (Rule tags go to its scenarios); tables, doc strings are details. Steps are written in tests, as for MD (README "Gherkin").
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
 - IDs and titles are globally unique across all MD files.
 
@@ -33,8 +34,8 @@ paths:
 
 ## Sync contract
 
-- Suite title, test case count/titles and step count/titles in each TS file match the MD (with ID/suffix rules above).
-- `npm run dress` checks it read-only; `npm run stage` fixes what it can (MD formatting, cyborg structure, empty skeletons, `TAG.SUITE`) and archives orphans.
+- Suite title, test case count/titles, step count/titles and spec tags (any order) in each TS file match the MD (with ID/suffix rules above).
+- `npm run dress` checks it read-only; `npm run stage` fixes what it can (MD formatting, cyborg structure and spec tags, empty skeletons, `TAG.SUITE`) and archives orphans.
 - `stage` aligns cases/steps by title or ID, never by position: inserts missing ones as skeletons in place, only reports removed or reordered ones. Steps of cyborg files written with `test.step()` are not synced.
 - `stage` never rewrites implemented automated tests — fix their titles/steps by hand, keeping step bodies.
 - TS side: all outermost describes form the suite (title/tags from the first); nested describes only group; loop-declared tests count once; `test.use`, `describe.configure`, runtime `test.skip(cond)`/`test.slow()` are not cases.

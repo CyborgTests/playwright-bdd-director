@@ -59,7 +59,7 @@ test.describe(
       })
     })
 
-    test('User Login', async ({ authenticatedUser }) => {
+    test('User Login', { tag: ['@smoke'] }, async ({ authenticatedUser }) => {
       const { testUser, authClient } = authenticatedUser
 
       await test.step('Navigate to and Verify "Signup/Login" Page', async () => {

@@ -43,6 +43,7 @@ describe('parseGherkinFile', () => {
     expect(parseGherkinFile(filePath)).toEqual({
       suiteID: '',
       suiteTtl: 'Shop',
+      suiteTags: [],
       testCases: [
         {
           id: null,
@@ -52,9 +53,15 @@ describe('parseGherkinFile', () => {
             'When user adds "Blue Top" to cart',
             'And user opens cart',
             'Then cart has 1 item'
-          ]
+          ],
+          tags: []
         },
-        { id: null, ttl: 'Empty cart', stepTtls: ['Given user opens cart', 'Then cart is empty'] }
+        {
+          id: null,
+          ttl: 'Empty cart',
+          stepTtls: ['Given user opens cart', 'Then cart is empty'],
+          tags: []
+        }
       ]
     })
   })
@@ -103,12 +110,13 @@ describe('parseGherkinFile', () => {
     expect(parseGherkinFile(unnamed).testCases[0]).toEqual({
       id: null,
       ttl: 'Background',
-      stepTtls: ['Given user is logged in']
+      stepTtls: ['Given user is logged in'],
+      tags: []
     })
     expect(parseGherkinFile(named).testCases[0].ttl).toBe('Background: Logged in user')
   })
 
-  it('should flatten Rule scenarios and ignore tags, descriptions, tables and doc strings', () => {
+  it('should flatten Rule scenarios with Rule tags and ignore descriptions, tables, doc strings', () => {
     const filePath = createFeature(
       'rich.feature',
       `@shop
@@ -125,15 +133,30 @@ Feature: Shop
       Hello
       """
 
+  @discount
   Rule: Discounts
+    @smoke @JIRA-12
     Scenario: Apply coupon
       Then total is reduced
 `
     )
 
-    expect(parseGherkinFile(filePath).testCases).toEqual([
-      { id: null, ttl: 'Buy product', stepTtls: ['Given products:', 'When user sends note:'] },
-      { id: null, ttl: 'Apply coupon', stepTtls: ['Then total is reduced'] }
+    const result = parseGherkinFile(filePath)
+
+    expect(result.suiteTags).toEqual(['@shop'])
+    expect(result.testCases).toEqual([
+      {
+        id: null,
+        ttl: 'Buy product',
+        stepTtls: ['Given products:', 'When user sends note:'],
+        tags: ['@smoke']
+      },
+      {
+        id: null,
+        ttl: 'Apply coupon',
+        stepTtls: ['Then total is reduced'],
+        tags: ['@discount', '@smoke', '@JIRA-12']
+      }
     ])
   })
 
@@ -152,7 +175,7 @@ Feature: Shop
     )
 
     expect(parseGherkinFile(filePath).testCases).toEqual([
-      { id: null, ttl: 'Login as <role>', stepTtls: ['Given user logs in as "<role>"'] }
+      { id: null, ttl: 'Login as <role>', stepTtls: ['Given user logs in as "<role>"'], tags: [] }
     ])
   })
 
@@ -217,6 +240,19 @@ Feature: Shop
       )
 
       expect(() => parseGherkinFile(filePath)).toThrow('Background inside Rule is not supported')
+    })
+
+    it('should reject tags Playwright tag rules do not allow', () => {
+      const filePath = createFeature(
+        'bad-tag.feature',
+        `Feature: Shop
+  @it's
+  Scenario: Buy
+    Given user is on home page
+`
+      )
+
+      expect(() => parseGherkinFile(filePath)).toThrow(`Invalid tag "@it's"`)
     })
   })
 })

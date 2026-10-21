@@ -63,6 +63,8 @@
 
 ### User Login
 
+Tags: @smoke
+
 - Verify existing User can Login
 
 #### Navigate to and Verify "Signup/Login" Page

@@ -185,6 +185,14 @@ function isNamedHook(callExpression: CallExpression): boolean {
 }
 
 /**
+ * Hook declared as test case (named beforeAll/afterAll, Background beforeEach). Playwright hooks
+ * take no details, so they carry no tags - a hook runs whenever any test of its describe runs.
+ */
+export function isHookCall(call: CallExpression): boolean {
+  return /\.(before|after)(All|Each)$/.test(call.getExpression().getText())
+}
+
+/**
  * Test declaration = (title, [details,] body). Runtime modifiers such as conditional
  * `test.skip(condition, reason)`, `test.skip(({ browserName }) => ..., reason)`, `test.slow()` or
  * `test.setTimeout(ms)` have no body after a non-function first argument, so they are not Test Cases

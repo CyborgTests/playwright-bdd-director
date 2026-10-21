@@ -3,20 +3,21 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
-import { collectCoverageMatrix } from '@/framework/reporting/coverage-matrix'
+import { collectCoverageMatrix, filterCoverageByTags } from '@/framework/reporting/coverage-matrix'
 import { renderConsole, renderHtml, renderMarkdown } from '@/framework/reporting/coverage-renderers'
 import { getErrorMessage } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
  * Coverage matrix: which spec test cases are covered by cyborg / api / ui / e2e tests
- * Usage: npm run matrix [-- --json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]
+ * Usage: npm run matrix [-- @tags] [--json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]
  *
  * Examples:
  *   npm run matrix                         # console table only
  *   npm run matrix -- --html --json        # + test-results/coverage-matrix.{html,json}
  *   npm run matrix -- --md=docs/matrix.md  # Markdown to custom path
  *   npm run matrix -- --min=80             # exit 1 when automated coverage < 80%
+ *   npm run matrix -- @smoke               # only test cases tagged @smoke in spec
  */
 
 const FORMATS = {
@@ -43,6 +44,7 @@ function main() {
 
   const unknownArgs = args.filter(
     (arg) =>
+      !arg.startsWith('@') &&
       !arg.startsWith('--min=') &&
       !Object.keys(FORMATS).some(
         (format) => arg === `--${format}` || arg.startsWith(`--${format}=`)
@@ -50,11 +52,13 @@ function main() {
   )
   if (unknownArgs.length > 0) {
     throw new Error(
-      `Unknown argument(s): ${unknownArgs.join(' ')}\nUsage: npm run matrix -- [--json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]`
+      `Unknown argument(s): ${unknownArgs.join(' ')}\nUsage: npm run matrix -- [@tags] [--json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]`
     )
   }
 
-  const matrix = collectCoverageMatrix()
+  const tags = args.filter((arg) => arg.startsWith('@'))
+  const matrix =
+    tags.length > 0 ? filterCoverageByTags(collectCoverageMatrix(), tags) : collectCoverageMatrix()
   const color = process.stdout.isTTY && !process.env.NO_COLOR
   console.log(`${renderConsole(matrix, { color })}\n`)
 

@@ -13,7 +13,7 @@ description: Use when running, filtering, debugging or reporting Playwright test
 ## Steps
 
 1. **Pick the command**:
-   - `npm run play <types...> [suites...]` — runs `dress` first. Examples: `play auto`, `play api auth`, `play api ui auth`, `play cyborg auth`, `play auth`. `npm run coldplay …` skips `dress`.
+   - `npm run play <types...> [suites...] [@tags...]` — runs `dress` first. Examples: `play auto`, `play api auth`, `play api ui auth`, `play cyborg auth`, `play auth`, `play ui @smoke` (spec tags). `npm run coldplay …` skips `dress`.
    - Raw: `npx playwright test --grep "(@api|@ui).*(@auth)"`. Tags combine as a regex in describe-tag order.
    - Single test: `npx playwright test tests/automated/ui/auth.ui.test.ts -g "User Login"`.
    - Visual runner with Director: `npm run show`.

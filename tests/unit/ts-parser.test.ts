@@ -749,3 +749,51 @@ describe('parseTestFile - coverage info', () => {
     expect(testCase.stepHasManual).toEqual([false, true, true])
   })
 })
+
+describe('parseTestFile - tags', () => {
+  it('should read describe and test tags, string literals as values', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'tags.ts',
+        `import { test } from '@playwright/test'
+import { TAG } from '@/test-constants/tags'
+
+test.describe('Suite', { tag: [TAG.TEST.AUTO, '@shop'] }, () => {
+  test('Array', { tag: ['@smoke', \`@JIRA-1\`] }, async () => {})
+  test('Single', { tag: '@critical' }, async () => {})
+  test('None', async () => {})
+})`
+      )
+    )
+
+    expect(result.tags).toEqual(['TAG.TEST.AUTO', '@shop'])
+    expect(result.testCases.map((tc) => tc.tags)).toEqual([
+      ['@smoke', '@JIRA-1'],
+      ['@critical'],
+      []
+    ])
+  })
+})
+
+describe('parseTestFile - hooks', () => {
+  it('should mark named hooks declared as test cases', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'hooks.ts',
+        `import { test } from '@playwright/test'
+
+test.describe('Suite', () => {
+  test.beforeAll('Create data', async () => {})
+  test.beforeEach('Background', async () => {})
+  test('Main', async () => {})
+})`
+      )
+    )
+
+    expect(result.testCases.map((tc) => [tc.ttl, tc.isHook])).toEqual([
+      ['Create data', true],
+      ['Background', true],
+      ['Main', false]
+    ])
+  })
+})

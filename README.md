@@ -137,6 +137,7 @@ npm run matrix                           # console table
 npm run matrix -- --html --json --md     # + test-results/coverage-matrix.{html,json,md}
 npm run matrix -- --md=docs/coverage.md  # any format to a custom path
 npm run matrix -- --min=80               # exit 1 when automated coverage is below 80%
+npm run matrix -- @smoke                 # only test cases tagged @smoke
 ```
 
 ```text
@@ -401,16 +402,37 @@ Feature: Site Navigation
     Then "Login to your account" form is visible
 ```
 
-| Gherkin                                      | Test file                                                           |
-| -------------------------------------------- | ------------------------------------------------------------------- |
-| `Feature: [ID] Title`                        | `test.describe(...)` - IDs follow the MD convention                 |
-| `Scenario: [ID] Title`                       | `test(...)`                                                         |
-| step (`Given/When/Then/And/But text`)        | `test.step('Given ...')` / `manualStep('Given ...')` - keyword kept |
-| `Background:`                                | `test.beforeEach('Background', ...)` with the background steps      |
-| `Rule:`                                      | groups scenarios only                                               |
-| descriptions, tags, data tables, doc strings | details, ignored by the validator                                   |
+| Gherkin                                | Test file                                                           |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| `Feature: [ID] Title`                  | `test.describe(...)` - IDs follow the MD convention                 |
+| `Scenario: [ID] Title`                 | `test(...)`                                                         |
+| step (`Given/When/Then/And/But text`)  | `test.step('Given ...')` / `manualStep('Given ...')` - keyword kept |
+| `Background:`                          | `test.beforeEach('Background', ...)` with the background steps      |
+| `Rule:`                                | groups scenarios only; its tags go to each scenario                 |
+| `@tag` on Feature / Rule / Scenario    | Playwright tags, see [Tags](#5-tags)                                |
+| descriptions, data tables, doc strings | details, ignored by the validator                                   |
 
 Steps are written in the test as in a Markdown suite - there are no step definitions or text matching at runtime. `Scenario Outline` is read as one test case for now (its examples are not used yet). Base names stay unique across formats: `auth.md` and `auth.feature` cannot coexist.
+
+### 5. Tags
+
+Tag a suite or a test case with a `Tags:` line right under its heading (Gherkin: `@tag` lines above `Feature` / `Rule` / `Scenario`):
+
+```markdown
+## Authentication Tests
+
+Tags: @auth-flow
+
+### User Login
+
+Tags: @smoke @JIRA-123
+```
+
+- Tags become Playwright tags as strings next to the `TAG.*` constants: suite tags in `test.describe(..., { tag: [TAG.TEST.AUTO, TAG.SUITE.AUTH, '@auth-flow'] })`, test case tags in `test('User Login', { tag: ['@smoke', '@JIRA-123'] }, ...)`
+- A tag starts with `@` followed by letters, digits, `_ . : / -`; several tags are separated by spaces or commas
+- `dress` checks that every test has exactly the spec tags (order does not matter); `stage` syncs them in cyborg tests and empty skeletons, implemented automated tests are fixed by hand
+- Hooks take no tags: `Background` cannot be tagged (as in Gherkin), and a test case implemented by a named `beforeAll` / `afterAll` hook skips the tag check - a hook runs whenever any test of its suite is selected
+- Run and measure by tag: `npm run play @smoke`, `npm run play ui auth @smoke`, `npm run matrix -- @smoke`
 
 ## ✅ Validation
 
@@ -432,7 +454,7 @@ Validator verifies:
    - Test case count and titles match
    - Step count and titles match per test case
    - IDs match (strict: MD is source of truth)
-   - Tags match file type and basename
+   - Tags match file type and basename, spec tags match `Tags:` / `@tag` of the spec
 
 ### 2. ID Validation Rules (Strict)
 
@@ -474,7 +496,7 @@ No ID:
 **Automatically fixed:**
 
 - MD formatting issues (trailing spaces, extra blank lines)
-- Cyborg test structure (suite/test case/step titles)
+- Cyborg test structure (suite/test case/step titles, spec tags)
 - Missing test files (generates skeletons for cyborg + auto)
 - Missing test cases and steps (inserted as skeletons at their MD position)
 
@@ -489,7 +511,7 @@ Test cases and steps are matched **by title or ID, not by position**: adding a c
 
 **Must fix manually:**
 
-- Tags (file type, suite tags from basename)
+- Tags (file type, suite tags from basename; spec tags of implemented automated tests)
 - IDs (add/remove to match MD)
 - Duplicate IDs/titles across MD files
 
@@ -702,10 +724,10 @@ npm run test:coverage # Generate coverage report
 
 ### Play CLI
 
-Unified command interface with built-in validation. Types and suites are freely combinable - specify any number of test types followed by any number of suite names:
+Unified command interface with built-in validation. Types and suites are freely combinable - specify any number of test types followed by any number of suite names, and spec tags (`@smoke`) anywhere:
 
 ```bash
-npm run play <types...> [suites...]
+npm run play <types...> [suites...] [@tags...]
 
 # Single type
 npm run play auto                   # All automated tests
@@ -727,6 +749,10 @@ npm run play api ui auth            # API + UI tests for auth suite
 
 # Suite only (no type filter)
 npm run play auth                   # All auth tests (any type)
+
+# Spec tags
+npm run play @smoke                 # All tests tagged @smoke
+npm run play ui auth @smoke         # UI auth tests tagged @smoke
 ```
 
 **Supported test types:** `auto`, `cyborg`, `api`, `ui`, `e2e`

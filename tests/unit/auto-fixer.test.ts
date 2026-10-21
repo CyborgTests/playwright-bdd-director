@@ -45,11 +45,13 @@ function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
   return {
     suiteID: 'ts01',
     suiteTtl: 'Correct Suite Title',
+    suiteTags: [],
     testCases: [
       {
         id: 'tc-01',
         ttl: 'Correct test case',
-        stepTtls: ['Correct step 1', 'Correct step 2']
+        stepTtls: ['Correct step 1', 'Correct step 2'],
+        tags: []
       }
     ],
     ...overrides
@@ -207,8 +209,8 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const filePath = createTSFile('missing-test.ts', content)
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Correct test case', stepTtls: [] },
-          { id: 'tc-02', ttl: 'Missing test', stepTtls: [] }
+          { id: 'tc-01', ttl: 'Correct test case', stepTtls: [], tags: [] },
+          { id: 'tc-02', ttl: 'Missing test', stepTtls: [], tags: [] }
         ]
       })
 
@@ -333,7 +335,8 @@ test.describe('[ts01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, ()
           {
             id: 'tc-01',
             ttl: 'Correct test case',
-            stepTtls: ["Step with 'quotes'", 'Step with \\n newline']
+            stepTtls: ["Step with 'quotes'", 'Step with \\n newline'],
+            tags: []
           }
         ]
       })
@@ -386,7 +389,9 @@ test.describe('[CYBORG] Suite Title', { tag: [TAG.TEST.CYBORG, TAG.SUITE.TEST] }
       const md = createMD({
         suiteID: '',
         suiteTtl: 'Suite Title',
-        testCases: [{ id: '', ttl: 'New case', stepTtls: ['Step 1', 'Step 2', 'New Step 3'] }]
+        testCases: [
+          { id: '', ttl: 'New case', stepTtls: ['Step 1', 'Step 2', 'New Step 3'], tags: [] }
+        ]
       })
 
       const result = autoFixTestFile(filePath, md)
@@ -416,7 +421,8 @@ test.describe('[MANUAL] Suite Title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }
           {
             id: '',
             ttl: 'Test case',
-            stepTtls: ['Step 1', 'Step 2', 'New Step 3']
+            stepTtls: ['Step 1', 'Step 2', 'New Step 3'],
+            tags: []
           }
         ]
       })
@@ -568,9 +574,10 @@ test.describe('[CYBORG] Shop', () => {
     const result = autoFixTestFile(filePath, {
       suiteID: '',
       suiteTtl: 'Shop',
+      suiteTags: [],
       testCases: [
-        { id: null, ttl: 'Background', stepTtls: ['Given user is logged in'] },
-        { id: '', ttl: 'Buy', stepTtls: ['When user buys product'] }
+        { id: null, ttl: 'Background', stepTtls: ['Given user is logged in'], tags: [] },
+        { id: '', ttl: 'Buy', stepTtls: ['When user buys product'], tags: [] }
       ]
     })
 
@@ -586,7 +593,8 @@ describe('autoFixTestFile - alignment by title', () => {
   const mdOf = (cases: Array<[string, string[]]>) => ({
     suiteID: '',
     suiteTtl: 'Suite',
-    testCases: cases.map(([ttl, stepTtls]) => ({ id: '', ttl, stepTtls }))
+    suiteTags: [],
+    testCases: cases.map(([ttl, stepTtls]) => ({ id: '', ttl, stepTtls, tags: [] }))
   })
 
   it('should insert MD case added in the middle without moving code to other titles', () => {
@@ -715,9 +723,10 @@ test.describe('[ts01-AUTO] Suite', () => {
     autoFixTestFile(filePath, {
       suiteID: 'ts01',
       suiteTtl: 'Suite',
+      suiteTags: [],
       testCases: [
-        { id: 'tc00', ttl: 'Inserted', stepTtls: ['Step'] },
-        { id: 'tc01', ttl: 'New title', stepTtls: ['Step'] }
+        { id: 'tc00', ttl: 'Inserted', stepTtls: ['Step'], tags: [] },
+        { id: 'tc01', ttl: 'New title', stepTtls: ['Step'], tags: [] }
       ]
     })
 
@@ -726,5 +735,79 @@ test.describe('[ts01-AUTO] Suite', () => {
       ['tc00-AUTO', 'Inserted'],
       ['tc01-AUTO', 'New title']
     ])
+  })
+})
+
+describe('autoFixTestFile - spec tags', () => {
+  const header = `import test from '@cyborgtests/test'\nimport { TAG } from '@/test-constants/tags'\n\n`
+  const md = (suiteTags: string[], caseTags: string[][]): ParsedMD => ({
+    suiteID: '',
+    suiteTtl: 'Shop',
+    suiteTags,
+    testCases: caseTags.map((tags, i) => ({
+      id: null,
+      ttl: `Case ${i + 1}`,
+      stepTtls: ['Step'],
+      tags
+    }))
+  })
+
+  it('should add, replace and remove spec tags keeping TAG constants and other details', () => {
+    const filePath = createTSFile(
+      'shop.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Shop', { tag: [TAG.TEST.CYBORG, TAG.SUITE.SHOP, '@old'] }, () => {
+  test('Case 1', async ({ manualStep }) => {
+    await manualStep('Step')
+  })
+  test('Case 2', { tag: ['@old'], annotation: { type: 'issue' } }, async ({ manualStep }) => {
+    await manualStep('Step')
+  })
+  test('Case 3', { tag: '@old' }, async ({ manualStep }) => {
+    await manualStep('Step')
+  })
+})`
+    )
+
+    const result = autoFixTestFile(filePath, md(['@shop'], [['@smoke'], ['@new'], []]))
+    const parsed = parseTestFile(filePath)
+
+    expect(parsed.tags).toEqual(['TAG.TEST.CYBORG', 'TAG.SUITE.SHOP', '@shop'])
+    expect(parsed.testCases.map((tc) => tc.tags)).toEqual([['@smoke'], ['@new'], []])
+    expect(fs.readFileSync(filePath, 'utf-8')).toContain("annotation: { type: 'issue' }")
+    expect(fs.readFileSync(filePath, 'utf-8')).not.toContain("test('Case 3', {")
+    expect(result.changes).toEqual([
+      'Test suite tags: [@old] → [@shop]',
+      'Test case #1 tags: [] → [@smoke]',
+      'Test case #2 tags: [@old] → [@new]',
+      'Test case #3 tags: [@old] → []'
+    ])
+  })
+
+  it('should leave tags in other order unchanged (idempotent)', () => {
+    const filePath = createTSFile(
+      'order.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Shop', { tag: [TAG.TEST.CYBORG, '@b', '@a'] }, () => {
+  test('Case 1', async ({ manualStep }) => {
+    await manualStep('Step')
+  })
+})`
+    )
+
+    expect(autoFixTestFile(filePath, md(['@a', '@b'], [[]])).fixed).toBe(false)
+  })
+
+  it('should insert missing test case with its tags', () => {
+    const filePath = createTSFile(
+      'insert.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Shop', { tag: [TAG.TEST.CYBORG] }, () => {
+  test('Case 1', async ({ manualStep }) => {
+    await manualStep('Step')
+  })
+})`
+    )
+
+    autoFixTestFile(filePath, md([], [[], ['@smoke']]))
+
+    expect(parseTestFile(filePath).testCases[1]).toMatchObject({ ttl: 'Case 2', tags: ['@smoke'] })
   })
 })

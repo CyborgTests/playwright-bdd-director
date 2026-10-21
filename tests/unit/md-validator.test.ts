@@ -185,6 +185,22 @@ Invalid line without proper format
 
     expect(validateMDStructure(filePath)).toEqual([])
   })
+
+  it('should accept Tags lines', () => {
+    const content = `## Suite
+
+Tags: @smoke
+
+### First
+
+Tags: @critical
+
+#### Step
+`
+    const filePath = createMDFile('tags.md', content)
+
+    expect(validateMDStructure(filePath)).toEqual([])
+  })
 })
 
 describe('autoFixMDFormatting', () => {

@@ -178,7 +178,31 @@ export function buildInvalidHeadingOrderError(
 }
 
 export function buildInvalidLineFormatError(line: string): string {
-  return `Invalid line format (expected: heading, list item "- ", or blank line)\nFound: "${line}"`
+  return `Invalid line format (expected: heading, list item "- ", "Tags: @tag" or blank line)\nFound: "${line}"`
+}
+
+export function buildInvalidTagError(tag: string, file: string): string {
+  return (
+    `Invalid tag "${tag}"\n` +
+    `  File: ${file}\n` +
+    `  Fix: Tags start with @ followed by letters, digits, _ . : / -, e.g. "Tags: @smoke @JIRA-123"`
+  )
+}
+
+export function buildTagsPlacementError(line: string, file: string): string {
+  return (
+    `Tags line in wrong place: "${line}"\n` +
+    `  File: ${file}\n` +
+    `  Fix: Put "Tags:" right under the ## suite or ### test case heading, before its steps`
+  )
+}
+
+export function buildBackgroundTagsError(line: string, file: string): string {
+  return (
+    `Background cannot have tags: "${line}"\n` +
+    `  File: ${file}\n` +
+    `  Fix: Background runs before every test of the suite - put the tags under the ## suite heading`
+  )
 }
 
 /**

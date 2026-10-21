@@ -23,6 +23,13 @@ export function buildTestCaseTtl(id: string | null, ttl: string, type: TestType)
 }
 
 /**
+ * Details argument with spec tags: `{ tag: ['@smoke'] }` (SPEC_TAG_PATTERN has no quotes to escape)
+ */
+export function buildTagDetails(tags: string[]): string {
+  return `{ tag: [${tags.map((tag) => `'${tag}'`).join(', ')}] }`
+}
+
+/**
  * @param subDir - MD folder inside test suites (see getSuiteSubDir), mirrored under output root:
  * test-suites/e2e/x.md → tests/cyborg/e2e/x.cyborg.test.ts
  */
@@ -76,7 +83,8 @@ export function generateTestFile(baseName: string, type: TestType, subDir = ''):
         })
         .join('\n')
       const testFn = isBackgroundTitle(tc.ttl) ? 'test.beforeEach' : 'test'
-      return `${testFn}(${testTtlLiteral}, async (${testParams}) => {\n${steps}\n});`
+      const details = tc.tags.length > 0 ? `${buildTagDetails(tc.tags)}, ` : ''
+      return `${testFn}(${testTtlLiteral}, ${details}async (${testParams}) => {\n${steps}\n});`
     })
     .join('\n\n')
 
@@ -97,7 +105,11 @@ export function generateTestFile(baseName: string, type: TestType, subDir = ''):
   // Determine tags
   const suiteName = extractSuiteName(baseName)
   const tagConstant = getTagConstant(suiteName)
-  const tags = [`TAG.TEST.${type}`, `TAG.SUITE.${tagConstant}`]
+  const tags = [
+    `TAG.TEST.${type}`,
+    `TAG.SUITE.${tagConstant}`,
+    ...mdData.suiteTags.map((tag) => `'${tag}'`)
+  ]
 
   // Use .fixme for AUTO tests until implemented
   const describeMethod = type === 'AUTO' ? 'test.describe.fixme' : 'test.describe'

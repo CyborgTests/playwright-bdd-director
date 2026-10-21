@@ -10,6 +10,13 @@ export const SPEC_FILE_EXTENSION = /\.(md|feature)$/
 /** Gherkin Background as a Test Case title - implemented by a named test.beforeEach */
 export const BACKGROUND_TTL = 'Background'
 
+/**
+ * Tags line right under suite (`##`) or test case (`###`) heading: `Tags: @smoke @critical`.
+ * Tags become Playwright tags (`npm run play @smoke`); Gherkin uses its own `@tag` lines.
+ */
+export const MD_TAGS_PREFIX = 'Tags:'
+export const SPEC_TAG_PATTERN = /^@[\w.:/-]+$/
+
 /** Horizontal rule - optional visual separator between test cases */
 export const MD_HORIZONTAL_RULE = '---'
 
