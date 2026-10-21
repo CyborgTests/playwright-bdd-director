@@ -3,6 +3,7 @@ import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class HomePage extends BasePage {
+  private readonly homeBtn: Locator
   private readonly signupLoginBtn: Locator
   private readonly logoutBtn: Locator
   private readonly deleteAccountBtn: Locator
@@ -13,6 +14,8 @@ export class HomePage extends BasePage {
 
   constructor(page: Page) {
     super(page, '/')
+    // Logo links to "/" too, so match the header menu item by its name
+    this.homeBtn = this.page.getByRole('banner').getByRole('link', { name: 'Home' })
     this.signupLoginBtn = this.page.locator('a[href="/login"]')
     this.loggedInHeader = this.page.locator('li a', { hasText: 'Logged in as' })
     this.logoutBtn = this.page.locator('a[href="/logout"]')
@@ -30,6 +33,10 @@ export class HomePage extends BasePage {
     await this.continueBtn.click()
   }
 
+  async clickHomeBtn(): Promise<void> {
+    await this.homeBtn.click()
+  }
+
   async clickSignupLoginBtn(): Promise<void> {
     await this.signupLoginBtn.click()
   }
@@ -43,11 +50,11 @@ export class HomePage extends BasePage {
   }
 
   async expectOnHomePage(): Promise<void> {
-    await this.expectToHaveUrl(/.*\/#?/)
+    await this.expectToHaveUrl(/^https?:\/\/[^/]+\/?$/)
   }
 
   async expectOnLoginPage(): Promise<void> {
-    await this.expectToHaveUrl(/.*login/)
+    await this.expectToHaveUrl(/\/login$/)
   }
 
   async expectAccountCreated(): Promise<void> {

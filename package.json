@@ -43,6 +43,8 @@
     "url": "https://github.com/CyborgTests/playwright-bdd-director/issues"
   },
   "devDependencies": {
+    "@cucumber/gherkin": "^42.0.1",
+    "@cucumber/messages": "^34.2.1",
     "@cyborgtests/test": "^0.3.0",
     "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.4.0",

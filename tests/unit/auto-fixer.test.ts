@@ -552,6 +552,36 @@ describe('isEmptyAutoTest - tests without steps', () => {
   })
 })
 
+describe('autoFixTestFile - Background', () => {
+  it('should insert missing Background as named test.beforeEach before other cases', () => {
+    const filePath = createTSFile(
+      'shop.cyborg.test.ts',
+      `import test from '@cyborgtests/test'
+
+test.describe('[CYBORG] Shop', () => {
+  test('[CYBORG] Buy', async ({ manualStep }) => {
+    await manualStep('When user buys product')
+  })
+})`
+    )
+
+    const result = autoFixTestFile(filePath, {
+      suiteID: '',
+      suiteTtl: 'Shop',
+      testCases: [
+        { id: null, ttl: 'Background', stepTtls: ['Given user is logged in'] },
+        { id: '', ttl: 'Buy', stepTtls: ['When user buys product'] }
+      ]
+    })
+
+    const code = fs.readFileSync(filePath, 'utf-8')
+    expect(result.changes.some((c) => c.includes('Added "Background"'))).toBe(true)
+    expect(code).toContain("test.beforeEach('Background', async ({ manualStep }) => {")
+    expect(code.indexOf('test.beforeEach')).toBeLessThan(code.indexOf("test('[CYBORG] Buy'"))
+    expect(parseTestFile(filePath).testCases.map((tc) => tc.ttl)).toEqual(['Background', 'Buy'])
+  })
+})
+
 describe('autoFixTestFile - alignment by title', () => {
   const mdOf = (cases: Array<[string, string[]]>) => ({
     suiteID: '',

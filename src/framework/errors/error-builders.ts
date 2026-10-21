@@ -68,9 +68,9 @@ export function buildDuplicateTitleInFileError(
  */
 export function buildFileNotFoundError(fileName: string, searchPath: string): string {
   return (
-    `Markdown file not found: ${fileName}.md\n` +
+    `Spec file not found: ${fileName}.md or ${fileName}.feature\n` +
     `  Searched in: ${searchPath}\n` +
-    `  Fix: Create the markdown file or check the file name`
+    `  Fix: Create the spec file or check the file name`
   )
 }
 

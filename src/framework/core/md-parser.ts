@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
-import { MD_EXAMPLES, MD_HEADINGS } from '@/framework/constants/markdown'
+import { MD_EXAMPLES, MD_HEADINGS, SPEC_FILE_EXTENSION } from '@/framework/constants/markdown'
 
 import {
   buildFileNotFoundError,
@@ -11,6 +11,8 @@ import {
   buildMissingElementError,
   buildPathTraversalError
 } from '../errors/error-builders'
+import { assertUniqueTestCaseIds } from '../utils/helpers'
+import { parseGherkinFile } from './gherkin-parser'
 
 // Regex constants (compiled once, reused many times)
 const VALID_FILENAME_PATTERN = /^[\w.-]+$/
@@ -55,12 +57,18 @@ export function clearMDCache(): void {
  * Note: IDs are only extracted if in brackets format [TC01-01]
  * Steps do not support IDs - they are just titles
  * Other formats (TC01-01:, TC01-01 -, etc.) are treated as part of ttl
+ *
+ * Gherkin specs (`.feature`) are parsed into the same structure (see gherkin-parser)
  */
 export function parseMDFile(fileName: string): ParsedMD {
   const mdPath = resolveMDPath(fileName)
 
   if (!mdPath) {
     throw new Error(buildFileNotFoundError(fileName, CONFIG.paths.testSuites))
+  }
+
+  if (mdPath.endsWith('.feature')) {
+    return parseGherkinFile(mdPath)
   }
 
   const content = fs.readFileSync(mdPath, 'utf-8')
@@ -168,34 +176,20 @@ export function parseMDFile(fileName: string): ParsedMD {
     )
   }
 
-  // Validate no duplicate IDs (only check non-empty IDs in brackets format)
-  // Empty ID [] is allowed for all test cases (enables suffix-only matching)
-  const idsWithBrackets = testCases
-    .filter((tc) => tc.id !== null && tc.id !== '')
-    .map((tc) => tc.id as string)
-  const duplicateIDs = idsWithBrackets.filter((id, index) => idsWithBrackets.indexOf(id) !== index)
-
-  if (duplicateIDs.length > 0) {
-    const uniqueDuplicates = [...new Set(duplicateIDs)]
-    throw new Error(
-      `Duplicate test case IDs found in ${mdPath}:\n` +
-        uniqueDuplicates.map((id) => `  - [${id}]`).join('\n') +
-        `\n\nEach test case must have a unique ID.`
-    )
-  }
+  assertUniqueTestCaseIds(testCases, mdPath)
 
   return { suiteID, suiteTtl, testCases }
 }
 
 function resolveMDPath(fileName: string): string | null {
-  if (fileName.endsWith('.md') && fs.existsSync(fileName)) {
+  if (SPEC_FILE_EXTENSION.test(fileName) && fs.existsSync(fileName)) {
     return fileName
   }
   return findMdFile(fileName)
 }
 
 /**
- * Find MD file by name (without extension)
+ * Find spec file (`<name>.md` or `<name>.feature`) by name (without extension)
  * Uses cache for performance optimization
  * @throws Error if fileName contains path traversal characters
  */
@@ -233,7 +227,7 @@ function findMdFile(fileName: string): string | null {
       if (entry.isDirectory()) {
         const result = search(fullPath)
         if (result) return result
-      } else if (entry.name === `${fileName}.md`) {
+      } else if (entry.name === `${fileName}.md` || entry.name === `${fileName}.feature`) {
         return fullPath
       }
     }

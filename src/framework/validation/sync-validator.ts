@@ -2,6 +2,7 @@ import { glob } from 'glob'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
+import { SPEC_FILE_GLOB } from '@/framework/constants/markdown'
 
 import { FileMatchResult, matchFiles } from '../core/file-matcher'
 import { parseMDFile } from '../core/md-parser'
@@ -34,10 +35,10 @@ export interface ValidatorResult {
 }
 
 /**
- * Find all markdown files in test suites directory
+ * Find all spec files (Markdown and Gherkin) in test suites directory
  */
 function findMarkdownFiles(): string[] {
-  return glob.sync(`${CONFIG.paths.testSuites}/**/*.md`)
+  return glob.sync(`${CONFIG.paths.testSuites}/${SPEC_FILE_GLOB}`)
 }
 
 /**
@@ -95,7 +96,8 @@ function validateAndParseMDFiles(markdownFiles: string[]): {
 
   for (const markdownFile of markdownFiles) {
     try {
-      const errors = validateMDStructure(markdownFile)
+      // Gherkin structure is checked by its parser (errors carry line:column)
+      const errors = markdownFile.endsWith('.md') ? validateMDStructure(markdownFile) : []
 
       if (errors.length > 0) {
         structureErrors.push({
@@ -123,7 +125,7 @@ function validateAndParseMDFiles(markdownFiles: string[]): {
     } catch (error: unknown) {
       structureErrors.push({
         file: markdownFile,
-        errors: [`${getIcon('error')}  Failed to parse MD: ${getErrorMessage(error)}`]
+        errors: [`${getIcon('error')}  Failed to parse spec: ${getErrorMessage(error)}`]
       })
     }
   }

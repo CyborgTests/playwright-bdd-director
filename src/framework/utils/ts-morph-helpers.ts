@@ -2,6 +2,8 @@ import { CallExpression, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
 
 import { AST_IDENTIFIERS } from '@/framework/constants/test-files'
 
+import { isBackgroundTitle, parseIDAndTitle } from './helpers'
+
 // Singleton Project instance for performance
 let _sharedProject: Project | null = null
 
@@ -76,8 +78,9 @@ export function findOutermostDescribeCalls(sourceFile: SourceFile): CallExpressi
 /**
  * Find all test() calls within describe block, in source order
  * Supports: test(), test.only(), test.skip(), test.fixme(), authTest(), customTest(), any fixture,
- * named test.beforeAll/afterAll('title', fn) (see isNamedHook) and tests declared in a loop
- * Excludes: test.beforeEach/afterEach, unnamed beforeAll/afterAll, test.use, runtime modifiers
+ * named test.beforeAll/afterAll('title', fn), test.beforeEach('Background', fn) (see isNamedHook)
+ * and tests declared in a loop
+ * Excludes: other beforeEach/afterEach, unnamed beforeAll/afterAll, test.use, runtime modifiers
  * (test.skip(condition, reason), test.slow(), test.setTimeout()), nested describes
  */
 export function findTestCalls(describeCall: CallExpression): CallExpression[] {
@@ -165,16 +168,20 @@ function isTestCaseCall(callExpression: CallExpression): boolean {
  * Named `test.beforeAll('title', fn)` / `test.afterAll('title', fn)` counts as MD Test Case: an
  * automated suite can keep API setup/teardown in a hook (runs for any --grep subset) while its
  * test.step titles still map 1:1 to MD steps. Unnamed hooks stay plain setup/teardown.
+ * `test.beforeEach('Background', fn)` is the Background Test Case (see isBackgroundTitle); other
+ * beforeEach/afterEach hooks are never Test Cases.
  */
 function isNamedHook(callExpression: CallExpression): boolean {
   const expression = callExpression.getExpression().getText()
-  if (!expression.endsWith('.beforeAll') && !expression.endsWith('.afterAll')) return false
+  const isAllHook = expression.endsWith('.beforeAll') || expression.endsWith('.afterAll')
+  if (!isAllHook && !expression.endsWith('.beforeEach')) return false
+
   const firstArg = callExpression.getArguments()[0]
-  return (
-    !!firstArg &&
-    (firstArg.isKind(SyntaxKind.StringLiteral) ||
-      firstArg.isKind(SyntaxKind.NoSubstitutionTemplateLiteral))
-  )
+  const title =
+    firstArg?.asKind(SyntaxKind.StringLiteral)?.getLiteralValue() ??
+    firstArg?.asKind(SyntaxKind.NoSubstitutionTemplateLiteral)?.getLiteralValue()
+  if (title === undefined) return false
+  return isAllHook || isBackgroundTitle(parseIDAndTitle(title).ttl)
 }
 
 /**

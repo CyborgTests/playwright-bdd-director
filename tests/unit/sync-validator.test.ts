@@ -114,4 +114,43 @@ describe('validate', () => {
     expect(result.success).toBe(false) // No matching TS files
     expect(result.markdownFiles).toHaveLength(2)
   })
+
+  describe('Gherkin specs', () => {
+    const feature =
+      'Feature: Shop\n  Background:\n    Given user is logged in\n  Scenario: Buy\n    When user buys product\n'
+
+    it('should parse .feature specs next to MD', () => {
+      createMDFile('auth.md', '## Auth\n\n### Login\n#### Step 1\n')
+      createMDFile('shop.feature', feature)
+
+      const result = validate()
+
+      expect(result.markdownFiles).toHaveLength(2)
+      expect(result.errors.mdStructure).toBeUndefined()
+      const shop = [...result.parsedMDMap.entries()].find(([file]) => file.endsWith('shop.feature'))
+      expect(shop?.[1].testCases.map((tc) => tc.ttl)).toEqual(['Background', 'Buy'])
+    })
+
+    it('should detect duplicate base names across MD and Gherkin', () => {
+      createMDFile('shop.md', '## Shop\n\n### Buy\n#### Step 1\n')
+      createMDFile('shop.feature', feature)
+
+      const result = validate()
+
+      expect(result.success).toBe(false)
+      expect(result.errors.duplicateBaseNames).toContain('Duplicate markdown base names')
+    })
+
+    it('should report Gherkin syntax errors as structure errors', () => {
+      createMDFile(
+        'broken.feature',
+        'Feature: Shop\n  Scenario: Buy\n    Given a\n  garbage line\n'
+      )
+
+      const result = validate()
+
+      expect(result.success).toBe(false)
+      expect(result.errors.mdStructure?.[0].errors[0]).toContain('Invalid Gherkin')
+    })
+  })
 })

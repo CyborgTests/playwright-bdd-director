@@ -137,7 +137,12 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({ file, onContentC
           />
         ) : (
           <div className="director-preview-content">
-            <ReactMarkdown components={markdownComponents}>{editedContent}</ReactMarkdown>
+            {file.name.endsWith('.feature') ? (
+              // Gherkin is plain text: keep its indentation instead of rendering it as Markdown
+              <pre className="director-preview-gherkin">{editedContent}</pre>
+            ) : (
+              <ReactMarkdown components={markdownComponents}>{editedContent}</ReactMarkdown>
+            )}
           </div>
         )}
       </div>

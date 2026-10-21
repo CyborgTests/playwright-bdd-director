@@ -355,6 +355,32 @@ All three match `[]` from MD. Useful when you don't need numbered IDs, just impl
 
 Must match exactly in test file - no suffix support, no multiple implementations.
 
+### 4. Gherkin (`.feature`) - Alternative Format
+
+A suite can be written in Gherkin instead of Markdown - choose the format per file. `test-suites/navigation.feature` works exactly like an MD file: `stage` generates its cyborg test, `dress` checks the sync, `autogen` creates the AUTO skeleton, and Director UI edits and stages it.
+
+```gherkin
+Feature: Site Navigation
+
+  Background:
+    Given user opens the home page
+
+  Scenario: Open "Signup / Login" page from header
+    When user clicks "Signup / Login" button in header
+    Then "Login to your account" form is visible
+```
+
+| Gherkin                                      | Test file                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| `Feature: [ID] Title`                        | `test.describe(...)` - IDs follow the MD convention                 |
+| `Scenario: [ID] Title`                       | `test(...)`                                                         |
+| step (`Given/When/Then/And/But text`)        | `test.step('Given ...')` / `manualStep('Given ...')` - keyword kept |
+| `Background:`                                | `test.beforeEach('Background', ...)` with the background steps      |
+| `Rule:`                                      | groups scenarios only                                               |
+| descriptions, tags, data tables, doc strings | details, ignored by the validator                                   |
+
+Steps are written in the test as in a Markdown suite - there are no step definitions or text matching at runtime. `Scenario Outline` is read as one test case for now (its examples are not used yet). Base names stay unique across formats: `auth.md` and `auth.feature` cannot coexist.
+
 ## ✅ Validation
 
 ### 1. What Validator Checks
@@ -573,7 +599,7 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 **Important:**
 
-- `test-suites/` - only Markdown files
+- `test-suites/` - only spec files (Markdown `.md` or Gherkin `.feature`)
 - `tests/` - only test files (no helpers/utils)
 - `tests/archived/` - orphaned tests (auto-created by Director)
 

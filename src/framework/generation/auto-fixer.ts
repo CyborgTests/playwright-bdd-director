@@ -2,7 +2,7 @@ import path from 'path'
 import { Block, CallExpression, Node, Statement, SyntaxKind } from 'ts-morph'
 
 import { ParsedMD } from '../core/md-parser'
-import { matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
+import { isBackgroundTitle, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
 import {
   findDescribeCall,
   findStepCalls,
@@ -296,7 +296,8 @@ function buildTestCaseCode(ttl: string, steps: string[], options: FixOptions): s
         : buildManualStepCode(step)
   )
   const params = isCyborg ? '{ manualStep }' : ''
-  return `test('${escapeString(ttl)}', async (${params}) => {\n${stepCode.join('\n')}\n})`
+  const testFn = isBackgroundTitle(parseIDAndTitle(ttl).ttl) ? 'test.beforeEach' : 'test'
+  return `${testFn}('${escapeString(ttl)}', async (${params}) => {\n${stepCode.join('\n')}\n})`
 }
 
 function buildTestStepCode(step: string): string {

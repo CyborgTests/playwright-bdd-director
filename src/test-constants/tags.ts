@@ -38,6 +38,7 @@ export const TAG = {
     AUTH: '@auth',
     NUMBER_1: '@1',
     NUMBER_11: '@11',
-    LOGIN: '@login'
+    LOGIN: '@login',
+    NAVIGATION: '@navigation'
   }
 } as const

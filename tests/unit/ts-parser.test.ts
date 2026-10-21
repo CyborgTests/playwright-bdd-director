@@ -663,4 +663,23 @@ describeFn('Suite', () => {
     expect(result.testCases.map((tc) => tc.ttl)).toEqual(['Create data', 'Main', 'Delete data'])
     expect(result.testCases[0].stepTtls).toEqual(['Create user'])
   })
+
+  it('should count test.beforeEach("Background") as test case, ignore other beforeEach hooks', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'background.ts',
+        `${header}test.describe('Suite', () => {
+  test.beforeEach(async () => {})
+  test.beforeEach('Open home page', async () => {})
+  test.beforeEach('[CYBORG] Background', async ({ manualStep }) => {
+    await manualStep('Given user is logged in')
+  })
+  test('Main', async () => {})
+})`
+      )
+    )
+
+    expect(result.testCases.map((tc) => tc.ttl)).toEqual(['Background', 'Main'])
+    expect(result.testCases[0].stepTtls).toEqual(['Given user is logged in'])
+  })
 })

@@ -4,6 +4,7 @@ import { glob } from 'glob'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
+import { SPEC_FILE_GLOB } from '@/framework/constants/markdown'
 import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 import { generateAutoTestFile } from '@/framework/generation/test-generator'
 import { getErrorMessage, getMarkdownBaseName, getSuiteSubDir } from '@/framework/utils/helpers'
@@ -27,7 +28,7 @@ function main() {
   console.log(`${getIcon('start')}  Generating AUTO test skeletons${dryRun ? ' (dry run)' : ''}...`)
   console.log('')
 
-  const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/**/*.md`)
+  const markdownFiles = glob.sync(`${CONFIG.paths.testSuites}/${SPEC_FILE_GLOB}`)
   let generated = 0
   let skipped = 0
   const generatedFiles: string[] = []

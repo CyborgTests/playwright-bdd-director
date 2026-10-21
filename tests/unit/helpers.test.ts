@@ -8,6 +8,7 @@ import {
   getSuiteSubDir,
   getTestFileBaseName,
   hasAutomatedTestFile,
+  isBackgroundTitle,
   isCyborgDisabledFor,
   isMatchingTestFile,
   matchIDWithSuffix,
@@ -57,6 +58,19 @@ describe('getMarkdownBaseName', () => {
 
   it('should handle file name with dots', () => {
     expect(getMarkdownBaseName('test-suites/my.test.suite.md')).toBe('my.test.suite')
+  })
+
+  it('should strip .feature extension of Gherkin specs', () => {
+    expect(getMarkdownBaseName('test-suites/e2e/shop.feature')).toBe('shop')
+  })
+})
+
+describe('isBackgroundTitle', () => {
+  it('should accept "Background" with optional name only', () => {
+    expect(isBackgroundTitle('Background')).toBe(true)
+    expect(isBackgroundTitle('Background: Logged in user')).toBe(true)
+    expect(isBackgroundTitle('Background color changes')).toBe(false)
+    expect(isBackgroundTitle('Login')).toBe(false)
   })
 })
 
@@ -333,6 +347,7 @@ describe('getSuiteKey / getSuiteSubDir', () => {
   it('should return MD path inside test suites without extension', () => {
     expect(getSuiteKey('test-suites/auth.md', 'test-suites')).toBe('auth')
     expect(getSuiteKey('test-suites/e2e/shop/checkout.md', 'test-suites')).toBe('e2e/shop/checkout')
+    expect(getSuiteKey('test-suites/e2e/shop.feature', 'test-suites')).toBe('e2e/shop')
   })
 
   it('should use / separators on any platform', () => {

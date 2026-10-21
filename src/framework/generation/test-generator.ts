@@ -5,6 +5,7 @@ import { CONFIG } from '@/framework/config'
 import { SUFFIXES } from '@/framework/constants/test-files'
 
 import { parseMDFile } from '../core/md-parser'
+import { isBackgroundTitle } from '../utils/helpers'
 import { getIcon } from '../utils/icons'
 import { addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
@@ -74,7 +75,8 @@ export function generateTestFile(baseName: string, type: TestType, subDir = ''):
           return stepTemplate(stepLiteral)
         })
         .join('\n')
-      return `test(${testTtlLiteral}, async (${testParams}) => {\n${steps}\n});`
+      const testFn = isBackgroundTitle(tc.ttl) ? 'test.beforeEach' : 'test'
+      return `${testFn}(${testTtlLiteral}, async (${testParams}) => {\n${steps}\n});`
     })
     .join('\n\n')
 

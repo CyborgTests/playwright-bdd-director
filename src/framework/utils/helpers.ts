@@ -1,7 +1,9 @@
 import path from 'path'
 
 import { CONFIG } from '../config'
+import { BACKGROUND_TTL, SPEC_FILE_EXTENSION } from '../constants/markdown'
 import { AUTOMATED_KINDS } from '../constants/test-files'
+import type { TestCase } from '../core/md-parser'
 
 export interface ParsedID {
   id: string | null // null=no brackets, ""=[], "TC-01"=[TC-01]
@@ -16,19 +18,47 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Extract base name from markdown file path
- * Example: "test-suites/todo.md" -> "todo"
+ * Extract base name from spec file path (Markdown or Gherkin)
+ * Example: "test-suites/todo.md" -> "todo", "test-suites/shop.feature" -> "shop"
  */
 export function getMarkdownBaseName(mdFilePath: string): string {
-  return path.basename(mdFilePath, '.md')
+  return path.basename(mdFilePath).replace(SPEC_FILE_EXTENSION, '')
 }
 
 /**
- * MD path inside test suites dir, `/`-separated, without `.md`
+ * Spec path inside test suites dir, `/`-separated, without extension
  * Example: "test-suites/e2e/checkout.md" -> "e2e/checkout"
  */
 export function getSuiteKey(mdFilePath: string, testSuitesDir = CONFIG.paths.testSuites): string {
-  return path.relative(testSuitesDir, mdFilePath).split(/[\\/]/).join('/').replace(/\.md$/, '')
+  return path
+    .relative(testSuitesDir, mdFilePath)
+    .split(/[\\/]/)
+    .join('/')
+    .replace(SPEC_FILE_EXTENSION, '')
+}
+
+/**
+ * Background Test Case ("Background" or "Background: name") - implemented by a named
+ * test.beforeEach instead of test(), so its steps run before every test of the suite
+ */
+export function isBackgroundTitle(ttl: string): boolean {
+  return ttl === BACKGROUND_TTL || ttl.startsWith(`${BACKGROUND_TTL}:`)
+}
+
+/**
+ * Non-empty test case IDs must be unique within a spec ([] is allowed for all cases)
+ * @throws Error listing duplicate IDs
+ */
+export function assertUniqueTestCaseIds(testCases: TestCase[], specPath: string): void {
+  const ids = testCases.map((tc) => tc.id).filter((id): id is string => !!id)
+  const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))]
+  if (duplicates.length === 0) return
+
+  throw new Error(
+    `Duplicate test case IDs found in ${specPath}:\n` +
+      duplicates.map((id) => `  - [${id}]`).join('\n') +
+      `\n\nEach test case must have a unique ID.`
+  )
 }
 
 /**

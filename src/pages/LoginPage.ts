@@ -51,11 +51,15 @@ export class LoginPage extends BasePage {
   }
 
   async expectLoginFormVisible(): Promise<void> {
-    await expect.soft(this.loginForm).toBeVisible()
+    await expect
+      .soft(this.loginForm.getByRole('heading', { name: 'Login to your account' }))
+      .toBeVisible()
   }
 
   async expectSignupFormVisible(): Promise<void> {
-    await expect.soft(this.signupForm).toBeVisible()
+    await expect
+      .soft(this.signupForm.getByRole('heading', { name: 'New User Signup!' }))
+      .toBeVisible()
   }
 
   async expectLoginError(): Promise<void> {

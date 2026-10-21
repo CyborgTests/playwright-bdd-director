@@ -96,9 +96,9 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
 
   // Handle stage - run real npm run stage via WebSocket
   const handleStage = async () => {
-    const mdFiles = files.filter((f) => f.name.endsWith('.md'))
+    const mdFiles = files.filter((f) => f.name.endsWith('.md') || f.name.endsWith('.feature'))
     if (mdFiles.length === 0) {
-      addOutputEntry('error', 'No Markdown files to stage')
+      addOutputEntry('error', 'No Markdown or Gherkin files to stage')
       return
     }
 

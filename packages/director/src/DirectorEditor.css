@@ -208,6 +208,13 @@
   overflow: auto;
 }
 
+.director-preview-gherkin {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family, monospace);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .director-preview-content h1,
 .director-preview-content h2,
 .director-preview-content h3,

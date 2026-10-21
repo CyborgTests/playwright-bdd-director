@@ -13,6 +13,7 @@ paths:
 
 - `## ` suite, `### ` test case, `#### ` step. Bullet lines (`- …`) under any heading are free-form details/test data, `---` is an optional separator — both ignored by the validator.
 - One MD file = one suite. Base name is unique across `test-suites/**` and becomes the suite tag (`auth.md` → `TAG.SUITE.AUTH` = `@auth`).
+- Gherkin `.feature` is an alternative spec format with the same contract: Feature → suite, Scenario → case, step → step with its keyword kept (`Given user …`); tags, tables, doc strings are details. Steps are written in tests, as for MD (README "Gherkin").
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
 - IDs and titles are globally unique across all MD files.
 
@@ -38,4 +39,5 @@ paths:
 - `stage` never rewrites implemented automated tests — fix their titles/steps by hand, keeping step bodies.
 - TS side: all outermost describes form the suite (title/tags from the first); nested describes only group; loop-declared tests count once; `test.use`, `describe.configure`, runtime `test.skip(cond)`/`test.slow()` are not cases.
 - Named `test.beforeAll('<case title>')` / `test.afterAll('<case title>')` are MD test cases (setup/teardown with MD steps); unnamed hooks are not.
+- A `Background` case (Gherkin `Background:` or MD `### Background`) is implemented by `test.beforeEach('Background', …)`; other `beforeEach`/`afterEach` hooks are not cases.
 - Changing what a test checks starts in MD; code follows. Never edit MD just to make code pass `dress`.

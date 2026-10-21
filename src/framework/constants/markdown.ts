@@ -3,6 +3,13 @@
  * Single source of truth for MD structure
  */
 
+/** Spec files: Markdown or Gherkin; the base name (without extension) pairs a spec with its tests */
+export const SPEC_FILE_GLOB = '**/*.{md,feature}'
+export const SPEC_FILE_EXTENSION = /\.(md|feature)$/
+
+/** Gherkin Background as a Test Case title - implemented by a named test.beforeEach */
+export const BACKGROUND_TTL = 'Background'
+
 /** Horizontal rule - optional visual separator between test cases */
 export const MD_HORIZONTAL_RULE = '---'
 

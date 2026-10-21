@@ -289,7 +289,7 @@ Some text but no test cases
     })
 
     it('should throw error when file does not exist', () => {
-      expect(() => parseMDFile('nonexistent.md')).toThrow('Markdown file not found')
+      expect(() => parseMDFile('nonexistent.md')).toThrow('Spec file not found')
     })
 
     it('should throw error for path traversal attack', () => {

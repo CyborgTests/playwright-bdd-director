@@ -60,7 +60,7 @@ describe('error-builders', () => {
   describe('buildFileNotFoundError', () => {
     it('should build file not found error', () => {
       const error = buildFileNotFoundError('auth', '/test-suites')
-      expect(error).toContain('Markdown file not found: auth.md')
+      expect(error).toContain('Spec file not found: auth.md or auth.feature')
       expect(error).toContain('/test-suites')
     })
   })
