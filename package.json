@@ -10,6 +10,7 @@
     "show": "playwright test --ui",
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "autogen": "tsx scripts/auto-skeletons.ts",
+    "matrix": "tsx scripts/coverage-matrix.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

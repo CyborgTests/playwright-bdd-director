@@ -3,5 +3,8 @@
   // so the official Cucumber extension does not report "Undefined step"
   "files.associations": {
     "**/test-suites/**/*.feature": "feature"
-  }
+  },
+  "cSpell.words": [
+    "Subfolders"
+  ]
 }

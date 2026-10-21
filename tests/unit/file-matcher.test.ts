@@ -4,6 +4,9 @@ import { matchFiles } from '@/framework/core/file-matcher'
 import type { ParsedMD } from '@/framework/core/md-parser'
 import type { ParsedTest } from '@/framework/core/ts-parser'
 
+// Coverage-only fields of ParsedTestCase - matching ignores them
+const COVERAGE_DEFAULTS = { stepHasManual: [], modifier: null, hasImplementation: true }
+
 // Test data factories
 function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
   return {
@@ -30,7 +33,8 @@ function createTS(overrides?: Partial<ParsedTest>): ParsedTest {
         id: 'tc-01',
         ttl: 'Test case 1',
         stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-        stepCallKinds: ['test.step', 'test.step']
+        stepCallKinds: ['test.step', 'test.step'],
+        ...COVERAGE_DEFAULTS
       }
     ],
     ...overrides
@@ -58,7 +62,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test case 1',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-            stepCallKinds: ['manualStep', 'manualStep'] // No test.step
+            stepCallKinds: ['manualStep', 'manualStep'],
+            ...COVERAGE_DEFAULTS // No test.step
           }
         ]
       })
@@ -218,9 +223,9 @@ describe('matchFiles', () => {
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [] },
-          { id: 'tc-03', ttl: 'Test 3', stepTtls: [], stepCallKinds: [] }
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS },
+          { id: 'tc-03', ttl: 'Test 3', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
         ]
       })
 
@@ -239,7 +244,9 @@ describe('matchFiles', () => {
         ]
       })
       const ts = createTS({
-        testCases: [{ id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -255,8 +262,14 @@ describe('matchFiles', () => {
       })
       const ts = createTS({
         testCases: [
-          { id: 'tc-01', ttl: 'Wrong Title', stepTtls: [], stepCallKinds: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [] }
+          {
+            id: 'tc-01',
+            ttl: 'Wrong Title',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS
+          },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
         ]
       })
 
@@ -278,7 +291,9 @@ describe('matchFiles', () => {
         testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: 'tc-02', ttl: 'Test', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          { id: 'tc-02', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -292,7 +307,9 @@ describe('matchFiles', () => {
         testCases: [{ id: 'tc-01', ttl: 'Correct Title', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: 'tc-01', ttl: 'Wrong Title', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          { id: 'tc-01', ttl: 'Wrong Title', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -308,7 +325,9 @@ describe('matchFiles', () => {
         testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: 'tc-01-AUTO', ttl: 'Test', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          { id: 'tc-01-AUTO', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -321,7 +340,15 @@ describe('matchFiles', () => {
         testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          {
+            id: null,
+            ttl: 'Test without ID',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS
+          }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -334,7 +361,15 @@ describe('matchFiles', () => {
         testCases: [{ id: '', ttl: 'Test with empty ID', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: 'AUTO', ttl: 'Test with empty ID', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          {
+            id: 'AUTO',
+            ttl: 'Test with empty ID',
+            stepTtls: [],
+            stepCallKinds: [],
+            ...COVERAGE_DEFAULTS
+          }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)
@@ -361,7 +396,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2', 'Step 3'],
-            stepCallKinds: ['test.step', 'test.step', 'test.step']
+            stepCallKinds: ['test.step', 'test.step', 'test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -389,7 +425,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2'],
-            stepCallKinds: ['test.step', 'test.step']
+            stepCallKinds: ['test.step', 'test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -417,7 +454,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-02] Step 1'],
-            stepCallKinds: ['test.step']
+            stepCallKinds: ['test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -444,7 +482,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-01] Wrong Step'],
-            stepCallKinds: ['test.step']
+            stepCallKinds: ['test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -471,7 +510,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step without ID'],
-            stepCallKinds: ['test.step']
+            stepCallKinds: ['test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -504,7 +544,8 @@ describe('matchFiles', () => {
             id: 'tc-02',
             ttl: 'Wrong Test',
             stepTtls: ['Wrong Step'],
-            stepCallKinds: ['test.step']
+            stepCallKinds: ['test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -541,7 +582,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-            stepCallKinds: ['manualStep', 'test.step']
+            stepCallKinds: ['manualStep', 'test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -579,7 +621,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-            stepCallKinds: ['manualStep', 'manualStep'] // Only manualStep, no test.step
+            stepCallKinds: ['manualStep', 'manualStep'],
+            ...COVERAGE_DEFAULTS // Only manualStep, no test.step
           }
         ]
       })
@@ -606,7 +649,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-            stepCallKinds: ['test.step', 'test.step']
+            stepCallKinds: ['test.step', 'test.step'],
+            ...COVERAGE_DEFAULTS
           }
         ]
       })
@@ -636,7 +680,9 @@ describe('matchFiles', () => {
         testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [] }]
       })
       const ts = createTS({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], stepCallKinds: [] }]
+        testCases: [
+          { id: 'tc-01', ttl: 'Test', stepTtls: [], stepCallKinds: [], ...COVERAGE_DEFAULTS }
+        ]
       })
 
       const result = matchFiles('tests/test-suite.AUTO.test.ts', md, ts)

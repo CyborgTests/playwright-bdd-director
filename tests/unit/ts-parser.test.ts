@@ -683,3 +683,69 @@ describeFn('Suite', () => {
     expect(result.testCases[0].stepTtls).toEqual(['Given user is logged in'])
   })
 })
+
+describe('parseTestFile - coverage info', () => {
+  const parse = (content: string) =>
+    parseTestFile(
+      createTSFile(
+        'coverage.ts',
+        `import { test } from '@playwright/test'\n\ntest.describe('Suite', () => {\n${content}\n})`
+      )
+    ).testCases
+
+  it('should read static skip/fixme of test and enclosing describe', () => {
+    const [plain, skipped, fixme, nested] = parse(`
+  test('Plain', async () => {})
+  test.skip('Skipped', async () => {})
+  test.fixme('Fixme', async () => {})
+  test.describe.fixme('Group', () => {
+    test('Nested', async () => {})
+  })`)
+
+    expect(plain.modifier).toBeNull()
+    expect(skipped.modifier).toBe('skip')
+    expect(fixme.modifier).toBe('fixme')
+    expect(nested.modifier).toBe('fixme')
+  })
+
+  it('should ignore runtime test.skip(condition) inside body', () => {
+    const [testCase] = parse(`
+  test('Conditional', async ({ browserName }) => {
+    test.skip(browserName === 'webkit', 'Not supported')
+  })`)
+
+    expect(testCase.modifier).toBeNull()
+  })
+
+  it('should tell implemented test from empty skeleton', () => {
+    const [skeleton, implemented] = parse(`
+  test('Skeleton', async () => {
+    await test.step('Step 1', async () => { /* TODO: Implement step logic */ })
+  })
+  test('Implemented', async ({ page }) => {
+    await test.step('Step 1', async () => {
+      await page.goto('/')
+    })
+  })`)
+
+    expect(skeleton.hasImplementation).toBe(false)
+    expect(implemented.hasImplementation).toBe(true)
+  })
+
+  it('should mark manual steps, including test.step wrapping manualStep', () => {
+    const [testCase] = parse(`
+  test('Cyborg', async ({ page, manualStep }) => {
+    await test.step('Automated', async () => {
+      await page.goto('/')
+    })
+    await test.step('Hybrid', async () => {
+      await page.goto('/')
+      await manualStep('Check it')
+    })
+    await manualStep('Manual')
+  })`)
+
+    expect(testCase.stepTtls).toEqual(['Automated', 'Hybrid', 'Manual'])
+    expect(testCase.stepHasManual).toEqual([false, true, true])
+  })
+})

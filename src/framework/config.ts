@@ -10,6 +10,8 @@ export const CONFIG = {
     testsCyborg: process.env.TESTS_CYBORG_DIR ?? 'tests/cyborg',
     testsArchived: process.env.TESTS_ARCHIVED_DIR ?? 'tests/archived',
     tagsFile: 'src/test-constants/tags.ts',
+    // Coverage matrix reports: <path>.json / .html / .md
+    coverageMatrix: process.env.COVERAGE_MATRIX_FILE ?? 'test-results/coverage-matrix',
     packageJson: 'package.json'
   },
   /**

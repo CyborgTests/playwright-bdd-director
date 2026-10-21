@@ -1,6 +1,6 @@
 # 🎭 Playwright BDD Director
 
-**Write the Script, We'll Play the Show**
+## Write the Script, We'll Play the Show
 
 A Markdown-driven testing framework for Playwright that keeps cyborg (manual) and automated tests synchronized from a single source of truth.
 
@@ -127,6 +127,37 @@ After tests finish, close the UI window - the terminal will become available aga
 ```bash
 npm run review
 ```
+
+### 11. Check coverage
+
+See which spec test cases are covered by cyborg, API, UI and E2E tests - no test run needed:
+
+```bash
+npm run matrix                           # console table
+npm run matrix -- --html --json --md     # + test-results/coverage-matrix.{html,json,md}
+npm run matrix -- --md=docs/coverage.md  # any format to a custom path
+npm run matrix -- --min=80               # exit 1 when automated coverage is below 80%
+```
+
+```text
+  Authentication Tests  test-suites/auth.md
+  ████████████████████ 100% automated 5/5
+
+    Test case                   Cyborg   API   UI   E2E
+    User Registration           ✔ 0/3    ✔     ✔    —
+    ...
+
+  Total  7 test cases in 2 suite(s)
+  Automated     ████████████████████ 100% 7/7
+  Cyborg only   ░░░░░░░░░░░░░░░░░░░░   0% 0/7
+  Uncovered     ░░░░░░░░░░░░░░░░░░░░   0% 0/7
+  Cyborg steps  ░░░░░░░░░░░░░░░░░░░░   0% 0/19 without manualStep()
+```
+
+- **Cells**: ✔ implemented · ○ empty skeleton (AUTO from `autogen`) · ⊘ `skip`/`fixme` · — missing · `n/a` for `noCyborg` suites; colors in a terminal (off for pipes and `NO_COLOR`)
+- **Cyborg cell** `✔ x/y` shows automated/total steps: a step counts as automated when it has no `manualStep()` inside
+- **Automated case** = implemented in at least one of api/ui/e2e/auto; Background is shown but not counted
+- **HTML** is a single self-contained file with filters (not automated / cyborg only / uncovered) and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
 ## ⚡ Markdown-Driven Testing Platform
 
@@ -607,15 +638,16 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable             | Default                | Description                     |
-| -------------------- | ---------------------- | ------------------------------- |
-| `TEST_SUITES_DIR`    | `test-suites`          | Markdown test suites directory  |
-| `TESTS_DIR`          | `tests`                | Root tests directory            |
-| `TESTS_AUTO_DIR`     | `tests/automated/todo` | Generated AUTO test skeletons   |
-| `TESTS_CYBORG_DIR`   | `tests/cyborg`         | Generated cyborg test skeletons |
-| `TESTS_ARCHIVED_DIR` | `tests/archived`       | Archived orphaned tests         |
-| `METRICS_ENABLED`    | `false`                | Enable metrics JSON output      |
-| `METRICS_FILE`       | `.metrics.json`        | Metrics output file path        |
+| Variable               | Default                        | Description                                      |
+| ---------------------- | ------------------------------ | ------------------------------------------------ |
+| `TEST_SUITES_DIR`      | `test-suites`                  | Markdown test suites directory                   |
+| `TESTS_DIR`            | `tests`                        | Root tests directory                             |
+| `TESTS_AUTO_DIR`       | `tests/automated/todo`         | Generated AUTO test skeletons                    |
+| `TESTS_CYBORG_DIR`     | `tests/cyborg`                 | Generated cyborg test skeletons                  |
+| `TESTS_ARCHIVED_DIR`   | `tests/archived`               | Archived orphaned tests                          |
+| `METRICS_ENABLED`      | `false`                        | Enable metrics JSON output                       |
+| `METRICS_FILE`         | `.metrics.json`                | Metrics output file path                         |
+| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix` | Coverage matrix reports path (without extension) |
 
 **Suites without cyborg tests:** list them in `CONFIG.noCyborg` (paths inside `test-suites/` without `.md`): a folder (`'api'`) covers all its MDs, a file (`'e2e/checkout'`) a single MD. `stage` neither generates nor auto-fixes cyborg files for them - they pair with automated tests only. An existing cyborg file is still checked by `dress`, so delete it.
 

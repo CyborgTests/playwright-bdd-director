@@ -1,6 +1,6 @@
 import { CallExpression, SyntaxKind } from 'ts-morph'
 
-import { PATTERNS } from '../constants/test-files'
+import { AST_IDENTIFIERS, PATTERNS } from '../constants/test-files'
 import { parseIDAndTitle } from '../utils/helpers'
 import {
   findOutermostDescribeCalls,
@@ -15,9 +15,13 @@ export interface ParsedTestCase {
   ttl: string // User login with valid credentials
   stepTtls: string[]
   stepCallKinds: StepCallKind[]
+  stepHasManual: boolean[] // manualStep() itself or test.step() wrapping a manualStep()
+  modifier: TestModifier | null // test.skip/fixme() or inside describe.skip/fixme()
+  hasImplementation: boolean // body calls something besides steps (not an empty skeleton)
 }
 
 export type StepCallKind = 'manualStep' | 'test.step'
+export type TestModifier = 'skip' | 'fixme'
 
 export interface ParsedTest {
   suiteID: string | null // "" for [], "TS01" for [TS01], or null for no brackets
@@ -69,12 +73,15 @@ export function parseTestFile(filePath: string): ParsedTest {
     const stepCalls = findStepCalls(testCall)
     const stepTtls: string[] = []
     const stepCallKinds: StepCallKind[] = []
+    const stepHasManual: boolean[] = []
 
     for (const stepCall of stepCalls) {
       const stepText = getStringLiteralValue(stepCall, 0)
       if (stepText) {
+        const kind = inferStepCallKind(stepCall)
         stepTtls.push(stepText)
-        stepCallKinds.push(inferStepCallKind(stepCall))
+        stepCallKinds.push(kind)
+        stepHasManual.push(kind === 'manualStep' || hasManualStepCall(stepCall))
       }
     }
 
@@ -82,7 +89,10 @@ export function parseTestFile(filePath: string): ParsedTest {
       id: testCaseID,
       ttl: testCaseTtl,
       stepTtls,
-      stepCallKinds
+      stepCallKinds,
+      stepHasManual,
+      modifier: inferModifier(testCall),
+      hasImplementation: hasImplementationCalls(testCall)
     })
   }
 
@@ -104,6 +114,43 @@ function inferStepCallKind(call: CallExpression): StepCallKind {
 
   if (expression === 'manualStep') return 'manualStep'
   return 'test.step'
+}
+
+function hasManualStepCall(call: CallExpression): boolean {
+  return call
+    .getDescendantsOfKind(SyntaxKind.CallExpression)
+    .some((inner) => inner.getExpression().getText() === AST_IDENTIFIERS.MANUAL_STEP)
+}
+
+/**
+ * Static skip/fixme of test case: `test.skip('title', fn)`, `test.fixme('title', fn)` or any
+ * enclosing `describe.skip/fixme`. Runtime `test.skip(condition)` inside the body is ignored.
+ */
+function inferModifier(testCall: CallExpression): TestModifier | null {
+  const calls = [
+    testCall,
+    ...testCall.getAncestors().filter((node) => node.isKind(SyntaxKind.CallExpression))
+  ] as CallExpression[]
+  for (const call of calls) {
+    const expression = call.getExpression().getText()
+    if (expression.endsWith('.skip')) return 'skip'
+    if (expression.endsWith('.fixme')) return 'fixme'
+  }
+  return null
+}
+
+/**
+ * Test body calls anything besides step declarations (page objects, clients, expect) -
+ * a generated skeleton holds only steps with empty bodies, a cyborg test only manualStep()
+ */
+function hasImplementationCalls(testCall: CallExpression): boolean {
+  const callback = testCall.getArguments().at(-1)
+  if (!callback) return false
+
+  return callback.getDescendantsOfKind(SyntaxKind.CallExpression).some((call) => {
+    const expression = call.getExpression().getText()
+    return !expression.endsWith('.step') && expression !== AST_IDENTIFIERS.MANUAL_STEP
+  })
 }
 
 /**
