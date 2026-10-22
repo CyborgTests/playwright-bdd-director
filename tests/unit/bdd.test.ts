@@ -327,3 +327,85 @@ Feature: Shop
     expect(ambiguous[0]).toContain('Ambiguous step "Then cart is empty" matches 2 definitions')
   })
 })
+
+describe('generateBddTest - Rule Background and languages', () => {
+  const generate = (feature: string) => {
+    const specPath = path.join(testDir, 'shop.feature')
+    fs.writeFileSync(specPath, feature, 'utf-8')
+    return generateBddTest(specPath, path.join(testDir, 'shop.bdd.test.ts'))
+  }
+  const feature = `Feature: Shop
+  Background:
+    Given user is logged in
+
+  Scenario: Browse
+    Given user is logged in
+
+  @cart
+  Rule: Cart
+    Background:
+      Given cart is empty
+
+    Scenario: Add
+      Given user is logged in
+`
+
+  it('should run Rule Background after Feature Background', async () => {
+    Given('user is logged in', async () => {})
+    Given('cart is empty', async () => {})
+
+    const { content } = await generate(feature)
+
+    expect(content).toMatch(
+      /beforeEach\('Background'[\s\S]*test\('Browse'[\s\S]*test\.describe\('Cart', \{ tag: \['@cart'\] \}, \(\) => \{\s+test\.beforeEach\('Background: Cart'[\s\S]*test\('Add'/
+    )
+  })
+
+  it('should keep Before hooks, Feature and Rule Background in order inside hook groups', async () => {
+    Given('user is logged in', async () => {})
+    Given('cart is empty', async () => {})
+    Before({ name: 'Open cart', tags: '@cart' }, async () => {})
+
+    const { content } = await generate(feature)
+    const rule = content.slice(content.indexOf("test.describe('Cart'"))
+
+    expect(content.indexOf("beforeEach('Background'")).toBeGreaterThan(-1)
+    expect(rule).toMatch(
+      /beforeEach\('Before: Open cart'[\s\S]*beforeEach\('Background'[\s\S]*beforeEach\('Background: Cart'[\s\S]*test\('Add'/
+    )
+  })
+
+  it('should pass the language of a non-English spec to runStep', async () => {
+    Given('user opens the home page', async ({ page }) => page)
+
+    const { content } = await generate(`# language: uk
+Функціонал: Shop
+  Сценарій: Open
+    Припустимо, що user opens the home page
+`)
+
+    expect(content).toContain(
+      "await runStep('Припустимо, що user opens the home page', { page }, { language: 'uk' })"
+    )
+  })
+})
+
+describe('step keywords of languages', () => {
+  it('should strip the longest keyword of the language', () => {
+    Given('user opens the home page', async () => {})
+
+    expect(stripStepKeyword('Припустимо, що user opens', 'uk')).toBe('user opens')
+    expect(stripStepKeyword('Дано user opens', 'uk')).toBe('user opens')
+    expect(findStepDefinition('І user opens the home page', 'uk').definition.keyword).toBe('Given')
+    expect(() => stripStepKeyword('Given x', 'xx')).toThrow('Unknown Gherkin language "xx"')
+  })
+
+  it('should not strip a word of English text that is a keyword in another language', () => {
+    expect(stripStepKeyword('A new tab opens')).toBe('A new tab opens')
+  })
+
+  it('should accept any whitespace after the keyword, but not a longer word', () => {
+    expect(stripStepKeyword('Given\tuser opens')).toBe('user opens')
+    expect(stripStepKeyword('Andrew opens the page')).toBe('Andrew opens the page')
+  })
+})

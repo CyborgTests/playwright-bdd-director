@@ -502,7 +502,7 @@ test('Go back home from "Signup / Login" page', async ({ homePage }) => {
 - **Missing step** → scenario generated as `test.fixme` + a snippet from `stage`; **ambiguous step** → `stage` and `dress` fail with locations
 - **Hooks** `Before/After/BeforeAll/AfterAll` with tag expressions, **special tags** `@skip`, `@fixme`, `@fail`, `@slow`, `@retries:N`, `@timeout:N`
 - **`runStep` in cyborg tests**: the same step definitions in a mixed walkthrough - `stage` never edits these calls, `dress` reports what would fail with the exact fix
-- Run: `npm run play bdd`. English Gherkin keywords only for now
+- Run: `npm run play bdd`. Any Gherkin language (`# language: uk`), Background inside Rule, tags on Examples
 
 Full guide: [docs/step-definitions.md](docs/step-definitions.md).
 

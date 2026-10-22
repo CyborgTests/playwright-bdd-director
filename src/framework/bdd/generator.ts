@@ -1,5 +1,5 @@
 import { CucumberExpressionGenerator } from '@cucumber/cucumber-expressions'
-import type { Rule, Scenario, Step, Tag } from '@cucumber/messages'
+import type { Background, Rule, Scenario, Step, Tag } from '@cucumber/messages'
 import { parse as parseTagExpression } from '@cucumber/tag-expressions'
 import { glob } from 'glob'
 import path from 'path'
@@ -7,7 +7,7 @@ import prettier from 'prettier'
 import { pathToFileURL } from 'url'
 
 import { CONFIG } from '../config'
-import { parseGherkinDocument } from '../core/gherkin-parser'
+import { getBackgroundTitle, parseGherkinDocument } from '../core/gherkin-parser'
 import { quoteString } from '../generation/examples-code'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
 import { getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
@@ -44,7 +44,7 @@ interface Context {
   ambiguous: string[]
   missing: MissingStep[]
   testPath: string
-  background: string[] // Background beforeEach, repeated in every hook group after its Before hooks
+  language: string // Gherkin dialect of the spec (`# language: uk`), passed to runStep when not English
 }
 
 /** Test with the Before / After hooks matching its tags - tests are grouped by them */
@@ -53,7 +53,9 @@ interface TestUnit {
   hooks: HookDefinition[]
 }
 
-type Child = { unit: TestUnit } | { rule: Rule; children: Child[] }
+/** Rule with its own Background (beforeEach lines, empty when none) */
+type RuleNode = { rule: Rule; background: string[]; children: Child[] }
+type Child = { unit: TestUnit } | RuleNode
 
 const SNIPPET_TYPES: Record<string, string> = {
   int: 'number',
@@ -83,7 +85,7 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
 
 /**
  * Test file of a step definitions style spec (step definitions must be loaded):
- * Feature → describe, Background → beforeEach, Rule → nested describe, Scenario → test,
+ * Feature → describe, Background → beforeEach (Rule Background too), Rule → nested describe, Scenario → test,
  * Outline → test per Examples row; each step → `await runStep('Given …', { fixtures })`.
  * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the feature,
  * Before / After → beforeEach / afterEach, tests with different hooks grouped in anonymous describes.
@@ -98,7 +100,7 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
     ambiguous: [],
     missing: [],
     testPath,
-    background: []
+    language: feature.language
   }
   const baseName = getMarkdownBaseName(specPath)
   const featureTags = tagNames(feature.tags)
@@ -110,7 +112,7 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   ]
 
   const background = feature.children.find((child) => child.background)?.background
-  if (background) context.background = emitBackground(background.steps, context)
+  const backgroundLines = background ? emitBackground(background, context) : []
 
   const children = feature.children.flatMap((child): Child[] => {
     if (child.scenario) return collectScenario(child.scenario, featureTags, context)
@@ -125,7 +127,7 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
     ...featureHooks('AfterAll')
       .reverse()
       .flatMap((hook) => emitHook(hook, context)),
-    ...emitChildren(children, context, false)
+    ...emitChildren(children, context, false, backgroundLines)
   ]
 
   const sideEffects = [...context.modules].sort().map((module) => `import '${module}'`)
@@ -156,12 +158,13 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   return { specPath, testPath, content, missing: context.missing, ambiguous: context.ambiguous }
 }
 
-function emitBackground(steps: readonly Step[], context: Context): string[] {
-  const { lines, fixtures, missing } = emitSteps(steps, {}, context)
+function emitBackground(background: Background, context: Context, ruleName?: string): string[] {
+  const { lines, fixtures, missing } = emitSteps(background.steps, {}, context)
   // Background cannot be skipped as a whole: mark every test of the suite fixme at runtime
   const fixme = missing.length > 0 ? [`test.fixme(true, ${quoteString(missingNote(missing))})`] : []
+  const title = quoteString(getBackgroundTitle(background, ruleName))
   return [
-    `test.beforeEach('Background', async (${fixtureParam(fixtures)}) => {`,
+    `test.beforeEach(${title}, async (${fixtureParam(fixtures)}) => {`,
     ...fixme,
     ...lines,
     '})',
@@ -170,12 +173,11 @@ function emitBackground(steps: readonly Step[], context: Context): string[] {
 }
 
 function collectRule(rule: Rule, inherited: string[], context: Context): Child {
-  if (rule.children.some((child) => child.background)) {
-    throw new Error(`Background inside Rule is not supported yet: "${rule.name}"`)
-  }
   const tags = [...inherited, ...tagNames(rule.tags)]
+  const background = rule.children.find((child) => child.background)?.background
   return {
     rule,
+    background: background ? emitBackground(background, context, rule.name.trim()) : [],
     children: rule.children.flatMap((child) =>
       child.scenario ? collectScenario(child.scenario, tags, context) : []
     )
@@ -199,27 +201,37 @@ function collectScenario(scenario: Scenario, inherited: string[], context: Conte
 }
 
 /**
- * Children with Before / After hooks and Background. When all tests share the hooks they are
+ * Children with Before / After hooks and Backgrounds. When all tests share the hooks they are
  * declared once at this level; otherwise consecutive tests with the same hooks are grouped
- * (rules decide for their own tests) - Background goes after Before hooks to keep Cucumber order.
+ * (rules decide for their own tests). Order as in Cucumber: Before hooks, Feature Background,
+ * Rule Background, steps, After hooks - so pending Backgrounds go after the Before hooks.
+ * @param background - Background lines not declared yet at an outer level
  */
-function emitChildren(children: Child[], context: Context, hooksDone: boolean): string[] {
+function emitChildren(
+  children: Child[],
+  context: Context,
+  hooksDone: boolean,
+  background: string[]
+): string[] {
   if (hooksDone) {
     return children.flatMap((child) =>
-      'unit' in child ? child.unit.lines : emitRule(child, context, true)
+      'unit' in child ? child.unit.lines : emitRule(child, context, true, [])
     )
   }
 
   const units = flattenUnits(children)
   if (new Set(units.map((unit) => hookKey(unit.hooks))).size <= 1) {
-    return [...emitSetup(units[0]?.hooks ?? [], context), ...emitChildren(children, context, true)]
+    return [
+      ...emitSetup(units[0]?.hooks ?? [], background, context),
+      ...emitChildren(children, context, true, [])
+    ]
   }
 
   const lines: string[] = []
   let group: TestUnit[] = []
   const flush = () => {
     if (group.length === 0) return
-    const setup = emitSetup(group[0].hooks, context)
+    const setup = emitSetup(group[0].hooks, background, context)
     const tests = group.flatMap((unit) => unit.lines)
     lines.push(
       ...(setup.length > 0 ? ['test.describe(() => {', ...setup, ...tests, '})', ''] : tests)
@@ -229,7 +241,7 @@ function emitChildren(children: Child[], context: Context, hooksDone: boolean): 
   for (const child of children) {
     if ('rule' in child) {
       flush()
-      lines.push(...emitRule(child, context, false))
+      lines.push(...emitRule(child, context, false, background))
     } else {
       if (group.length > 0 && hookKey(group[0].hooks) !== hookKey(child.unit.hooks)) flush()
       group.push(child.unit)
@@ -239,25 +251,37 @@ function emitChildren(children: Child[], context: Context, hooksDone: boolean): 
   return lines
 }
 
-function emitRule(child: { rule: Rule; children: Child[] }, context: Context, hooksDone: boolean) {
-  const { rule } = child
+/**
+ * Rule describe. Hooks declared outside - its own Background first; otherwise the Rule decides on
+ * hooks and pending Backgrounds itself, its Background after the outer one.
+ */
+function emitRule(
+  node: RuleNode,
+  context: Context,
+  hooksDone: boolean,
+  background: string[]
+): string[] {
+  const { rule } = node
   const details = rule.tags.length > 0 ? `${tagDetails(tagNames(rule.tags))}, ` : ''
+  const body = hooksDone
+    ? [...node.background, ...emitChildren(node.children, context, true, [])]
+    : emitChildren(node.children, context, false, [...background, ...node.background])
   return [
     `test.describe(${quoteString(rule.name.trim())}, ${details}() => {`,
     ...configureLines(tagNames(rule.tags), `Rule "${rule.name.trim()}"`),
-    ...emitChildren(child.children, context, hooksDone),
+    ...body,
     '})',
     ''
   ]
 }
 
-/** Before hooks, Background, After hooks (reverse definition order, as Cucumber runs them) */
-function emitSetup(hooks: HookDefinition[], context: Context): string[] {
+/** Before hooks, Backgrounds, After hooks (reverse definition order, as Cucumber runs them) */
+function emitSetup(hooks: HookDefinition[], background: string[], context: Context): string[] {
   const before = hooks.filter((hook) => hook.kind === 'Before')
   const after = hooks.filter((hook) => hook.kind === 'After').reverse()
   return [
     ...before.flatMap((hook) => emitHook(hook, context)),
-    ...context.background,
+    ...background,
     ...after.flatMap((hook) => emitHook(hook, context))
   ]
 }
@@ -344,7 +368,7 @@ function emitSteps(
       context.modules.add(toModuleSpecifier(definition.location, context.testPath))
     }
 
-    const argument = stepArgument(step, values)
+    const argument = stepOptions(step, values, context.language)
     const fixturesArg =
       fixtureNames.length > 0 ? `{ ${fixtureNames.join(', ')} }` : argument ? '{}' : ''
     const args = [quoteString(title), fixturesArg, argument].filter(Boolean).join(', ')
@@ -413,17 +437,21 @@ function hasHooks(lines: string[]): boolean {
   return lines.some((line) => line.startsWith('await runHook('))
 }
 
-function stepArgument(step: Step, values: Record<string, string>): string {
+/** runStep options: DataTable / DocString of the step, language of a non-English spec */
+function stepOptions(step: Step, values: Record<string, string>, language: string): string {
+  const options: string[] = []
   if (step.dataTable) {
     const rows = step.dataTable.rows.map(
       (row) =>
         `[${row.cells.map((cell) => quoteString(substitute(cell.value, values))).join(', ')}]`
     )
-    return `{ dataTable: [${rows.join(', ')}] }`
+    options.push(`dataTable: [${rows.join(', ')}]`)
   }
-  if (step.docString)
-    return `{ docString: ${quoteString(substitute(step.docString.content, values))} }`
-  return ''
+  if (step.docString) {
+    options.push(`docString: ${quoteString(substitute(step.docString.content, values))}`)
+  }
+  if (language !== 'en') options.push(`language: ${quoteString(language)}`)
+  return options.length > 0 ? `{ ${options.join(', ')} }` : ''
 }
 
 /**

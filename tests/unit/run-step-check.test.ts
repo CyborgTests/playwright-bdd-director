@@ -31,7 +31,11 @@ afterEach(() => {
 })
 
 /** Cyborg test importing runStep and this file's step definitions, with the given test body */
-const check = (body: string, imports = "import '../tests/unit/run-step-check.test'\n") => {
+const check = (
+  body: string,
+  imports = "import '../tests/unit/run-step-check.test'\n",
+  specs?: ReadonlyMap<string, string>
+) => {
   const file = path.join(testDir, 'shop.cyborg.test.ts')
   fs.writeFileSync(
     file,
@@ -44,7 +48,7 @@ ${body}
 `,
     'utf-8'
   )
-  return checkRunSteps([file], { load }).then((result) => result[0]?.errors ?? [])
+  return checkRunSteps([file], { load, specs }).then((result) => result[0]?.errors ?? [])
 }
 
 describe('checkRunSteps', () => {
@@ -131,6 +135,36 @@ describe('checkRunSteps', () => {
     expect(errors).toEqual([
       expect.stringContaining(
         'Step definitions of tests/unit/run-step-check.test.ts are used but not imported\n  Fix: import'
+      )
+    ])
+  })
+})
+
+describe('checkRunSteps - languages', () => {
+  const body = `  test('Open', async ({ homePage }) => {
+    await runStep('Дано user opens the home page', { homePage }, { language: 'uk' })
+    await runStep('Дано user opens the home page', { homePage })
+  })`
+
+  it('should match a non-English title with its language, hint the language of the spec', async () => {
+    const spec = path.join(testDir, 'shop.feature')
+    fs.writeFileSync(spec, '# language: uk\nФункціонал: Shop\n  Сценарій: Open\n    Дано x\n')
+
+    const errors = await check(body, undefined, new Map([['shop', spec]]))
+
+    expect(errors).toEqual([
+      expect.stringContaining(
+        "no step definition matches \"Дано user opens the home page\"\n  Fix: Pass the spec language: runStep('Дано user opens the home page', { ... }, { language: 'uk' })"
+      )
+    ])
+  })
+
+  it('should give a generic language hint when the spec is unknown', async () => {
+    const errors = await check(body)
+
+    expect(errors).toEqual([
+      expect.stringContaining(
+        "(its # language: code): runStep('Дано user opens the home page', { ... }, { language: '<code>' })"
       )
     ])
   })

@@ -1,12 +1,17 @@
+import { dialects } from '@cucumber/gherkin'
 import { test } from '@playwright/test'
 
 import { getHookDefinitions, type HookKind, matchStepDefinitions, type StepMatch } from './registry'
 
-/** Gherkin step keyword at the start of a step title (English) */
-const STEP_KEYWORD = /^(Given|When|Then|And|But|\*)\s+/
-
-/** Step argument as written by the generator: Gherkin DataTable rows or DocString */
-export type StepArgument = { dataTable: string[][] } | { docString: string }
+/**
+ * Third argument of runStep: Gherkin DataTable rows or DocString of the step (passed to the step
+ * function last), and the spec language for a non-English title (`Дано …` → `uk`)
+ */
+export interface StepOptions {
+  dataTable?: string[][]
+  docString?: string
+  language?: string // Gherkin dialect code (`# language: uk`), English by default
+}
 
 /**
  * Gherkin DataTable passed to a step function as last argument
@@ -44,10 +49,10 @@ export class DataTable {
 export async function runStep(
   title: string,
   fixtures: Record<string, unknown> = {},
-  argument?: StepArgument
+  options: StepOptions = {}
 ): Promise<void> {
-  const { definition, params } = findStepDefinition(title)
-  const extra = argument === undefined ? [] : [toStepArgument(argument)]
+  const { definition, params } = findStepDefinition(title, options.language)
+  const extra = toStepArgument(options)
   await test.step(title, async () => {
     await definition.fn(fixtures, ...params, ...extra)
   })
@@ -74,8 +79,8 @@ export async function runHook(
  * The only definition matching step title
  * @throws Error listing locations of ambiguous definitions, or a hint for a missing one
  */
-export function findStepDefinition(title: string): StepMatch {
-  const text = stripStepKeyword(title)
+export function findStepDefinition(title: string, language?: string): StepMatch {
+  const text = stripStepKeyword(title, language)
   const matches = matchStepDefinitions(text)
   if (matches.length === 1) return matches[0]
   if (matches.length === 0) {
@@ -86,8 +91,52 @@ export function findStepDefinition(title: string): StepMatch {
   throw new Error(formatAmbiguous(title, matches))
 }
 
-export function stripStepKeyword(title: string): string {
-  return title.replace(STEP_KEYWORD, '')
+/**
+ * Step text without its keyword: "Given user …" → "user …", "Дано user …" with language "uk"
+ * @throws Error for an unknown language code
+ */
+export function stripStepKeyword(title: string, language = 'en'): string {
+  const keyword = getStepKeywords(language).find((candidate) => startsWithKeyword(title, candidate))
+  return keyword ? title.slice(keyword.length).trimStart() : title
+}
+
+/** Keyword followed by whitespace: "And user" yes, "Andrew" / "And" alone no */
+function startsWithKeyword(title: string, keyword: string): boolean {
+  return title.startsWith(keyword) && /\s/.test(title.charAt(keyword.length))
+}
+
+/** Title starts with a step keyword of the language */
+export function hasStepKeyword(title: string, language = 'en'): boolean {
+  return getStepKeywords(language).some((keyword) => startsWithKeyword(title, keyword))
+}
+
+/** Title starts with a step keyword of some language, but not an English one */
+export function isNonEnglishStepTitle(title: string): boolean {
+  return (
+    !hasStepKeyword(title) &&
+    Object.keys(dialects).some((code) => code !== 'en' && hasStepKeyword(title, code))
+  )
+}
+
+const keywordsByLanguage = new Map<string, string[]>()
+
+/** Step keywords of a Gherkin dialect, trimmed, longest first ("Припустимо, що" before "Припустимо") */
+function getStepKeywords(language: string): string[] {
+  let keywords = keywordsByLanguage.get(language)
+  if (!keywords) {
+    const dialect = dialects[language]
+    if (!dialect) {
+      throw new Error(
+        `Unknown Gherkin language "${language}"\n  Fix: Use a code from # language: (en, uk, de, ...)`
+      )
+    }
+    const all = [...dialect.given, ...dialect.when, ...dialect.then, ...dialect.and, ...dialect.but]
+    keywords = [...new Set(all.map((keyword) => keyword.trim()))].sort(
+      (a, b) => b.length - a.length
+    )
+    keywordsByLanguage.set(language, keywords)
+  }
+  return keywords
 }
 
 export function formatAmbiguous(title: string, matches: StepMatch[]): string {
@@ -104,6 +153,7 @@ function formatPattern(pattern: string | RegExp): string {
   return typeof pattern === 'string' ? `'${pattern}'` : String(pattern)
 }
 
-function toStepArgument(argument: StepArgument): DataTable | string {
-  return 'dataTable' in argument ? new DataTable(argument.dataTable) : argument.docString
+function toStepArgument({ dataTable, docString }: StepOptions): Array<DataTable | string> {
+  if (dataTable) return [new DataTable(dataTable)]
+  return docString === undefined ? [] : [docString]
 }

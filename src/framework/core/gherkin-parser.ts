@@ -4,6 +4,7 @@ import {
   type Examples,
   type FeatureChild,
   IdGenerator,
+  type RuleChild,
   type Step,
   type Tag
 } from '@cucumber/messages'
@@ -15,6 +16,7 @@ import {
   assertUniqueTestCaseIds,
   assertValidExamples,
   assertValidTags,
+  getBddSpecKey,
   getErrorMessage,
   isBackgroundTitle,
   parseIDAndTitle
@@ -30,11 +32,16 @@ import type { ExamplesTable, ParsedMD, TestCase } from './md-parser'
  * - Background → test case "Background" (or "Background: name"), implemented by a named
  *   test.beforeEach (see isBackgroundTitle)
  * - Rule groups its scenarios only (flattened in source order)
+ * - step definitions style specs (CONFIG.bdd.dirs) also allow Background inside Rule and tags on
+ *   Examples (added to the test case tags) - their tests are generated, not written by hand
  * - tags: Feature → suite tags, Rule + Scenario → test case tags (Background has none)
  * - descriptions, data tables and doc strings are details, ignored like MD bullet lines
  * - `[ID]` in Feature / Scenario names follows the MD convention
  */
-export function parseGherkinFile(featurePath: string): ParsedMD {
+export function parseGherkinFile(
+  featurePath: string,
+  { isBdd = getBddSpecKey(featurePath) !== null }: { isBdd?: boolean } = {}
+): ParsedMD {
   const feature = parseGherkinDocument(featurePath).feature
 
   if (!feature) {
@@ -48,7 +55,7 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
   }
 
   const suite = parseIDAndTitle(feature.name.trim())
-  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath, []))
+  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath, [], isBdd))
 
   if (testCases.every((tc) => isBackgroundTitle(tc.ttl))) {
     throw new Error(
@@ -80,35 +87,51 @@ export function parseGherkinDocument(featurePath: string) {
   }
 }
 
-function toTestCases(child: FeatureChild, featurePath: string, ruleTags: string[]): TestCase[] {
+function toTestCases(
+  child: FeatureChild | RuleChild,
+  featurePath: string,
+  ruleTags: string[],
+  isBdd: boolean,
+  ruleSteps: string[] = []
+): TestCase[] {
   if (child.background) return [toBackgroundCase(child.background)]
 
   if (child.scenario) {
     const { id, ttl } = parseIDAndTitle(child.scenario.name.trim())
-    const tags = [...new Set([...ruleTags, ...toTagNames(child.scenario.tags)])]
-    const examples = toExamplesTable(child.scenario.examples, ttl, featurePath)
-    return [{ id, ttl, stepTtls: child.scenario.steps.map(toStepTtl), tags, examples }]
+    const examplesTags = isBdd
+      ? child.scenario.examples.flatMap((block) => toTagNames(block.tags))
+      : []
+    const tags = [...new Set([...ruleTags, ...toTagNames(child.scenario.tags), ...examplesTags])]
+    const examples = toExamplesTable(child.scenario.examples, ttl, featurePath, isBdd)
+    const stepTtls = [...ruleSteps, ...child.scenario.steps.map(toStepTtl)]
+    return [{ id, ttl, stepTtls, tags, examples }]
   }
 
-  if (child.rule) {
-    if (child.rule.children.some((ruleChild) => ruleChild.background)) {
+  if ('rule' in child && child.rule) {
+    const { rule } = child
+    const background = rule.children.find((ruleChild) => ruleChild.background)?.background
+    if (!isBdd && background) {
       throw new Error(
-        `Background inside Rule is not supported yet: "${child.rule.name}" in ${featurePath}\n` +
-          `  Fix: Move the Background to Feature level`
+        `Background inside Rule is not supported yet: "${rule.name}" in ${featurePath}\n` +
+          `  Fix: Move the Background to Feature level (supported in step definitions style specs)`
       )
     }
-    const tags = toTagNames(child.rule.tags)
-    return child.rule.children.flatMap((ruleChild) => toTestCases(ruleChild, featurePath, tags))
+    // Rule Background steps run before each scenario of the Rule only: in the case model (cyborg
+    // tests, matrix) they lead its scenarios' steps - a beforeEach would also run for other tests
+    const steps = background?.steps.map(toStepTtl) ?? []
+    const tags = toTagNames(rule.tags)
+    return rule.children
+      .filter((ruleChild) => !ruleChild.background)
+      .flatMap((ruleChild) => toTestCases(ruleChild, featurePath, tags, isBdd, steps))
   }
 
   return []
 }
 
 function toBackgroundCase(background: Background): TestCase {
-  const name = background.name.trim()
   return {
     id: null,
-    ttl: name ? `${BACKGROUND_TTL}: ${name}` : BACKGROUND_TTL,
+    ttl: getBackgroundTitle(background),
     stepTtls: background.steps.map(toStepTtl),
     tags: [],
     examples: null
@@ -116,13 +139,24 @@ function toBackgroundCase(background: Background): TestCase {
 }
 
 /**
- * Outline Examples blocks joined into one table. Tags on Examples would need per-row tags - not
- * supported yet.
+ * "Background" or "Background: <name>"; a Background inside Rule without name is titled by its
+ * Rule ("Background: <rule>") so the two stay apart
+ */
+export function getBackgroundTitle(background: Background, ruleName?: string): string {
+  const name = background.name.trim() || ruleName
+  return name ? `${BACKGROUND_TTL}: ${name}` : BACKGROUND_TTL
+}
+
+/**
+ * Outline Examples blocks joined into one table. Tags on Examples would need per-row tags in
+ * hand-written tests - allowed only in step definitions style specs (isBdd), whose tests are
+ * generated.
  */
 function toExamplesTable(
   blocks: readonly Examples[],
   caseTtl: string,
-  featurePath: string
+  featurePath: string,
+  isBdd: boolean
 ): ExamplesTable | null {
   const withHeader = blocks.filter((block) => block.tableHeader)
   if (withHeader.length === 0) return null
@@ -130,8 +164,11 @@ function toExamplesTable(
   const fail = (problem: string, fix: string): never => {
     throw new Error(buildExamplesError(problem, caseTtl, featurePath, fix))
   }
-  if (withHeader.some((block) => block.tags.length > 0)) {
-    fail('have tags - not supported yet', 'Move the tags to the Scenario Outline')
+  if (!isBdd && withHeader.some((block) => block.tags.length > 0)) {
+    fail(
+      'have tags - not supported yet',
+      'Move the tags to the Scenario Outline (Examples tags work in step definitions style specs)'
+    )
   }
 
   const cells = (row: { cells: readonly { value: string }[] }) => row.cells.map((c) => c.value)

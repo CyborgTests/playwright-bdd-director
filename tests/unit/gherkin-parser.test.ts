@@ -347,3 +347,37 @@ ${examples}`
     expect(() => parseGherkinFile(filePath)).toThrow('make test titles repeat')
   })
 })
+
+describe('parseGherkinFile - step definitions style', () => {
+  const feature = `Feature: Shop
+  Rule: Cart
+    Background:
+      Given cart is empty
+
+    Scenario Outline: Add <product>
+      When user adds "<product>"
+
+      @smoke
+      Examples:
+        | product  |
+        | Blue Top |
+`
+
+  it('should lead Rule scenarios with Rule Background steps and add Examples tags in step definitions style', () => {
+    const filePath = createFeature('bdd.feature', feature)
+
+    const { testCases } = parseGherkinFile(filePath, { isBdd: true })
+
+    expect(testCases.map((tc) => [tc.ttl, tc.stepTtls, tc.tags])).toEqual([
+      ['Add <product>', ['Given cart is empty', 'When user adds "<product>"'], ['@smoke']]
+    ])
+  })
+
+  it('should reject them in Director style specs', () => {
+    const filePath = createFeature('director.feature', feature)
+
+    expect(() => parseGherkinFile(filePath, { isBdd: false })).toThrow(
+      'Background inside Rule is not supported yet'
+    )
+  })
+})

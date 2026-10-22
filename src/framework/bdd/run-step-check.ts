@@ -12,7 +12,9 @@ import {
 } from 'ts-morph'
 
 import { AST_IDENTIFIERS } from '../constants/test-files'
+import { parseGherkinDocument } from '../core/gherkin-parser'
 import { getErrorMessage } from '../utils/helpers'
+import { getTestFileBaseName } from '../utils/helpers'
 import {
   findExamplesLoop,
   getExampleColumn,
@@ -21,7 +23,7 @@ import {
 } from '../utils/ts-morph-helpers'
 import { loadStepDefinitions, toModuleSpecifier } from './generator'
 import { matchStepDefinitions } from './registry'
-import { formatAmbiguous, stripStepKeyword } from './runtime'
+import { formatAmbiguous, hasStepKeyword, isNonEnglishStepTitle, stripStepKeyword } from './runtime'
 
 export type RunStepErrors = Array<{ file: string; errors: string[] }>
 
@@ -34,10 +36,14 @@ const BDD_MODULE = '@/framework/bdd'
  * definition, fixtures it destructures passed and declared in the test, step file imported,
  * no test.step wrapping a runStep of the same title. Before / After hooks run only in generated
  * tests (README), so they are not checked here.
+ * @param specs - spec path by test file base name: a non-English spec's language makes the fix exact
  */
 export async function checkRunSteps(
   testFiles: string[],
-  { load = loadStepDefinitions }: { load?: () => Promise<void> } = {}
+  {
+    load = loadStepDefinitions,
+    specs = new Map<string, string>()
+  }: { load?: () => Promise<void>; specs?: ReadonlyMap<string, string> } = {}
 ): Promise<RunStepErrors> {
   const result: RunStepErrors = []
   const candidates = testFiles.filter(
@@ -60,9 +66,10 @@ export async function checkRunSteps(
       .filter((call) => call.getExpression().getText() === AST_IDENTIFIERS.RUN_STEP)
     if (calls.length === 0) continue
 
+    const specLanguage = readSpecLanguage(specs.get(getTestFileBaseName(path.basename(file))))
     const errors = [
       ...checkRunStepImport(sourceFile),
-      ...calls.flatMap((call) => checkCall(call, file)),
+      ...calls.flatMap((call) => checkCall(call, file, specLanguage)),
       ...checkStepFileImports(sourceFile, calls)
     ]
     if (errors.length > 0) result.push({ file: toPosix(file), errors })
@@ -81,7 +88,18 @@ function checkRunStepImport(sourceFile: SourceFile): string[] {
   return imported ? [] : [`runStep is not imported\n  Fix: import { runStep } from '${BDD_MODULE}'`]
 }
 
-function checkCall(call: CallExpression, file: string): string[] {
+/** `# language:` of a Gherkin spec, undefined for Markdown, English or an unreadable spec */
+function readSpecLanguage(specPath: string | undefined): string | undefined {
+  if (!specPath?.endsWith('.feature')) return undefined
+  try {
+    const language = parseGherkinDocument(specPath).feature?.language
+    return language === 'en' ? undefined : language
+  } catch {
+    return undefined // reported by spec validation
+  }
+}
+
+function checkCall(call: CallExpression, file: string, specLanguage?: string): string[] {
   const where = `${toPosix(file)}:${call.getStartLineNumber()}`
   const titles = resolveTitles(call)
   if (!titles) {
@@ -90,14 +108,27 @@ function checkCall(call: CallExpression, file: string): string[] {
     ]
   }
 
+  const language = readLanguage(call)
+  let texts: string[]
+  try {
+    texts = titles.map((title) => stripStepKeyword(title, language))
+  } catch (error: unknown) {
+    return [`${where} ${getErrorMessage(error)}`]
+  }
+
   const errors: string[] = []
   const fixtures = new Set<string>()
-  for (const title of titles) {
-    const matches = matchStepDefinitions(stripStepKeyword(title))
+  for (const [i, title] of titles.entries()) {
+    const matches = matchStepDefinitions(texts[i])
     if (matches.length === 0) {
-      errors.push(
-        `${where} no step definition matches "${title}"\n  Fix: Define it in a step file (CONFIG.bdd.steps) or use manualStep`
-      )
+      const titleText = call.getArguments()[0].getText()
+      const fix =
+        language !== undefined || !isNonEnglishStepTitle(title)
+          ? 'Define it in a step file (CONFIG.bdd.steps) or use manualStep'
+          : specLanguage && hasStepKeyword(title, specLanguage)
+            ? `Pass the spec language: runStep(${titleText}, { ... }, { language: '${specLanguage}' })`
+            : `Pass the spec language (its # language: code): runStep(${titleText}, { ... }, { language: '<code>' })`
+      errors.push(`${where} no step definition matches "${title}"\n  Fix: ${fix}`)
     } else if (matches.length > 1) {
       errors.push(`${where} ${formatAmbiguous(title, matches)}`)
     } else {
@@ -173,6 +204,17 @@ function resolveTitles(call: CallExpression): string[] | null {
         .join('')
     )
   })
+}
+
+/** `language` of the options object literal (third argument), undefined when not given */
+function readLanguage(call: CallExpression): string | undefined {
+  const property = call
+    .getArguments()[2]
+    ?.asKind(SyntaxKind.ObjectLiteralExpression)
+    ?.getProperty('language')
+    ?.asKind(SyntaxKind.PropertyAssignment)
+    ?.getInitializer()
+  return property ? literalText(property) : undefined
 }
 
 /** Keys of the fixtures object literal; empty set when no argument; null for anything else */
@@ -260,7 +302,13 @@ function checkStepFileImports(sourceFile: SourceFile, calls: CallExpression[]): 
   const used = new Set<string>()
   for (const call of calls) {
     for (const title of resolveTitles(call) ?? []) {
-      const matches = matchStepDefinitions(stripStepKeyword(title))
+      let text: string
+      try {
+        text = stripStepKeyword(title, readLanguage(call))
+      } catch {
+        continue // reported by checkCall
+      }
+      const matches = matchStepDefinitions(text)
       if (matches.length === 1) used.add(locationFile(matches[0].definition.location))
     }
   }

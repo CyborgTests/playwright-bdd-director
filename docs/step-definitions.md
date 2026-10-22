@@ -85,18 +85,19 @@ export const { Given, When, Then, Step, Before, After, BeforeAll, AfterAll } = c
 
 `test-suites/bdd/<path>.feature` → `tests/bdd/<path>.bdd.test.ts` (`TESTS_BDD_DIR`):
 
-| Gherkin          | Playwright                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------ |
-| Feature          | `test.describe` with `TAG.TEST.AUTO`, `TAG.TYPE.BDD`, `TAG.SUITE.*` and Feature tags |
-| Background       | `test.beforeEach('Background', …)`                                                   |
-| Rule             | nested `test.describe`                                                               |
-| Scenario         | `test` with its tags                                                                 |
-| Scenario Outline | one `test` per Examples row, title filled with the row values                        |
-| step             | `await runStep('Given …', { fixtures })` - a `test.step` titled as the spec step     |
+| Gherkin          | Playwright                                                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Feature          | `test.describe` with `TAG.TEST.AUTO`, `TAG.TYPE.BDD`, `TAG.SUITE.*` and Feature tags                                       |
+| Background       | `test.beforeEach('Background', …)`                                                                                         |
+| Rule             | nested `test.describe`; its Background → `test.beforeEach('Background: <rule or own name>', …)`, run after the Feature one |
+| Scenario         | `test` with its tags                                                                                                       |
+| Scenario Outline | one `test` per Examples row, title filled with the row values; Examples tags go to the row tests                           |
+| step             | `await runStep('Given …', { fixtures })` - a `test.step` titled as the spec step                                           |
 
 - The file imports the step files it uses and is formatted with the project Prettier config.
+- **Languages**: a spec may start with `# language: uk` (any [Gherkin dialect](https://cucumber.io/docs/gherkin/languages/)). Step titles keep the localized keyword and the generated `runStep` gets `{ language: 'uk' }`, so `Припустимо, що user opens …` finds `Given('user opens …')`. Step definitions stay the same for every language.
 - `dress` regenerates every test in memory and fails when a file is outdated; `stage` rewrites it and deletes generated tests whose spec is gone.
-- The spec also gets a cyborg test like any other (`CONFIG.noCyborg` turns it off).
+- The spec also gets a cyborg test like any other (`CONFIG.noCyborg` turns it off). There a Rule Background has no hook of its own - its steps lead each scenario of the Rule - and Examples tags tag the whole Outline (one test loops over all rows); the coverage matrix counts them the same way.
 
 ## Hooks
 
@@ -152,6 +153,7 @@ test('Go back home from "Signup / Login" page', async ({ homePage, manualStep })
   - a passed fixture is not declared in the test (`Fix: Add to the test parameters: async ({ homePage, ... }) =>`);
   - the step file is not imported (`Fix: import '@/steps/navigation.steps'`) or `runStep` is not imported;
   - the title is not checkable statically - use a string or `${example.<column>}` of the examples loop;
+  - a non-English title has no `{ language: '<code>' }` third argument (the hint gives the `# language:` code of the spec);
   - `test.step` wraps a `runStep` with the same title (the step would be reported twice).
 - Fixtures need the project `test` (`@/fixtures/base.fixture`), not the plain `@cyborgtests/test` of a fresh cyborg file.
 - In `beforeAll` / `afterAll`, only worker fixtures are available (`browser`, not `page` or Page Objects) - Playwright reports it when a step needs more.
@@ -180,7 +182,5 @@ The matrix reads files as they are - run `npm run dress` first (`npm run play` d
 
 ## Limitations
 
-- English Gherkin keywords only.
-- `Background` inside a `Rule` is not supported yet.
 - Step and hook functions declare fixtures by destructuring the first parameter (read from the function source) - a step wrapped in another function loses them.
 - Hooks run only in generated tests.

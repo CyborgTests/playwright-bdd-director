@@ -119,7 +119,10 @@ async function main() {
   }
 
   // runStep() in hand-written tests is never edited by stage - report what would fail at runtime
-  const runStepErrors = await checkRunSteps(finalValidation.validationResults.map((r) => r.file))
+  const runStepErrors = await checkRunSteps(
+    finalValidation.validationResults.map((r) => r.file),
+    { specs: finalValidation.markdownByBaseName }
+  )
   if (runStepErrors.length > 0) {
     console.log(`\n${getIcon('error')}  runStep failed: ${runStepErrors.length} file(s)\n`)
     printErrorGroups(runStepErrors.map(({ file, errors }) => ({ title: `File: ${file}`, errors })))

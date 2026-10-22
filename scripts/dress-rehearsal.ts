@@ -43,7 +43,10 @@ async function main() {
     process.exit(1)
   }
 
-  const runStepErrors = await checkRunSteps(result.validationResults.map((r) => r.file))
+  const runStepErrors = await checkRunSteps(
+    result.validationResults.map((r) => r.file),
+    { specs: result.markdownByBaseName }
+  )
   if (runStepErrors.length > 0) {
     console.log(`${getIcon('error')}  runStep failed: ${runStepErrors.length} file(s)\n`)
     printErrorGroups(runStepErrors.map(({ file, errors }) => ({ title: `File: ${file}`, errors })))
