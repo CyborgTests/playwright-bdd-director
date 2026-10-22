@@ -1,7 +1,16 @@
-import { CallExpression, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
+import {
+  ArrayLiteralExpression,
+  CallExpression,
+  Node,
+  Project,
+  SourceFile,
+  Statement,
+  SyntaxKind
+} from 'ts-morph'
 
 import { AST_IDENTIFIERS } from '@/framework/constants/test-files'
 
+import type { ExamplesTable } from '../core/md-parser'
 import { isBackgroundTitle, parseIDAndTitle } from './helpers'
 
 // Singleton Project instance for performance
@@ -274,12 +283,104 @@ export function getStringLiteralValue(call: CallExpression, index: number): stri
     return arg.getLiteralText()
   }
 
-  // Template expression with substitutions: `text ${var}`
+  // Template expression with substitutions: `text ${var}` - examples columns read as `<column>`
   if (arg.isKind(SyntaxKind.TemplateExpression)) {
-    // For validation, we need the raw text (will be normalized in comparison)
-    return arg.getText().slice(1, -1) // Remove backticks
+    const loopVar = findExamplesLoop(call)?.varName
+    const spans = arg.getTemplateSpans().map((span) => {
+      const expression = span.getExpression()
+      const column = loopVar ? getExampleColumn(expression, loopVar) : undefined
+      const text = column !== undefined ? `<${column}>` : `\${${expression.getText()}}`
+      return text + span.getLiteral().getLiteralText()
+    })
+    return arg.getHead().getLiteralText() + spans.join('')
   }
 
   // Fallback: return text as-is
   return arg.getText().replace(/^['"`]|['"`]$/g, '')
+}
+
+export interface ExamplesLoop {
+  varName: string // loop variable: `example`
+  array: ArrayLiteralExpression | undefined // inline data, undefined for a variable / call
+  statement: Statement // the loop statement itself
+}
+
+/**
+ * Nearest loop around call: `for (const example of [...]) { ... }` or
+ * `[...].forEach((example) => { ... })` - a parametrized test case runs once per element
+ */
+export function findExamplesLoop(call: Node): ExamplesLoop | undefined {
+  for (const node of call.getAncestors()) {
+    const forOf = node.asKind(SyntaxKind.ForOfStatement)
+    if (forOf) {
+      const declaration = forOf
+        .getInitializer()
+        .asKind(SyntaxKind.VariableDeclarationList)
+        ?.getDeclarations()[0]
+      const varName = declaration?.getNameNode().asKind(SyntaxKind.Identifier)?.getText()
+      if (!varName) return undefined
+      const array = forOf.getExpression().asKind(SyntaxKind.ArrayLiteralExpression)
+      return { varName, array, statement: forOf }
+    }
+
+    const fn = node.asKind(SyntaxKind.ArrowFunction) ?? node.asKind(SyntaxKind.FunctionExpression)
+    const forEachCall = fn?.getParent()?.asKind(SyntaxKind.CallExpression)
+    const callee = forEachCall?.getExpression().asKind(SyntaxKind.PropertyAccessExpression)
+    const statement = forEachCall?.getParentIfKind(SyntaxKind.ExpressionStatement)
+    if (fn && callee?.getName() === 'forEach' && statement) {
+      const varName = fn.getParameters()[0]?.getNameNode().asKind(SyntaxKind.Identifier)?.getText()
+      if (!varName) return undefined
+      const array = callee.getExpression().asKind(SyntaxKind.ArrayLiteralExpression)
+      return { varName, array, statement }
+    }
+  }
+  return undefined
+}
+
+/**
+ * Inline examples data: array of objects with string values only, same keys in every object
+ * (columns in key order of the first object). Anything else - null.
+ */
+export function readExamplesArray(array: ArrayLiteralExpression): ExamplesTable | null {
+  const records: Array<Map<string, string>> = []
+  for (const element of array.getElements()) {
+    const object = element.asKind(SyntaxKind.ObjectLiteralExpression)
+    if (!object) return null
+    const record = new Map<string, string>()
+    for (const property of object.getProperties()) {
+      const assignment = property.asKind(SyntaxKind.PropertyAssignment)
+      const nameNode = assignment?.getNameNode()
+      const name =
+        nameNode?.asKind(SyntaxKind.Identifier)?.getText() ??
+        nameNode?.asKind(SyntaxKind.StringLiteral)?.getLiteralValue()
+      const initializer = assignment?.getInitializer()
+      const value =
+        initializer?.asKind(SyntaxKind.StringLiteral)?.getLiteralValue() ??
+        initializer?.asKind(SyntaxKind.NoSubstitutionTemplateLiteral)?.getLiteralValue()
+      if (name === undefined || value === undefined) return null
+      record.set(name, value)
+    }
+    records.push(record)
+  }
+
+  const columns = [...(records[0]?.keys() ?? [])]
+  const sameKeys = records.every(
+    (record) => record.size === columns.length && columns.every((column) => record.has(column))
+  )
+  if (!sameKeys) return null
+  return { columns, rows: records.map((record) => columns.map((column) => record.get(column)!)) }
+}
+
+/**
+ * Column of `example.column` / `example['column']`
+ */
+function getExampleColumn(expression: Node, loopVar: string): string | undefined {
+  const property = expression.asKind(SyntaxKind.PropertyAccessExpression)
+  if (property && property.getExpression().getText() === loopVar) return property.getName()
+
+  const element = expression.asKind(SyntaxKind.ElementAccessExpression)
+  if (element && element.getExpression().getText() === loopVar) {
+    return element.getArgumentExpression()?.asKind(SyntaxKind.StringLiteral)?.getLiteralValue()
+  }
+  return undefined
 }

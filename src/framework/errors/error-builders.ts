@@ -197,6 +197,23 @@ export function buildTagsPlacementError(line: string, file: string): string {
   )
 }
 
+export function buildTablePlacementError(line: string, file: string): string {
+  return (
+    `Table in wrong place: "${line}"\n` +
+    `  File: ${file}\n` +
+    `  Fix: Put the examples table right under the ### test case heading (after Tags), before its steps`
+  )
+}
+
+export function buildExamplesError(
+  problem: string,
+  testCase: string,
+  file: string,
+  fix: string
+): string {
+  return `Examples of "${testCase}" ${problem}\n  File: ${file}\n  Fix: ${fix}`
+}
+
 export function buildBackgroundTagsError(line: string, file: string): string {
   return (
     `Background cannot have tags: "${line}"\n` +

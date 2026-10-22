@@ -412,7 +412,7 @@ Feature: Site Navigation
 | `@tag` on Feature / Rule / Scenario    | Playwright tags, see [Tags](#5-tags)                                |
 | descriptions, data tables, doc strings | details, ignored by the validator                                   |
 
-Steps are written in the test as in a Markdown suite - there are no step definitions or text matching at runtime. `Scenario Outline` is read as one test case for now (its examples are not used yet). Base names stay unique across formats: `auth.md` and `auth.feature` cannot coexist.
+Steps are written in the test as in a Markdown suite - there are no step definitions or text matching at runtime. `Scenario Outline` is one parametrized test case, its `Examples` its data - see [Parametrized test cases](#6-parametrized-test-cases). Base names stay unique across formats: `auth.md` and `auth.feature` cannot coexist.
 
 ### 5. Tags
 
@@ -433,6 +433,40 @@ Tags: @smoke @JIRA-123
 - `dress` checks that every test has exactly the spec tags (order does not matter); `stage` syncs them in cyborg tests and empty skeletons, implemented automated tests are fixed by hand
 - Hooks take no tags: `Background` cannot be tagged (as in Gherkin), and a test case implemented by a named `beforeAll` / `afterAll` hook skips the tag check - a hook runs whenever any test of its suite is selected
 - Run and measure by tag: `npm run play @smoke`, `npm run play ui auth @smoke`, `npm run matrix -- @smoke`
+
+### 6. Parametrized test cases
+
+A test case that runs once per data row gets an examples table right under its heading (after `Tags:`); its title and steps use `<column>` placeholders. In Gherkin it is a `Scenario Outline` with `Examples` (several blocks with the same columns are joined).
+
+```markdown
+### Login as <role>
+
+| role  | password |
+| ----- | -------- |
+| admin | secret   |
+| guest | guest    |
+
+#### Log in as "<role>" with "<password>"
+```
+
+The test loops over inline data, placeholders become template substitutions:
+
+```typescript
+for (const example of [
+  { role: 'admin', password: 'secret' },
+  { role: 'guest', password: 'guest' }
+]) {
+  test(`Login as ${example.role}`, async ({ loginPage }) => {
+    await test.step(`Log in as "${example.role}" with "${example.password}"`, async () => { ... })
+  })
+}
+```
+
+- The title needs a placeholder of a column with unique values - Playwright requires unique test titles
+- Values are strings, as in the table; convert them in the test when needed
+- `dress` checks that the data equals the table (rows in order, keys in any order); `stage` keeps it in sync in **every** test, implemented automated tests included - the data belongs to the spec, test code is never touched. Generated tests also get the loop added or removed placeholders turned into substitutions
+- The coverage matrix shows the rows count: `Login as <role> ×2`
+- Not supported yet: tags on Gherkin `Examples` (per-row tags)
 
 ## ✅ Validation
 
@@ -496,7 +530,8 @@ No ID:
 **Automatically fixed:**
 
 - MD formatting issues (trailing spaces, extra blank lines)
-- Cyborg test structure (suite/test case/step titles, spec tags)
+- Cyborg test structure (suite/test case/step titles, spec tags, examples loop)
+- Examples data of parametrized test cases - in every test, implemented automated tests included
 - Missing test files (generates skeletons for cyborg + auto)
 - Missing test cases and steps (inserted as skeletons at their MD position)
 

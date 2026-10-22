@@ -4,12 +4,13 @@ import { CONFIG } from '../config'
 import {
   BACKGROUND_TTL,
   MD_TAGS_PREFIX,
+  PLACEHOLDER_PATTERN,
   SPEC_FILE_EXTENSION,
   SPEC_TAG_PATTERN
 } from '../constants/markdown'
 import { AUTOMATED_KINDS } from '../constants/test-files'
 import type { TestCase } from '../core/md-parser'
-import { buildInvalidTagError } from '../errors/error-builders'
+import { buildExamplesError, buildInvalidTagError } from '../errors/error-builders'
 
 export interface ParsedID {
   id: string | null // null=no brackets, ""=[], "TC-01"=[TC-01]
@@ -69,6 +70,51 @@ export function parseTagsLine(line: string): string[] | null {
 export function assertValidTags(tags: string[], specPath: string): void {
   const invalid = tags.find((tag) => !SPEC_TAG_PATTERN.test(tag))
   if (invalid !== undefined) throw new Error(buildInvalidTagError(invalid, specPath))
+}
+
+/**
+ * Column names used as `<column>` placeholders in text, in order of appearance
+ */
+export function getPlaceholders(text: string): string[] {
+  return [...text.matchAll(PLACEHOLDER_PATTERN)].map((match) => match[1])
+}
+
+/**
+ * Examples table is rectangular with unique column names, and the test case title has a
+ * placeholder with a different value in every row - Playwright needs unique test titles
+ * @throws Error with fix hint
+ */
+export function assertValidExamples(testCase: TestCase, specPath: string): void {
+  const { examples, ttl } = testCase
+  if (!examples) return
+  const fail = (problem: string, fix: string): never => {
+    throw new Error(buildExamplesError(problem, ttl, specPath, fix))
+  }
+
+  const { columns, rows } = examples
+  if (columns.some((column) => !column) || new Set(columns).size !== columns.length) {
+    fail('have empty or repeated column names', 'Give every column a unique name')
+  }
+  if (rows.length === 0) fail('have no rows', 'Add at least one data row under the header')
+  const badRow = rows.findIndex((row) => row.length !== columns.length)
+  if (badRow >= 0) {
+    fail(
+      `row ${badRow + 1} has ${rows[badRow].length} cells, header has ${columns.length}`,
+      'Make every row as wide as the header'
+    )
+  }
+
+  const isUnique = (column: string) => {
+    const values = rows.map((row) => row[columns.indexOf(column)])
+    return new Set(values).size === values.length
+  }
+  const titleColumns = getPlaceholders(ttl).filter((name) => columns.includes(name))
+  if (!titleColumns.some(isUnique)) {
+    fail(
+      'make test titles repeat',
+      `Add a placeholder of a column with unique values to the title, e.g. "${ttl} as <${columns[0]}>"`
+    )
+  }
 }
 
 /**

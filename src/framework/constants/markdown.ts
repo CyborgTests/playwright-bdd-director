@@ -17,6 +17,12 @@ export const BACKGROUND_TTL = 'Background'
 export const MD_TAGS_PREFIX = 'Tags:'
 export const SPEC_TAG_PATTERN = /^@[\w.:/-]+$/
 
+/** Examples table row under test case heading: `| role | password |` */
+export const MD_TABLE_PREFIX = '|'
+
+/** Placeholder of examples column in titles and steps: `Login as <role>` */
+export const PLACEHOLDER_PATTERN = /<([^<>\n]+)>/g
+
 /** Horizontal rule - optional visual separator between test cases */
 export const MD_HORIZONTAL_RULE = '---'
 

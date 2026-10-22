@@ -7,6 +7,7 @@ import { SUFFIXES } from '@/framework/constants/test-files'
 import { parseMDFile } from '../core/md-parser'
 import { isBackgroundTitle } from '../utils/helpers'
 import { getIcon } from '../utils/icons'
+import { buildExamplesLoop, buildTextLiteral } from './examples-code'
 import { addSuiteTag, extractSuiteName, getTagConstant } from './tags-updater'
 
 type TestType = 'AUTO' | 'CYBORG'
@@ -75,16 +76,15 @@ export function generateTestFile(baseName: string, type: TestType, subDir = ''):
   // Generate test cases
   const testCases = mdData.testCases
     .map((tc) => {
-      const testTtlLiteral = JSON.stringify(buildTestCaseTtl(tc.id, tc.ttl, type))
+      const columns = tc.examples?.columns ?? []
+      const testTtlLiteral = buildTextLiteral(buildTestCaseTtl(tc.id, tc.ttl, type), columns)
       const steps = tc.stepTtls
-        .map((step) => {
-          const stepLiteral = JSON.stringify(step)
-          return stepTemplate(stepLiteral)
-        })
+        .map((step) => stepTemplate(buildTextLiteral(step, columns)))
         .join('\n')
       const testFn = isBackgroundTitle(tc.ttl) ? 'test.beforeEach' : 'test'
       const details = tc.tags.length > 0 ? `${buildTagDetails(tc.tags)}, ` : ''
-      return `${testFn}(${testTtlLiteral}, ${details}async (${testParams}) => {\n${steps}\n});`
+      const code = `${testFn}(${testTtlLiteral}, ${details}async (${testParams}) => {\n${steps}\n});`
+      return tc.examples ? buildExamplesLoop(tc.examples, code) : code
     })
     .join('\n\n')
 

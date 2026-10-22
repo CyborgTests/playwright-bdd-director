@@ -1,6 +1,7 @@
 import { AstBuilder, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import {
   type Background,
+  type Examples,
   type FeatureChild,
   IdGenerator,
   type Step,
@@ -9,20 +10,22 @@ import {
 import fs from 'fs'
 
 import { BACKGROUND_TTL } from '../constants/markdown'
-import { buildMissingElementError } from '../errors/error-builders'
+import { buildExamplesError, buildMissingElementError } from '../errors/error-builders'
 import {
   assertUniqueTestCaseIds,
+  assertValidExamples,
   assertValidTags,
   getErrorMessage,
   isBackgroundTitle,
   parseIDAndTitle
 } from '../utils/helpers'
-import type { ParsedMD, TestCase } from './md-parser'
+import type { ExamplesTable, ParsedMD, TestCase } from './md-parser'
 
 /**
  * Parse Gherkin spec (`.feature`) into the same structure as Markdown, so validation, generation
  * and auto-fixing work unchanged:
- * - Feature → suite, Scenario / Scenario Outline / Example → test case, step → step
+ * - Feature → suite, Scenario / Scenario Outline / Example → test case, step → step;
+ *   Outline Examples (several blocks with same columns are joined) → examples table
  * - step title keeps its keyword as written: "Given user is on login page", "And ..."
  * - Background → test case "Background" (or "Background: name"), implemented by a named
  *   test.beforeEach (see isBackgroundTitle)
@@ -54,6 +57,7 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
   }
 
   assertUniqueTestCaseIds(testCases, featurePath)
+  testCases.forEach((tc) => assertValidExamples(tc, featurePath))
 
   const suiteTags = toTagNames(feature.tags)
   assertValidTags([...suiteTags, ...testCases.flatMap((tc) => tc.tags)], featurePath)
@@ -82,7 +86,8 @@ function toTestCases(child: FeatureChild, featurePath: string, ruleTags: string[
   if (child.scenario) {
     const { id, ttl } = parseIDAndTitle(child.scenario.name.trim())
     const tags = [...new Set([...ruleTags, ...toTagNames(child.scenario.tags)])]
-    return [{ id, ttl, stepTtls: child.scenario.steps.map(toStepTtl), tags }]
+    const examples = toExamplesTable(child.scenario.examples, ttl, featurePath)
+    return [{ id, ttl, stepTtls: child.scenario.steps.map(toStepTtl), tags, examples }]
   }
 
   if (child.rule) {
@@ -105,8 +110,36 @@ function toBackgroundCase(background: Background): TestCase {
     id: null,
     ttl: name ? `${BACKGROUND_TTL}: ${name}` : BACKGROUND_TTL,
     stepTtls: background.steps.map(toStepTtl),
-    tags: []
+    tags: [],
+    examples: null
   }
+}
+
+/**
+ * Outline Examples blocks joined into one table. Tags on Examples would need per-row tags - not
+ * supported yet.
+ */
+function toExamplesTable(
+  blocks: readonly Examples[],
+  caseTtl: string,
+  featurePath: string
+): ExamplesTable | null {
+  const withHeader = blocks.filter((block) => block.tableHeader)
+  if (withHeader.length === 0) return null
+
+  const fail = (problem: string, fix: string): never => {
+    throw new Error(buildExamplesError(problem, caseTtl, featurePath, fix))
+  }
+  if (withHeader.some((block) => block.tags.length > 0)) {
+    fail('have tags - not supported yet', 'Move the tags to the Scenario Outline')
+  }
+
+  const cells = (row: { cells: readonly { value: string }[] }) => row.cells.map((c) => c.value)
+  const columns = cells(withHeader[0].tableHeader!)
+  if (withHeader.some((block) => cells(block.tableHeader!).join('\n') !== columns.join('\n'))) {
+    fail('blocks have different columns', 'Use the same columns in every Examples block')
+  }
+  return { columns, rows: withHeader.flatMap((block) => block.tableBody.map(cells)) }
 }
 
 function toTagNames(tags: readonly Tag[]): string[] {

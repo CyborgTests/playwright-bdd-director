@@ -3,13 +3,16 @@ import { CallExpression, SyntaxKind } from 'ts-morph'
 import { AST_IDENTIFIERS, PATTERNS } from '../constants/test-files'
 import { parseIDAndTitle } from '../utils/helpers'
 import {
+  findExamplesLoop,
   findOutermostDescribeCalls,
   findStepCalls,
   findTestCallsDeep,
   getSharedProject,
   getStringLiteralValue,
-  isHookCall
+  isHookCall,
+  readExamplesArray
 } from '../utils/ts-morph-helpers'
+import type { ExamplesTable } from './md-parser'
 
 export interface ParsedTestCase {
   id: string | null // TC-001, "" for empty brackets [], or null for no brackets
@@ -21,6 +24,7 @@ export interface ParsedTestCase {
   hasImplementation: boolean // body calls something besides steps (not an empty skeleton)
   tags: string[] // test('title', { tag: [...] }, fn) - see extractTags
   isHook: boolean // named beforeAll/afterAll or Background beforeEach - has no tags (isHookCall)
+  examples: ExamplesTable | null // inline data of loop around test (findExamplesLoop)
 }
 
 export type StepCallKind = 'manualStep' | 'test.step'
@@ -97,7 +101,8 @@ export function parseTestFile(filePath: string): ParsedTest {
       modifier: inferModifier(testCall),
       hasImplementation: hasImplementationCalls(testCall),
       tags: extractTags(testCall),
-      isHook: isHookCall(testCall)
+      isHook: isHookCall(testCall),
+      examples: readTestExamples(testCall)
     })
   }
 
@@ -119,6 +124,11 @@ function inferStepCallKind(call: CallExpression): StepCallKind {
 
   if (expression === 'manualStep') return 'manualStep'
   return 'test.step'
+}
+
+function readTestExamples(testCall: CallExpression): ExamplesTable | null {
+  const array = findExamplesLoop(testCall)?.array
+  return array ? readExamplesArray(array) : null
 }
 
 function hasManualStepCall(call: CallExpression): boolean {

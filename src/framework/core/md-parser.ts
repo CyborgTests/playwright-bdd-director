@@ -2,19 +2,27 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
-import { MD_EXAMPLES, MD_HEADINGS, SPEC_FILE_EXTENSION } from '@/framework/constants/markdown'
+import {
+  MD_EXAMPLES,
+  MD_HEADINGS,
+  MD_TABLE_PREFIX,
+  SPEC_FILE_EXTENSION
+} from '@/framework/constants/markdown'
 
 import {
   buildBackgroundTagsError,
+  buildExamplesError,
   buildFileNotFoundError,
   buildInvalidCharsError,
   buildInvalidFormatError,
   buildMissingElementError,
   buildPathTraversalError,
+  buildTablePlacementError,
   buildTagsPlacementError
 } from '../errors/error-builders'
 import {
   assertUniqueTestCaseIds,
+  assertValidExamples,
   assertValidTags,
   isBackgroundTitle,
   parseTagsLine
@@ -29,6 +37,16 @@ export interface TestCase {
   ttl: string // User login with valid credentials
   stepTtls: string[]
   tags: string[] // "Tags: @smoke" under ### heading (Gherkin: Rule + Scenario tags)
+  examples: ExamplesTable | null // data table under ### heading (Gherkin: Outline Examples)
+}
+
+/**
+ * Parametrized test case data: title and steps use `<column>` placeholders, the test runs once
+ * per row (TS: `for (const example of [{ column: 'value' }]) test(...)`)
+ */
+export interface ExamplesTable {
+  columns: string[]
+  rows: string[][]
 }
 
 export interface ParsedMD {
@@ -56,6 +74,9 @@ export function clearMDCache(): void {
  * ## [TS01] Suite Title
  * ### [TC01-01] Test case ttl
  * Tags: @smoke @critical (optional, right under ## or ### heading)
+ * | role  |  (optional examples table under ### heading - parametrized test case)
+ * | ----- |
+ * | admin |
  * #### Step ttl
  * Optional comment text (ignored by validator)
  *
@@ -89,9 +110,42 @@ export function parseMDFile(fileName: string): ParsedMD {
   const suiteTags: string[] = []
   const testCases: TestCase[] = []
   let currentTestCase: TestCase | null = null
+  let tableLines: string[] = []
+
+  // Examples table ends at the first non-table line (blank included)
+  const finishTable = () => {
+    if (currentTestCase && tableLines.length > 0) {
+      currentTestCase.examples = parseExamplesTable(tableLines, currentTestCase.ttl, mdPath)
+    }
+    tableLines = []
+  }
 
   for (const line of lines) {
     const trimmed = line.trim()
+
+    // Examples table belongs to the test case above it, before its steps
+    if (trimmed.startsWith(MD_TABLE_PREFIX)) {
+      if (
+        !currentTestCase ||
+        currentTestCase.stepTtls.length > 0 ||
+        isBackgroundTitle(currentTestCase.ttl)
+      ) {
+        throw new Error(buildTablePlacementError(trimmed, mdPath))
+      }
+      if (currentTestCase.examples) {
+        throw new Error(
+          buildExamplesError(
+            'have more than one table',
+            currentTestCase.ttl,
+            mdPath,
+            'Merge the rows into one table'
+          )
+        )
+      }
+      tableLines.push(trimmed)
+      continue
+    }
+    finishTable()
 
     // Tags line belongs to the heading right above it: suite (before first case) or case (before steps)
     const tags = parseTagsLine(trimmed)
@@ -152,7 +206,8 @@ export function parseMDFile(fileName: string): ParsedMD {
         id: tcMatchWithID[1].trim(), // "" for [], "TC01-01" for [TC01-01]
         ttl: tcMatchWithID[2].trim(),
         stepTtls: [],
-        tags: []
+        tags: [],
+        examples: null
       }
       continue
     } else if (tcMatchNoID && trimmed.startsWith(MD_HEADINGS.TEST_CASE.PREFIX)) {
@@ -166,7 +221,8 @@ export function parseMDFile(fileName: string): ParsedMD {
         id: null, // null = no brackets at all
         ttl: tcMatchNoID[1].trim(),
         stepTtls: [],
-        tags: []
+        tags: [],
+        examples: null
       }
       continue
     }
@@ -179,6 +235,8 @@ export function parseMDFile(fileName: string): ParsedMD {
       currentTestCase.stepTtls.push(stepMatch[1].trim())
     }
   }
+
+  finishTable()
 
   // Save last test case
   if (currentTestCase) {
@@ -206,8 +264,35 @@ export function parseMDFile(fileName: string): ParsedMD {
   }
 
   assertUniqueTestCaseIds(testCases, mdPath)
+  testCases.forEach((tc) => assertValidExamples(tc, mdPath))
 
   return { suiteID, suiteTtl, suiteTags, testCases }
+}
+
+/**
+ * `| a | b |` header, `| --- | --- |` separator, data rows; `\|` escapes a pipe inside a cell
+ */
+function parseExamplesTable(lines: string[], caseTtl: string, mdPath: string): ExamplesTable {
+  const [header, separator, ...rows] = lines.map(splitTableRow)
+  if (!separator || !separator.every((cell) => /^:?-+:?$/.test(cell))) {
+    throw new Error(
+      buildExamplesError(
+        'have no header separator row',
+        caseTtl,
+        mdPath,
+        'Add "| --- | --- |" under the column names'
+      )
+    )
+  }
+  return { columns: header, rows }
+}
+
+function splitTableRow(line: string): string[] {
+  return line
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.trim().replace(/\\\|/g, '|'))
 }
 
 function resolveMDPath(fileName: string): string | null {

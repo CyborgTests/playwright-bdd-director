@@ -9,7 +9,8 @@ const COVERAGE_DEFAULTS = {
   stepHasManual: [],
   modifier: null,
   hasImplementation: true,
-  isHook: false
+  isHook: false,
+  examples: null
 }
 
 // Test data factories
@@ -23,7 +24,8 @@ function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
         id: 'tc-01',
         ttl: 'Test case 1',
         stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-        tags: []
+        tags: [],
+        examples: null
       }
     ],
     ...overrides
@@ -226,8 +228,8 @@ describe('matchFiles', () => {
     it('should detect extra test cases in TS', () => {
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [] }
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [], examples: null },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [], examples: null }
         ]
       })
       const ts = createTS({
@@ -269,8 +271,8 @@ describe('matchFiles', () => {
     it('should detect missing test cases in TS', () => {
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] },
-          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [] }
+          { id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [], examples: null },
+          { id: 'tc-02', ttl: 'Test 2', stepTtls: [], tags: [], examples: null }
         ]
       })
       const ts = createTS({
@@ -295,7 +297,7 @@ describe('matchFiles', () => {
 
     it('should not validate individual test cases when count mismatches', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test 1', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -333,7 +335,7 @@ describe('matchFiles', () => {
   describe('test case validation', () => {
     it('should detect test case ID mismatch', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -356,7 +358,7 @@ describe('matchFiles', () => {
 
     it('should detect test case title mismatch', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Correct Title', stepTtls: [], tags: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Correct Title', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -381,7 +383,7 @@ describe('matchFiles', () => {
 
     it('should validate test case ID with suffix (tc-01 → tc-01-AUTO)', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -403,7 +405,7 @@ describe('matchFiles', () => {
 
     it('should handle test cases without IDs', () => {
       const md = createMD({
-        testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [], tags: [] }]
+        testCases: [{ id: null, ttl: 'Test without ID', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -425,7 +427,7 @@ describe('matchFiles', () => {
 
     it('should handle test cases with empty IDs', () => {
       const md = createMD({
-        testCases: [{ id: '', ttl: 'Test with empty ID', stepTtls: [], tags: [] }]
+        testCases: [{ id: '', ttl: 'Test with empty ID', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -455,7 +457,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -486,7 +489,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step 1', 'Step 2', 'Step 3'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -517,7 +521,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-01] Step 1'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -547,7 +552,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-01] Correct Step'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -577,7 +583,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['Step without ID'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -610,7 +617,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Correct Test',
             stepTtls: ['Correct Step'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -650,7 +658,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -691,7 +700,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test case',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -724,7 +734,8 @@ describe('matchFiles', () => {
             id: 'tc-01',
             ttl: 'Test',
             stepTtls: ['[step-01] Step 1', '[step-02] Step 2', '[step-03] Step 3'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -763,7 +774,7 @@ describe('matchFiles', () => {
 
     it('should handle test cases with empty step arrays', () => {
       const md = createMD({
-        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [] }]
+        testCases: [{ id: 'tc-01', ttl: 'Test', stepTtls: [], tags: [], examples: null }]
       })
       const ts = createTS({
         testCases: [
@@ -841,5 +852,56 @@ describe('matchFiles - spec tags on hooks', () => {
     ts.testCases[0] = { ...ts.testCases[0], isHook: true }
 
     expect(matchFiles('tests/automated/test-suite.auto.test.ts', md, ts).errors).toEqual([])
+  })
+})
+
+describe('matchFiles - examples', () => {
+  const testFile = 'tests/automated/test-suite.auto.test.ts'
+  const table = {
+    columns: ['role', 'password'],
+    rows: [
+      ['admin', 'a'],
+      ['guest', 'g']
+    ]
+  }
+  const parametrized = () => {
+    const md = createMD()
+    md.testCases[0] = { ...md.testCases[0], ttl: 'Test case 1', examples: table }
+    return md
+  }
+  const withData = (examples: ParsedTest['testCases'][number]['examples']) => {
+    const ts = createTS()
+    ts.testCases[0] = { ...ts.testCases[0], examples }
+    return ts
+  }
+
+  it('should accept same data in any key order', () => {
+    const ts = withData({
+      columns: ['password', 'role'],
+      rows: [
+        ['a', 'admin'],
+        ['g', 'guest']
+      ]
+    })
+
+    expect(matchFiles(testFile, parametrized(), ts).errors).toEqual([])
+  })
+
+  it('should report missing loop and changed data', () => {
+    const missing = matchFiles(testFile, parametrized(), withData(null)).errors.join('\n')
+    const changed = matchFiles(
+      testFile,
+      parametrized(),
+      withData({ columns: ['role', 'password'], rows: [['admin', 'a']] })
+    ).errors.join('\n')
+
+    expect(missing).toContain('• Examples: no inline data')
+    expect(changed).toContain('• Examples: data differs from spec table (1 rows → 2)')
+  })
+
+  it('should not check a loop of the test when spec case is not parametrized', () => {
+    const ts = withData({ columns: ['role'], rows: [['admin']] })
+
+    expect(matchFiles(testFile, createMD(), ts).errors).toEqual([])
   })
 })

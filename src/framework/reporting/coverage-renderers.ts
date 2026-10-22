@@ -336,8 +336,12 @@ export function formatSummary(summary: CoverageSummary): string {
   )
 }
 
+/**
+ * Parametrized test case gets its examples count: `Login as <role> ×3`
+ */
 function formatCaseTitle(tc: CaseCoverage): string {
-  return tc.id ? `[${tc.id}] ${tc.ttl}` : tc.ttl
+  const title = tc.id ? `[${tc.id}] ${tc.ttl}` : tc.ttl
+  return tc.examples > 0 ? `${title} ×${tc.examples}` : title
 }
 
 /**

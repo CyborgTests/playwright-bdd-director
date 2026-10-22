@@ -797,3 +797,59 @@ test.describe('Suite', () => {
     ])
   })
 })
+
+describe('parseTestFile - examples', () => {
+  const parse = (body: string) =>
+    parseTestFile(
+      createTSFile(
+        'examples.ts',
+        `import { test } from '@playwright/test'\n\ntest.describe('Suite', () => {\n${body}\n})`
+      )
+    ).testCases
+
+  it('should read inline data of for...of loop and placeholders of loop variable', () => {
+    const [testCase] = parse(`
+  for (const example of [
+    { role: 'admin', 'first name': 'Ann' },
+    { role: 'guest', 'first name': 'Bob' }
+  ]) {
+    test(\`Login as \${example.role}\`, async ({ page }) => {
+      await test.step(\`Greet \${example['first name']} on \${page.url()}\`, async () => {})
+    })
+  }`)
+
+    expect(testCase.ttl).toBe('Login as <role>')
+    expect(testCase.stepTtls).toEqual(['Greet <first name> on ${page.url()}'])
+    expect(testCase.examples).toEqual({
+      columns: ['role', 'first name'],
+      rows: [
+        ['admin', 'Ann'],
+        ['guest', 'Bob']
+      ]
+    })
+  })
+
+  it('should read forEach loop with any variable name', () => {
+    const [testCase] = parse(`
+  ;[{ role: 'admin' }].forEach((row) => {
+    test(\`Login as \${row.role}\`, async () => {})
+  })`)
+
+    expect(testCase.ttl).toBe('Login as <role>')
+    expect(testCase.examples).toEqual({ columns: ['role'], rows: [['admin']] })
+  })
+
+  it('should give no examples for data that is not inline strings', () => {
+    const [fromVariable, withNumber] = parse(`
+  const roles = [{ role: 'admin' }]
+  for (const example of roles) {
+    test(\`Login as \${example.role}\`, async () => {})
+  }
+  for (const example of [{ role: 'admin', age: 30 }]) {
+    test(\`Open as \${example.role}\`, async () => {})
+  }`)
+
+    expect(fromVariable.examples).toBeNull()
+    expect(withNumber.examples).toBeNull()
+  })
+})

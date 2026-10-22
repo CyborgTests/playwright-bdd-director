@@ -25,6 +25,7 @@ import {
   getMarkdownBaseName,
   getSuiteSubDir,
   getTestFileBaseName,
+  hasAutomatedTestFile,
   isCyborgDisabledFor,
   isMatchingTestFile
 } from '@/framework/utils/helpers'
@@ -311,19 +312,25 @@ function processTestFiles(
     const markdownData = validation.parsedMDMap.get(markdownFile)
     if (!markdownData) continue
 
-    // Filter by file type (case-insensitive for file names)
-    const isTargetType = fileName.toLowerCase().includes(fileType.toLowerCase())
+    // Filter by file type (case-insensitive for file names): cyborg, or any automated kind
+    const isCyborgFile = fileName.toLowerCase().includes('.cyborg.')
+    const isTargetType =
+      fileType === 'CYBORG'
+        ? isCyborgFile
+        : !isCyborgFile && hasAutomatedTestFile([testFile], baseName)
     if (!isTargetType) continue
 
-    // For auto tests, only fix if empty
-    if (onlyEmpty && !isEmptyAutoTest(testFile)) continue
+    // Automated tests are fully fixed only as empty AUTO skeletons; implemented ones get only
+    // the examples data of parametrized test cases synced
+    const isEmptySkeleton = fileName.toLowerCase().includes('.auto.') && isEmptyAutoTest(testFile)
+    const scope = onlyEmpty && !isEmptySkeleton ? 'examples' : 'full'
 
     try {
       const typeScriptData = parseTestFile(testFile)
       const result = matchFiles(testFile, markdownData, typeScriptData)
 
       if (!result.valid) {
-        const fixResult = autoFixTestFile(testFile, markdownData)
+        const fixResult = autoFixTestFile(testFile, markdownData, { scope })
         if (fixResult.fixed) {
           fixedFiles.push(fixResult)
         } else if (fixResult.warnings.length > 0) {

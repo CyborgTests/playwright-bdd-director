@@ -27,6 +27,7 @@ const CASES: CaseCoverage[] = [
     ttl: 'Add <b>"item"</b> | cart',
     isBackground: false,
     tags: [],
+    examples: 0,
     cells: {
       cyborg: 'implemented',
       api: 'missing',
@@ -41,6 +42,7 @@ const CASES: CaseCoverage[] = [
     ttl: 'Checkout',
     isBackground: false,
     tags: [],
+    examples: 0,
     cells: {
       cyborg: 'implemented',
       api: 'disabled',
@@ -143,5 +145,18 @@ describe('renderHtml', () => {
 
     expect(html).toContain('Could not parse')
     expect(html).toContain('No test.describe() found')
+  })
+})
+
+describe('parametrized test cases', () => {
+  it('should show examples count next to the title', () => {
+    const matrix: CoverageMatrix = {
+      ...MATRIX,
+      suites: [{ ...MATRIX.suites[0], cases: [{ ...CASES[1], ttl: 'Pay as <card>', examples: 3 }] }]
+    }
+
+    expect(renderConsole(matrix)).toContain('Pay as <card> ×3')
+    expect(renderMarkdown(matrix)).toContain('| Pay as <card> ×3 |')
+    expect(renderHtml(matrix)).toContain('Pay as &lt;card&gt; ×3')
   })
 })

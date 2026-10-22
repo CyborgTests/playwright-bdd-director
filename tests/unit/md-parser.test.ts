@@ -61,14 +61,16 @@ describe('parseMDFile', () => {
           '[01-01-02] Enter username and password',
           '[01-01-03] Click submit button'
         ],
-        tags: []
+        tags: [],
+        examples: null
       })
 
       expect(result.testCases[1]).toEqual({
         id: 'TC-02',
         ttl: 'Login with invalid credentials',
         stepTtls: ['[01-02-01] Open login page', '[01-02-02] Enter invalid credentials'],
-        tags: []
+        tags: [],
+        examples: null
       })
     })
 
@@ -134,14 +136,16 @@ describe('parseMDFile', () => {
         id: null,
         ttl: 'Login with valid credentials',
         stepTtls: ['Open login page', 'Enter username and password', 'Click submit button'],
-        tags: []
+        tags: [],
+        examples: null
       })
 
       expect(result.testCases[1]).toEqual({
         id: null,
         ttl: 'Login with invalid credentials',
         stepTtls: ['Open login page'],
-        tags: []
+        tags: [],
+        examples: null
       })
     })
 
@@ -533,5 +537,82 @@ Tags: @smoke
     )
 
     expect(() => parseMDFile(filePath)).toThrow('Background cannot have tags: "Tags: @smoke"')
+  })
+})
+
+describe('parseMDFile - examples table', () => {
+  const spec = (table: string, title = 'Login as <role>') => `## Auth
+
+### ${title}
+
+Tags: @smoke
+
+${table}
+
+#### Log in as "<role>" with "<password>"
+`
+
+  it('should read table under test case heading, unescaping pipes', () => {
+    const filePath = createMDFile(
+      'examples.md',
+      spec(`| role  | password |
+| :---- | -------- |
+| admin | a\\|b   |
+| guest | guest    |`)
+    )
+
+    expect(parseMDFile(filePath).testCases[0]).toMatchObject({
+      ttl: 'Login as <role>',
+      tags: ['@smoke'],
+      examples: {
+        columns: ['role', 'password'],
+        rows: [
+          ['admin', 'a|b'],
+          ['guest', 'guest']
+        ]
+      }
+    })
+  })
+
+  it('should reject table after steps', () => {
+    const filePath = createMDFile(
+      'late-table.md',
+      `## Auth
+
+### Login as <role>
+
+#### Log in
+
+| role  |
+| ----- |
+| admin |
+`
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('Table in wrong place')
+  })
+
+  it('should reject table without separator row', () => {
+    const filePath = createMDFile('no-sep.md', spec(`| role  |\n| admin |`))
+
+    expect(() => parseMDFile(filePath)).toThrow('have no header separator row')
+  })
+
+  it('should reject title that repeats for rows', () => {
+    const filePath = createMDFile(
+      'no-placeholder.md',
+      spec(`| role  | password |\n| ----- | -------- |\n| admin | a        |`, 'Login')
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('Examples of "Login" make test titles repeat')
+  })
+
+  it('should reject rows narrower than header', () => {
+    const filePath = createMDFile(
+      'narrow.md',
+      spec(`| role  | password |\n| ----- | -------- |\n| admin |`)
+    )
+
+    expect(() => parseMDFile(filePath)).toThrow('row 1 has 1 cells, header has 2')
   })
 })

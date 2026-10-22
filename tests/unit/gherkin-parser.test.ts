@@ -54,13 +54,15 @@ describe('parseGherkinFile', () => {
             'And user opens cart',
             'Then cart has 1 item'
           ],
-          tags: []
+          tags: [],
+          examples: null
         },
         {
           id: null,
           ttl: 'Empty cart',
           stepTtls: ['Given user opens cart', 'Then cart is empty'],
-          tags: []
+          tags: [],
+          examples: null
         }
       ]
     })
@@ -111,7 +113,8 @@ describe('parseGherkinFile', () => {
       id: null,
       ttl: 'Background',
       stepTtls: ['Given user is logged in'],
-      tags: []
+      tags: [],
+      examples: null
     })
     expect(parseGherkinFile(named).testCases[0].ttl).toBe('Background: Logged in user')
   })
@@ -149,18 +152,20 @@ Feature: Shop
         id: null,
         ttl: 'Buy product',
         stepTtls: ['Given products:', 'When user sends note:'],
-        tags: ['@smoke']
+        tags: ['@smoke'],
+        examples: null
       },
       {
         id: null,
         ttl: 'Apply coupon',
         stepTtls: ['Then total is reduced'],
-        tags: ['@discount', '@smoke', '@JIRA-12']
+        tags: ['@discount', '@smoke', '@JIRA-12'],
+        examples: null
       }
     ])
   })
 
-  it('should read Scenario Outline as one test case with placeholders in steps', () => {
+  it('should read Scenario Outline as one test case with examples table', () => {
     const filePath = createFeature(
       'outline.feature',
       `Feature: Login
@@ -175,7 +180,13 @@ Feature: Shop
     )
 
     expect(parseGherkinFile(filePath).testCases).toEqual([
-      { id: null, ttl: 'Login as <role>', stepTtls: ['Given user logs in as "<role>"'], tags: [] }
+      {
+        id: null,
+        ttl: 'Login as <role>',
+        stepTtls: ['Given user logs in as "<role>"'],
+        tags: [],
+        examples: { columns: ['role'], rows: [['admin'], ['guest']] }
+      }
     ])
   })
 
@@ -268,5 +279,71 @@ describe('parseMDFile with .feature path', () => {
     )
 
     expect(parseMDFile(filePath)).toEqual(parseGherkinFile(filePath))
+  })
+})
+
+describe('parseGherkinFile - Scenario Outline examples', () => {
+  const outline = (examples: string, title = 'Login as <role>') =>
+    createFeature(
+      'outline-ex.feature',
+      `Feature: Login
+  Scenario Outline: ${title}
+    Given user logs in as "<role>"
+${examples}`
+    )
+
+  it('should join several Examples blocks with same columns', () => {
+    const filePath = outline(`
+    Examples: Staff
+      | role  |
+      | admin |
+
+    Examples: Visitors
+      | role  |
+      | guest |
+`)
+
+    expect(parseGherkinFile(filePath).testCases[0].examples).toEqual({
+      columns: ['role'],
+      rows: [['admin'], ['guest']]
+    })
+  })
+
+  it('should reject Examples with different columns', () => {
+    const filePath = outline(`
+    Examples:
+      | role  |
+      | admin |
+
+    Examples:
+      | name  |
+      | guest |
+`)
+
+    expect(() => parseGherkinFile(filePath)).toThrow('blocks have different columns')
+  })
+
+  it('should reject tagged Examples for now', () => {
+    const filePath = outline(`
+    @smoke
+    Examples:
+      | role  |
+      | admin |
+`)
+
+    expect(() => parseGherkinFile(filePath)).toThrow('have tags - not supported yet')
+  })
+
+  it('should reject Outline title without placeholder', () => {
+    const filePath = outline(
+      `
+    Examples:
+      | role  |
+      | admin |
+`,
+      'Login'
+    )
+
+    expect(() => parseGherkinFile(filePath)).toThrow('make test titles repeat')
   })
 })

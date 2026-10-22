@@ -38,6 +38,7 @@ export interface CaseCoverage {
   ttl: string
   isBackground: boolean // shown, but not counted in summary
   tags: string[] // spec tags of suite and test case
+  examples: number // rows of examples table, 0 for a plain test case
   cells: Record<CoverageLayer, CellStatus>
   cyborgSteps: StepCount | null // steps of cyborg test without manualStep()
 }
@@ -140,6 +141,7 @@ export function buildCoverageMatrix(
         ttl: mdCase.ttl,
         isBackground: isBackgroundTitle(mdCase.ttl),
         tags: [...new Set([...parsed.suiteTags, ...mdCase.tags])],
+        examples: mdCase.examples?.rows.length ?? 0,
         cells,
         cyborgSteps: cyborgCase ? countAutomatedSteps(cyborgCase) : null
       }

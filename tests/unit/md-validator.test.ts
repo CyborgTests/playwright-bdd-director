@@ -306,3 +306,59 @@ describe('autoFixMDFormatting', () => {
     expect(modified).toBe(true)
   })
 })
+
+describe('examples table formatting', () => {
+  it('should accept table lines and keep them apart from bullets and Tags', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-table-test-'))
+    const filePath = path.join(tempDir, 'table.md')
+    fs.writeFileSync(
+      filePath,
+      `## Suite
+
+### Login as <role>
+Tags: @smoke
+| role  |
+| ----- |
+| admin |
+- detail
+#### Step
+`,
+      'utf-8'
+    )
+
+    try {
+      expect(validateMDStructure(filePath)).toEqual([])
+      autoFixMDFormatting(filePath)
+      expect(fs.readFileSync(filePath, 'utf-8')).toBe(`## Suite
+
+### Login as <role>
+
+Tags: @smoke
+
+| role  |
+| ----- |
+| admin |
+
+- detail
+
+#### Step
+`)
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('Tags line formatting', () => {
+  it('should keep blank line between Tags line and details as Prettier does', () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-tags-test-'))
+    const filePath = path.join(tempDir, 'tags.md')
+    fs.writeFileSync(filePath, `## Suite\n\n### Case\n\nTags: @smoke\n\n- detail\n\n#### Step\n`)
+
+    try {
+      expect(autoFixMDFormatting(filePath)).toBe(false)
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+})

@@ -1,17 +1,25 @@
 import path from 'path'
 import { Block, CallExpression, Node, Statement, SyntaxKind } from 'ts-morph'
 
-import { splitTags } from '../core/file-matcher'
-import { ParsedMD } from '../core/md-parser'
-import { isBackgroundTitle, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
+import { isSameExamples, splitTags } from '../core/file-matcher'
+import { ExamplesTable, ParsedMD, TestCase } from '../core/md-parser'
+import {
+  getPlaceholders,
+  isBackgroundTitle,
+  matchIDWithSuffix,
+  parseIDAndTitle
+} from '../utils/helpers'
 import {
   findDescribeCall,
+  findExamplesLoop,
   findStepCalls,
   findTestCalls,
   getSharedProject,
   getStringLiteralValue,
-  isHookCall
+  isHookCall,
+  readExamplesArray
 } from '../utils/ts-morph-helpers'
+import { buildExamplesArray, buildExamplesLoop, buildTextLiteral } from './examples-code'
 import { buildTagDetails, buildTestCaseTtl } from './test-generator'
 import { alignByTitle, type AlignOp } from './title-aligner'
 
@@ -44,7 +52,11 @@ function hasTestStepCalls(describeCall: CallExpression): boolean {
  * Uses ts-morph for safe AST-based code modification. Test cases and steps are aligned by
  * title/ID (see title-aligner), so MD insertions never shift titles onto other tests' code.
  */
-export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFixResult {
+export function autoFixTestFile(
+  testFilePath: string,
+  mdData: ParsedMD,
+  { scope = 'full' }: { scope?: FixScope } = {}
+): AutoFixResult {
   const report: FixReport = { changes: [], warnings: [] }
   const project = getSharedProject()
   const sourceFile = project.addSourceFileAtPath(testFilePath)
@@ -62,11 +74,13 @@ export function autoFixTestFile(testFilePath: string, mdData: ParsedMD): AutoFix
     fileType === 'CYBORG' && hasTestStepCalls(describeCall) ? 'cyborg-test-step' : 'default'
 
   // 2. Fix suite ttl and spec tags
-  fixSuiteTtl(describeCall, mdData, report.changes)
-  fixSpecTags(describeCall, mdData.suiteTags, 'Test suite', report.changes)
+  if (scope === 'full') {
+    fixSuiteTtl(describeCall, mdData, report.changes)
+    fixSpecTags(describeCall, mdData.suiteTags, 'Test suite', report.changes)
+  }
 
   // 3. Fix test cases (and their steps, unless steps are hand-structured)
-  fixTestCases(describeCall, mdData, { fileType, stepStyle }, report)
+  fixTestCases(describeCall, mdData, { fileType, stepStyle, scope }, report)
 
   // 4. Save only real changes - warnings alone leave the file untouched
   const fixed = report.changes.length > 0
@@ -128,9 +142,17 @@ function fixSuiteTtl(describeCall: CallExpression, mdData: ParsedMD, changes: st
 
 type StepStyle = 'default' | 'cyborg-test-step'
 
+/**
+ * - full: generated files (cyborg, empty AUTO skeleton) - titles, steps, tags, examples
+ * - examples: implemented automated tests - only data arrays of parametrized test cases,
+ *   which belong to the spec; code is never touched
+ */
+export type FixScope = 'full' | 'examples'
+
 interface FixOptions {
   fileType: FileType
   stepStyle: StepStyle
+  scope: FixScope
 }
 
 /**
@@ -159,6 +181,14 @@ function fixTestCases(
   const newTtl = createSiblingTtlBuilder(ops, currentTtls, expectedTtls, options.fileType)
 
   for (const op of ops) {
+    if (options.scope === 'examples') {
+      if (op.kind === 'pair') {
+        const { examples } = mdData.testCases[op.expected]
+        fixExamples(testCalls[op.current], examples, `Test case #${op.expected + 1}`, report, false)
+      }
+      continue
+    }
+
     if (op.kind === 'extra') {
       report.warnings.push(
         `Extra test case "${currentTtls[op.current]}" (not in MD) - manual review needed`
@@ -174,7 +204,7 @@ function fixTestCases(
 
     if (op.kind === 'insert') {
       const ttl = newTtl(mdTestCase.id, mdTestCase.ttl)
-      const code = buildTestCaseCode(ttl, mdTestCase.stepTtls, mdTestCase.tags, options)
+      const code = buildTestCaseCode(ttl, mdTestCase, options)
       if (inserter.insert(op.after, code)) {
         report.changes.push(`Test case #${op.expected + 1}: Added "${ttl}" (skeleton)`)
       } else {
@@ -189,9 +219,10 @@ function fixTestCases(
     const testCall = testCalls[op.current]
     const currentTtl = currentTtls[op.current]
     const expectedTtl = expectedTtls[op.expected]
+    const columns = mdTestCase.examples?.columns ?? []
     if (currentTtl && !isTitleMatch(currentTtl, expectedTtl)) {
       const newTtl = preserveSuffix(currentTtl, expectedTtl)
-      testCall.getArguments()[0]?.replaceWithText(`'${escapeString(newTtl)}'`)
+      testCall.getArguments()[0]?.replaceWithText(buildTextLiteral(newTtl, columns))
       report.changes.push(`Test case #${op.expected + 1} title: "${currentTtl}" → "${newTtl}"`)
     }
     if (!isHookCall(testCall)) {
@@ -199,9 +230,87 @@ function fixTestCases(
     }
 
     if (options.stepStyle === 'default') {
-      fixTestSteps(testCall, mdTestCase.stepTtls, options.fileType, report, op.expected + 1)
+      fixTestSteps(
+        testCall,
+        mdTestCase.stepTtls,
+        columns,
+        options.fileType,
+        report,
+        op.expected + 1
+      )
     }
+
+    // Last: wrapping the test in a loop replaces its node
+    fixExamples(testCall, mdTestCase.examples, `Test case #${op.expected + 1}`, report, true)
   }
+}
+
+/**
+ * Plain strings with `<column>` placeholders (e.g. generated before the case got a table) would
+ * print the placeholder itself - turn them into template substitutions of the loop variable
+ */
+function templatizeLiterals(
+  testCall: CallExpression,
+  columns: string[],
+  label: string,
+  report: FixReport
+): void {
+  for (const call of [testCall, ...findStepCalls(testCall)]) {
+    const arg = call.getArguments()[0]
+    const text =
+      arg?.asKind(SyntaxKind.StringLiteral)?.getLiteralValue() ??
+      arg?.asKind(SyntaxKind.NoSubstitutionTemplateLiteral)?.getLiteralValue()
+    if (text === undefined || !getPlaceholders(text).some((name) => columns.includes(name))) {
+      continue
+    }
+    arg!.replaceWithText(buildTextLiteral(text, columns))
+    report.changes.push(`${label}: "${text}" uses examples data`)
+  }
+}
+
+/**
+ * Sync inline data of parametrized test case with the spec table. Generated files also get the
+ * loop added around a test (`canWrap`); a loop over non-inline data or an unparametrized spec
+ * case with a test in a loop is left for manual review.
+ */
+function fixExamples(
+  testCall: CallExpression,
+  expected: ExamplesTable | null,
+  label: string,
+  report: FixReport,
+  canWrap: boolean
+): void {
+  const loop = findExamplesLoop(testCall)
+  if (!expected) {
+    // Generated test still runs per row though MD case lost its table - titles would repeat
+    if (canWrap && loop?.array && readExamplesArray(loop.array)) {
+      report.warnings.push(`${label} is not parametrized in MD - remove examples loop manually`)
+    }
+    return
+  }
+
+  if (canWrap) templatizeLiterals(testCall, expected.columns, label, report)
+
+  if (!loop) {
+    const statement = getStatementIn(testCall)
+    if (canWrap && statement) {
+      statement.replaceWithText(buildExamplesLoop(expected, statement.getText()))
+      report.changes.push(`${label}: wrapped in examples loop (${expected.rows.length} rows)`)
+    } else {
+      report.warnings.push(`${label} is parametrized in MD - add examples loop manually`)
+    }
+    return
+  }
+
+  const actual = loop.array ? readExamplesArray(loop.array) : null
+  if (!loop.array || !actual) {
+    report.warnings.push(`${label} examples are not inline string data - sync them manually`)
+    return
+  }
+  if (isSameExamples(actual, expected)) return
+
+  loop.array.replaceWithText(buildExamplesArray(expected))
+  report.changes.push(`${label} examples: ${actual.rows.length} rows → ${expected.rows.length}`)
 }
 
 /**
@@ -239,6 +348,7 @@ function createSiblingTtlBuilder(
 function fixTestSteps(
   testCall: CallExpression,
   expectedSteps: string[],
+  columns: string[],
   fileType: FileType,
   report: FixReport,
   testCaseIndex: number
@@ -269,7 +379,9 @@ function fixTestSteps(
     }
 
     if (op.kind === 'insert') {
-      const code = useTestStep ? buildTestStepCode(expectedStep) : buildManualStepCode(expectedStep)
+      const code = useTestStep
+        ? buildTestStepCode(expectedStep, columns)
+        : buildManualStepCode(expectedStep, columns)
       const added = inserter.insert(op.after, code)
       if (added) {
         report.changes.push(
@@ -285,7 +397,9 @@ function fixTestSteps(
 
     const currentStep = currentSteps[op.current]
     if (currentStep && currentStep !== expectedStep) {
-      stepCalls[op.current].getArguments()[0]?.replaceWithText(`'${escapeString(expectedStep)}'`)
+      stepCalls[op.current]
+        .getArguments()[0]
+        ?.replaceWithText(buildTextLiteral(expectedStep, columns))
       report.changes.push(
         `  TC#${testCaseIndex} Step#${op.expected + 1}: "${currentStep}" → "${expectedStep}"`
       )
@@ -293,25 +407,23 @@ function fixTestSteps(
   }
 }
 
-function buildTestCaseCode(
-  ttl: string,
-  steps: string[],
-  tags: string[],
-  options: FixOptions
-): string {
+function buildTestCaseCode(ttl: string, testCase: TestCase, options: FixOptions): string {
+  const { stepTtls, tags, examples } = testCase
+  const columns = examples?.columns ?? []
   const isCyborg = options.fileType === 'CYBORG'
-  const stepCode = steps.map((step) =>
+  const stepCode = stepTtls.map((step) =>
     !isCyborg
-      ? buildTestStepCode(step)
+      ? buildTestStepCode(step, columns)
       : options.stepStyle === 'cyborg-test-step'
-        ? `await test.step('${escapeString(step)}', async () => {\n${buildManualStepCode(step)}\n})`
-        : buildManualStepCode(step)
+        ? `await test.step(${buildTextLiteral(step, columns)}, async () => {\n${buildManualStepCode(step, columns)}\n})`
+        : buildManualStepCode(step, columns)
   )
   const params = isCyborg ? '{ manualStep }' : ''
   const isBackground = isBackgroundTitle(parseIDAndTitle(ttl).ttl)
   const testFn = isBackground ? 'test.beforeEach' : 'test'
   const details = !isBackground && tags.length > 0 ? `${buildTagDetails(tags)}, ` : ''
-  return `${testFn}('${escapeString(ttl)}', ${details}async (${params}) => {\n${stepCode.join('\n')}\n})`
+  const code = `${testFn}(${buildTextLiteral(ttl, columns)}, ${details}async (${params}) => {\n${stepCode.join('\n')}\n})`
+  return examples ? buildExamplesLoop(examples, code) : code
 }
 
 /**
@@ -361,12 +473,12 @@ function fixSpecTags(
   changes.push(`${label} tags: [${current.join(', ')}] → [${expected.join(', ')}]`)
 }
 
-function buildTestStepCode(step: string): string {
-  return `await test.step('${escapeString(step)}', async () => {\n// TODO: Implement step\n})`
+function buildTestStepCode(step: string, columns: string[]): string {
+  return `await test.step(${buildTextLiteral(step, columns)}, async () => {\n// TODO: Implement step\n})`
 }
 
-function buildManualStepCode(step: string): string {
-  return `await manualStep('${escapeString(step)}')`
+function buildManualStepCode(step: string, columns: string[]): string {
+  return `await manualStep(${buildTextLiteral(step, columns)})`
 }
 
 /**

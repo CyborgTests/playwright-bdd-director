@@ -51,7 +51,8 @@ function createMD(overrides?: Partial<ParsedMD>): ParsedMD {
         id: 'tc-01',
         ttl: 'Correct test case',
         stepTtls: ['Correct step 1', 'Correct step 2'],
-        tags: []
+        tags: [],
+        examples: null
       }
     ],
     ...overrides
@@ -209,8 +210,8 @@ test.describe('[ts01] Correct Suite Title', { tag: [TAG.TEST.AUTO, TAG.SUITE.TES
       const filePath = createTSFile('missing-test.ts', content)
       const md = createMD({
         testCases: [
-          { id: 'tc-01', ttl: 'Correct test case', stepTtls: [], tags: [] },
-          { id: 'tc-02', ttl: 'Missing test', stepTtls: [], tags: [] }
+          { id: 'tc-01', ttl: 'Correct test case', stepTtls: [], tags: [], examples: null },
+          { id: 'tc-02', ttl: 'Missing test', stepTtls: [], tags: [], examples: null }
         ]
       })
 
@@ -336,7 +337,8 @@ test.describe('[ts01] Wrong Suite', { tag: [TAG.TEST.AUTO, TAG.SUITE.TEST] }, ()
             id: 'tc-01',
             ttl: 'Correct test case',
             stepTtls: ["Step with 'quotes'", 'Step with \\n newline'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -390,7 +392,13 @@ test.describe('[CYBORG] Suite Title', { tag: [TAG.TEST.CYBORG, TAG.SUITE.TEST] }
         suiteID: '',
         suiteTtl: 'Suite Title',
         testCases: [
-          { id: '', ttl: 'New case', stepTtls: ['Step 1', 'Step 2', 'New Step 3'], tags: [] }
+          {
+            id: '',
+            ttl: 'New case',
+            stepTtls: ['Step 1', 'Step 2', 'New Step 3'],
+            tags: [],
+            examples: null
+          }
         ]
       })
 
@@ -422,7 +430,8 @@ test.describe('[MANUAL] Suite Title', { tag: [TAG.TEST.MANUAL, TAG.SUITE.TEST] }
             id: '',
             ttl: 'Test case',
             stepTtls: ['Step 1', 'Step 2', 'New Step 3'],
-            tags: []
+            tags: [],
+            examples: null
           }
         ]
       })
@@ -576,8 +585,14 @@ test.describe('[CYBORG] Shop', () => {
       suiteTtl: 'Shop',
       suiteTags: [],
       testCases: [
-        { id: null, ttl: 'Background', stepTtls: ['Given user is logged in'], tags: [] },
-        { id: '', ttl: 'Buy', stepTtls: ['When user buys product'], tags: [] }
+        {
+          id: null,
+          ttl: 'Background',
+          stepTtls: ['Given user is logged in'],
+          tags: [],
+          examples: null
+        },
+        { id: '', ttl: 'Buy', stepTtls: ['When user buys product'], tags: [], examples: null }
       ]
     })
 
@@ -594,7 +609,7 @@ describe('autoFixTestFile - alignment by title', () => {
     suiteID: '',
     suiteTtl: 'Suite',
     suiteTags: [],
-    testCases: cases.map(([ttl, stepTtls]) => ({ id: '', ttl, stepTtls, tags: [] }))
+    testCases: cases.map(([ttl, stepTtls]) => ({ id: '', ttl, stepTtls, tags: [], examples: null }))
   })
 
   it('should insert MD case added in the middle without moving code to other titles', () => {
@@ -725,8 +740,8 @@ test.describe('[ts01-AUTO] Suite', () => {
       suiteTtl: 'Suite',
       suiteTags: [],
       testCases: [
-        { id: 'tc00', ttl: 'Inserted', stepTtls: ['Step'], tags: [] },
-        { id: 'tc01', ttl: 'New title', stepTtls: ['Step'], tags: [] }
+        { id: 'tc00', ttl: 'Inserted', stepTtls: ['Step'], tags: [], examples: null },
+        { id: 'tc01', ttl: 'New title', stepTtls: ['Step'], tags: [], examples: null }
       ]
     })
 
@@ -748,7 +763,8 @@ describe('autoFixTestFile - spec tags', () => {
       id: null,
       ttl: `Case ${i + 1}`,
       stepTtls: ['Step'],
-      tags
+      tags,
+      examples: null
     }))
   })
 
@@ -809,5 +825,124 @@ describe('autoFixTestFile - spec tags', () => {
     autoFixTestFile(filePath, md([], [[], ['@smoke']]))
 
     expect(parseTestFile(filePath).testCases[1]).toMatchObject({ ttl: 'Case 2', tags: ['@smoke'] })
+  })
+})
+
+describe('autoFixTestFile - examples', () => {
+  const header = `import test from '@cyborgtests/test'\n\n`
+  const table = { columns: ['role'], rows: [['admin'], ['guest']] }
+  const md = (examples: ParsedMD['testCases'][number]['examples']): ParsedMD => ({
+    suiteID: '',
+    suiteTtl: 'Auth',
+    suiteTags: [],
+    testCases: [
+      {
+        id: null,
+        ttl: 'Login as <role>',
+        stepTtls: ['Log in as "<role>"', 'Check menu'],
+        tags: [],
+        examples
+      }
+    ]
+  })
+
+  it('should wrap generated test in examples loop with template title and steps', () => {
+    // Generated before the case got a table: plain strings with placeholders
+    const filePath = createTSFile(
+      'auth.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Auth', () => {
+  test('Login', async ({ manualStep }) => {
+    await manualStep('Log in as "<role>"')
+  })
+})`
+    )
+
+    const result = autoFixTestFile(filePath, md(table))
+    const [testCase] = parseTestFile(filePath).testCases
+
+    expect(testCase).toMatchObject({
+      ttl: 'Login as <role>',
+      stepTtls: ['Log in as "<role>"', 'Check menu'],
+      examples: table
+    })
+    const code = fs.readFileSync(filePath, 'utf-8')
+    expect(code).toContain('test(`Login as ${example.role}`')
+    expect(code).toContain('await manualStep(`Log in as "${example.role}"`)')
+    expect(result.changes).toContain('Test case #1: wrapped in examples loop (2 rows)')
+  })
+
+  it('should replace changed data and leave equal data untouched', () => {
+    const filePath = createTSFile(
+      'auth.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Auth', () => {
+  for (const example of [{ role: 'admin' }]) {
+    test(\`Login as \${example.role}\`, async ({ manualStep }) => {
+      await manualStep(\`Log in as "\${example.role}"\`)
+      await manualStep('Check menu')
+    })
+  }
+})`
+    )
+
+    expect(autoFixTestFile(filePath, md(table)).changes).toEqual([
+      'Test case #1 examples: 1 rows → 2'
+    ])
+    expect(parseTestFile(filePath).testCases[0].examples).toEqual(table)
+    expect(autoFixTestFile(filePath, md(table)).fixed).toBe(false)
+  })
+
+  it('should only sync data in implemented tests (examples scope)', () => {
+    const filePath = createTSFile(
+      'auth.ui.test.ts',
+      `${header}test.describe('[UI] Auth', () => {
+  for (const example of [{ role: 'admin' }]) {
+    test(\`Login as \${example.role}\`, async ({ page }) => {
+      await test.step('Old step title', async () => {
+        await page.goto(example.role)
+      })
+    })
+  }
+})`
+    )
+
+    const result = autoFixTestFile(filePath, md(table), { scope: 'examples' })
+    const [testCase] = parseTestFile(filePath).testCases
+
+    expect(result.changes).toEqual(['Test case #1 examples: 1 rows → 2'])
+    expect(testCase.examples).toEqual(table)
+    expect(testCase.stepTtls).toEqual(['Old step title'])
+  })
+
+  it('should insert missing parametrized test case inside its loop', () => {
+    const filePath = createTSFile(
+      'auth.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Auth', () => {
+})`
+    )
+
+    autoFixTestFile(filePath, md(table))
+
+    expect(parseTestFile(filePath).testCases[0]).toMatchObject({
+      ttl: 'Login as <role>',
+      examples: table
+    })
+  })
+
+  it('should warn when spec case lost its table but generated test still loops', () => {
+    const filePath = createTSFile(
+      'auth.cyborg.test.ts',
+      `${header}test.describe('[CYBORG] Auth', () => {
+  for (const example of [{ role: 'admin' }]) {
+    test(\`Login as \${example.role}\`, async ({ manualStep }) => {
+      await manualStep(\`Log in as "\${example.role}"\`)
+      await manualStep('Check menu')
+    })
+  }
+})`
+    )
+
+    expect(autoFixTestFile(filePath, md(null)).warnings).toContain(
+      'Test case #1 is not parametrized in MD - remove examples loop manually'
+    )
   })
 })

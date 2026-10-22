@@ -242,3 +242,24 @@ Feature: Nav
     expect(filtered.summary.totalCases).toBe(1)
   })
 })
+
+describe('buildCoverageMatrix - examples', () => {
+  it('should count examples rows of parametrized test case', () => {
+    const spec = writeFile(
+      'test-suites/login.md',
+      `## Login
+
+### Login as <role>
+
+| role  |
+| ----- |
+| admin |
+| guest |
+
+#### Log in
+`
+    )
+
+    expect(build([spec], []).suites[0].cases[0].examples).toBe(2)
+  })
+})

@@ -2,7 +2,7 @@ import path from 'path'
 
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
 import { getTestFileBaseName, matchIDWithSuffix, parseIDAndTitle } from '../utils/helpers'
-import { ParsedMD } from './md-parser'
+import { ExamplesTable, ParsedMD } from './md-parser'
 import { ParsedTest } from './ts-parser'
 
 export interface FileMatchResult {
@@ -137,6 +137,33 @@ export function splitTags(tags: string[]): { constants: string[]; specTags: stri
 }
 
 /**
+ * Same examples data: equal columns (any key order) and rows in spec order
+ */
+export function isSameExamples(actual: ExamplesTable, expected: ExamplesTable): boolean {
+  const { columns } = expected
+  if (actual.columns.length !== columns.length || actual.rows.length !== expected.rows.length) {
+    return false
+  }
+  if (!columns.every((column) => actual.columns.includes(column))) return false
+  return expected.rows.every((row, i) =>
+    columns.every((column, j) => actual.rows[i][actual.columns.indexOf(column)] === row[j])
+  )
+}
+
+/**
+ * Parametrized spec case needs inline data equal to its table. A loop in a test of a plain spec
+ * case is the test's own business (e.g. iterating fixtures) - not checked.
+ */
+function diffExamples(actual: ExamplesTable | null, expected: ExamplesTable | null): string | null {
+  if (!expected) return null
+  if (!actual) {
+    return `• Examples: no inline data - expected for (const example of [{ ${expected.columns[0]}: '…' }]) around test`
+  }
+  if (isSameExamples(actual, expected)) return null
+  return `• Examples: data differs from spec table (${actual.rows.length} rows → ${expected.rows.length})`
+}
+
+/**
  * Spec tags of a test / describe must be exactly the spec ones (order does not matter)
  */
 function diffSpecTags(actual: string[], expected: string[]): string[] {
@@ -258,6 +285,9 @@ function validateTestCases(
         ? []
         : diffSpecTags(splitTags(typeScriptTestCase.tags).specTags, markdownTestCase.tags))
     )
+
+    const examplesProblem = diffExamples(typeScriptTestCase.examples, markdownTestCase.examples)
+    if (examplesProblem) problems.push(examplesProblem)
 
     // Check step count
     if (markdownTestCase.stepTtls.length !== typeScriptTestCase.stepTtls.length) {

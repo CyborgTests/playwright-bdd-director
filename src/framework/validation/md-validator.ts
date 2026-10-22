@@ -5,6 +5,7 @@ import {
   isHeading,
   MD_HEADINGS,
   MD_HORIZONTAL_RULE,
+  MD_TABLE_PREFIX,
   MD_TAGS_PREFIX
 } from '@/framework/constants/markdown'
 
@@ -72,8 +73,8 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     // 6. List/comment (- ...)
     if (trimmed.startsWith('- ')) continue
 
-    // 7. Tags line (placement and tag format are checked by md-parser)
-    if (trimmed.startsWith(MD_TAGS_PREFIX)) continue
+    // 7. Tags line and examples table row (placement and format are checked by md-parser)
+    if (trimmed.startsWith(MD_TAGS_PREFIX) || trimmed.startsWith(MD_TABLE_PREFIX)) continue
 
     // Everything else is invalid
     errors.push({
@@ -203,7 +204,21 @@ export function autoFixMDFormatting(filePath: string): boolean {
   const isComment = (line: string): boolean => {
     const trimmed = line.trim()
     // Horizontal rule is a separator, not a comment - blank lines around it are kept
-    return trimmed.length > 0 && trimmed !== MD_HORIZONTAL_RULE && getHeadingLevel(trimmed) === null
+    return (
+      trimmed.length > 0 &&
+      trimmed !== MD_HORIZONTAL_RULE &&
+      getBlockKind(line) === 'details' &&
+      getHeadingLevel(trimmed) === null
+    )
+  }
+
+  // Tags line and examples table are blocks of their own, kept apart from details by blank
+  // lines (as Prettier does) - a list item would swallow a table, a Tags line would merge
+  const getBlockKind = (line: string): 'tags' | 'table' | 'details' => {
+    const trimmed = line.trim()
+    if (trimmed.startsWith(MD_TAGS_PREFIX)) return 'tags'
+    if (trimmed.startsWith(MD_TABLE_PREFIX)) return 'table'
+    return 'details'
   }
 
   const isBlank = (line: string): boolean => {
@@ -287,6 +302,17 @@ export function autoFixMDFormatting(filePath: string): boolean {
     // Add blank line before header if previous was comment
     const nextIsHeader = nextLine !== null && getHeadingLevel(nextLine.trim()) !== null
     if (isComment(line) && nextIsHeader) {
+      finalLines.push('')
+    }
+
+    // Blank line between Tags line, examples table and adjacent details
+    if (
+      nextLine !== null &&
+      !isBlank(line) &&
+      !isBlank(nextLine) &&
+      !isHeader &&
+      getBlockKind(line) !== getBlockKind(nextLine)
+    ) {
       finalLines.push('')
     }
   }
