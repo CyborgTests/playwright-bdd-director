@@ -26,7 +26,7 @@ afterEach(() => {
   // Cleanup unique test directory
   if (fs.existsSync(testDir)) {
     try {
-      fs.rmSync(testDir, { recursive: true, force: true })
+      fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
     } catch {
       // Ignore cleanup errors - directory is unique, won't conflict with other tests
     }
@@ -587,6 +587,27 @@ test.describe('Suite part 2', () => {
     expect(result.testCases.map((tc) => tc.ttl)).toEqual(['First', 'Second'])
   })
 
+  it('should read tests of anonymous describes, suite title from first titled describe', () => {
+    const result = parseTestFile(
+      createTSFile(
+        'anonymous.ts',
+        `${header}test.describe(() => {
+  test('First', async () => {})
+})
+
+test.describe('Suite', () => {
+  test.describe(() => {
+    test.describe.configure({ retries: 2 })
+    test('Second', async () => {})
+  })
+})`
+      )
+    )
+
+    expect(result.suiteTtl).toBe('Suite')
+    expect(result.testCases.map((tc) => tc.ttl)).toEqual(['First', 'Second'])
+  })
+
   it('should read test cases from nested and serial describes in source order', () => {
     expect(
       titles(`test.describe('Suite', () => {
@@ -747,6 +768,35 @@ describe('parseTestFile - coverage info', () => {
 
     expect(testCase.stepTtls).toEqual(['Automated', 'Hybrid', 'Manual'])
     expect(testCase.stepHasManual).toEqual([false, true, true])
+  })
+
+  it('should read runStep as automated step, inside test.step as its content', () => {
+    const [testCase] = parse(`
+  test('Cyborg', async ({ homePage, manualStep }) => {
+    await runStep('Given user opens the home page', { homePage })
+    await test.step('Login', async () => {
+      await runStep('When user logs in', { homePage })
+    })
+    await manualStep('Then account is shown')
+  })`)
+
+    expect(testCase.stepTtls).toEqual([
+      'Given user opens the home page',
+      'Login',
+      'Then account is shown'
+    ])
+    expect(testCase.stepCallKinds).toEqual(['runStep', 'test.step', 'manualStep'])
+    expect(testCase.stepHasManual).toEqual([false, false, true])
+    expect(testCase.hasImplementation).toBe(true)
+  })
+
+  it('should read test.fail as fail modifier', () => {
+    const [testCase] = parse(`
+  test.fail('Known bug', async ({ page }) => {
+    await page.goto('/')
+  })`)
+
+    expect(testCase.modifier).toBe('fail')
   })
 })
 

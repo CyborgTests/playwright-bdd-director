@@ -33,6 +33,7 @@ const CASES: CaseCoverage[] = [
       api: 'missing',
       ui: 'implemented',
       e2e: 'missing',
+      bdd: 'missing',
       auto: 'missing'
     },
     cyborgSteps: { automated: 1, total: 2 }
@@ -48,6 +49,7 @@ const CASES: CaseCoverage[] = [
       api: 'disabled',
       ui: 'skeleton',
       e2e: 'missing',
+      bdd: 'missing',
       auto: 'missing'
     },
     cyborgSteps: { automated: 0, total: 2 }

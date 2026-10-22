@@ -110,12 +110,8 @@ export function findTestCallsDeep(describeCall: CallExpression): CallExpression[
  * Statement-level call expressions of describe callback body (not nested in other calls)
  */
 function getDescribeBodyCalls(describeCall: CallExpression): CallExpression[] {
-  const args = describeCall.getArguments()
-
-  // Support both:
-  // test.describe('title', () => {}) - callback at index 1
-  // test.describe('title', { tag: [...] }, () => {}) - callback at index 2
-  const callback = args.length === 3 ? args[2] : args[1]
+  // Callback is the last argument: describe(fn), describe('title', fn), describe('title', details, fn)
+  const callback = describeCall.getArguments().at(-1)
   if (!callback) return []
 
   // Get the function body (arrow function or regular function)
@@ -215,8 +211,8 @@ function hasTestBody(callExpression: CallExpression): boolean {
 
 /**
  * Find all step calls within test block
- * Supports: manualStep(), test.step(), authTest.step(), customTest.step(), and any fixture with .step
- * Excludes: manualStep() calls that are inside test.step() - they are part of the step, not separate steps
+ * Supports: manualStep(), runStep() (step definition), test.step(), authTest.step(), any fixture with .step
+ * Excludes: manualStep() / runStep() calls inside test.step() - they are part of the step, not separate steps
  */
 export function findStepCalls(testCall: CallExpression): CallExpression[] {
   const args = testCall.getArguments()
@@ -234,8 +230,8 @@ export function findStepCalls(testCall: CallExpression): CallExpression[] {
       // Always include test.step calls
       if (expression.endsWith('.step')) return true
 
-      // For manualStep, check if it's inside a test.step - if so, exclude it
-      if (expression === AST_IDENTIFIERS.MANUAL_STEP) {
+      // For manualStep / runStep, check if it's inside a test.step - if so, exclude it
+      if (expression === AST_IDENTIFIERS.MANUAL_STEP || expression === AST_IDENTIFIERS.RUN_STEP) {
         return !isInsideTestStep(call)
       }
 
@@ -374,7 +370,7 @@ export function readExamplesArray(array: ArrayLiteralExpression): ExamplesTable 
 /**
  * Column of `example.column` / `example['column']`
  */
-function getExampleColumn(expression: Node, loopVar: string): string | undefined {
+export function getExampleColumn(expression: Node, loopVar: string): string | undefined {
   const property = expression.asKind(SyntaxKind.PropertyAccessExpression)
   if (property && property.getExpression().getText() === loopVar) return property.getName()
 

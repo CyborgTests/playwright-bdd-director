@@ -14,15 +14,18 @@ import {
   matchIDWithSuffix
 } from '../utils/helpers'
 
-export const COVERAGE_LAYERS = ['cyborg', 'api', 'ui', 'e2e', 'auto'] as const
-export const AUTOMATED_LAYERS = ['api', 'ui', 'e2e', 'auto'] as const
+export const COVERAGE_LAYERS = ['cyborg', 'api', 'ui', 'e2e', 'bdd', 'auto'] as const
+export const AUTOMATED_LAYERS = ['api', 'ui', 'e2e', 'bdd', 'auto'] as const
+
+/** Layers listed only when some suite has tests in them */
+const OPTIONAL_LAYERS: readonly CoverageLayer[] = ['bdd', 'auto']
 
 export type CoverageLayer = (typeof COVERAGE_LAYERS)[number]
 
 /**
  * - implemented: test exists and does something
  * - skeleton: test exists with empty steps only (autogen / AUTO skeleton)
- * - disabled: test.skip/fixme or inside describe.skip/fixme
+ * - disabled: test.skip/fixme/fail or inside describe.skip/fixme (bdd: scenario with missing steps)
  * - missing: no test for the case in this layer
  * - n/a: cyborg layer of a suite listed in CONFIG.noCyborg
  */
@@ -61,7 +64,7 @@ export interface SuiteCoverage {
 
 export interface CoverageMatrix {
   generatedAt: string
-  layers: CoverageLayer[] // `auto` is listed only when some suite has AUTO tests
+  layers: CoverageLayer[] // `bdd` / `auto` are listed only when some suite has such tests
   suites: SuiteCoverage[]
   summary: CoverageSummary
   errors: string[] // specs / tests that could not be parsed
@@ -118,10 +121,19 @@ export function buildCoverageMatrix(
     const cyborgDisabled = isCyborgDisabledFor(specFile, noCyborg, testSuitesDir)
 
     const cases = parsed.testCases.map((mdCase): CaseCoverage => {
+      // Generated (bdd) tests run one test per examples row, titles filled with the row values
+      const rowTitles = new Set(
+        mdCase.examples?.rows.map((row) =>
+          mdCase.ttl.replace(/<([^<>\n]+)>/g, (match, column: string) => {
+            const index = mdCase.examples!.columns.indexOf(column)
+            return index < 0 ? match : row[index]
+          })
+        )
+      )
       const matchesCase = (tsCase: ParsedTestCase): boolean =>
         mdCase.id
           ? tsCase.id !== null && matchIDWithSuffix(mdCase.id, tsCase.id)
-          : tsCase.ttl === mdCase.ttl
+          : tsCase.ttl === mdCase.ttl || rowTitles.has(tsCase.ttl)
       const matchesByLayer = new Map(
         COVERAGE_LAYERS.map((layer) => [layer, (testsByLayer.get(layer) ?? []).filter(matchesCase)])
       )
@@ -155,10 +167,11 @@ export function buildCoverageMatrix(
     })
   }
 
-  const hasAuto = suites.some((suite) => suite.cases.some((tc) => tc.cells.auto !== 'missing'))
+  const isUsed = (layer: CoverageLayer) =>
+    suites.some((suite) => suite.cases.some((tc) => tc.cells[layer] !== 'missing'))
   return {
     generatedAt: new Date().toISOString(),
-    layers: COVERAGE_LAYERS.filter((layer) => layer !== 'auto' || hasAuto),
+    layers: COVERAGE_LAYERS.filter((layer) => !OPTIONAL_LAYERS.includes(layer) || isUsed(layer)),
     suites,
     summary: summarize(suites.flatMap((suite) => suite.cases)),
     errors

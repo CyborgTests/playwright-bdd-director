@@ -28,7 +28,7 @@ afterEach(() => {
   // Cleanup unique test directory
   if (fs.existsSync(testDir)) {
     try {
-      fs.rmSync(testDir, { recursive: true, force: true })
+      fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
     } catch {
       // Ignore cleanup errors - directory is unique, won't conflict with other tests
     }
@@ -555,6 +555,19 @@ describe('isEmptyAutoTest - tests without steps', () => {
     expect(isEmptyAutoTest(filePath)).toBe(true)
   })
 
+  it('should return false when steps call step definitions', () => {
+    const filePath = createTSFile(
+      'run-steps.ts',
+      `${header}test.describe('Suite', () => {
+  test('Test', async ({ homePage }) => {
+    await runStep('Given user opens the home page', { homePage })
+  })
+})`
+    )
+
+    expect(isEmptyAutoTest(filePath)).toBe(false)
+  })
+
   it('should return false when file only delegates to other functions', () => {
     const filePath = createTSFile(
       'delegating.ts',
@@ -667,6 +680,35 @@ test.describe('[CYBORG] Suite', () => {
     autoFixTestFile(filePath, mdOf([['Case', ['First', 'Second', 'Third']]]))
 
     expect(parseTestFile(filePath).testCases[0].stepTtls).toEqual(['First', 'Second', 'Third'])
+  })
+
+  it('should insert manualStep next to runStep in cyborg and test.step in automated test', () => {
+    const cyborg = createTSFile(
+      'run.cyborg.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('[CYBORG] Suite', () => {
+  test('[CYBORG] Case', async ({ homePage }) => {
+    await runStep('First', { homePage })
+  })
+})`
+    )
+    const automated = createTSFile(
+      'run.ui.test.ts',
+      `import { test } from '@playwright/test'
+
+test.describe('Suite', () => {
+  test('Case', async ({ homePage }) => {
+    await runStep('First', { homePage })
+  })
+})`
+    )
+
+    autoFixTestFile(cyborg, mdOf([['Case', ['First', 'Second']]]))
+    autoFixTestFile(automated, mdOf([['Case', ['First', 'Second']]]))
+
+    expect(parseTestFile(cyborg).testCases[0].stepCallKinds).toEqual(['runStep', 'manualStep'])
+    expect(parseTestFile(automated).testCases[0].stepCallKinds).toEqual(['runStep', 'test.step'])
   })
 
   it('should keep code of removed case and report it instead of renaming another case', () => {

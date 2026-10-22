@@ -27,7 +27,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clearStepDefinitions()
-  fs.rmSync(testDir, { recursive: true, force: true })
+  fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
 })
 
 describe('parseFixtureNames', () => {

@@ -13,7 +13,7 @@ describe('validateMDStructure', () => {
   })
 
   afterEach(() => {
-    fs.rmSync(tempDir, { recursive: true, force: true })
+    fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
   })
 
   function createMDFile(fileName: string, content: string): string {
@@ -211,7 +211,7 @@ describe('autoFixMDFormatting', () => {
   })
 
   afterEach(() => {
-    fs.rmSync(tempDir, { recursive: true, force: true })
+    fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
   })
 
   function createMDFile(fileName: string, content: string): string {
@@ -344,7 +344,7 @@ Tags: @smoke
 #### Step
 `)
     } finally {
-      fs.rmSync(tempDir, { recursive: true, force: true })
+      fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
     }
   })
 })
@@ -358,7 +358,7 @@ describe('Tags line formatting', () => {
     try {
       expect(autoFixMDFormatting(filePath)).toBe(false)
     } finally {
-      fs.rmSync(tempDir, { recursive: true, force: true })
+      fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
     }
   })
 })

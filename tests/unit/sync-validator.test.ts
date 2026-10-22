@@ -20,7 +20,7 @@ describe('validate', () => {
 
   afterEach(() => {
     process.chdir(originalCwd)
-    fs.rmSync(tempDir, { recursive: true, force: true })
+    fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
   })
 
   function createMDFile(fileName: string, content: string): void {

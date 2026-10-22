@@ -155,9 +155,11 @@ npm run matrix -- @smoke                 # only test cases tagged @smoke
   Cyborg steps  ░░░░░░░░░░░░░░░░░░░░   0% 0/19 without manualStep()
 ```
 
-- **Cells**: ✔ implemented · ○ empty skeleton (AUTO from `autogen`) · ⊘ `skip`/`fixme` · — missing · `n/a` for `noCyborg` suites; colors in a terminal (off for pipes and `NO_COLOR`)
-- **Cyborg cell** `✔ x/y` shows automated/total steps: a step counts as automated when it has no `manualStep()` inside
-- **Automated case** = implemented in at least one of api/ui/e2e/auto; Background is shown but not counted
+- **Cells**: ✔ implemented · ○ empty skeleton (AUTO from `autogen`) · ⊘ `skip`/`fixme`/`fail` · — missing · `n/a` for `noCyborg` suites; colors in a terminal (off for pipes and `NO_COLOR`)
+- **Cyborg cell** `✔ x/y` shows automated/total steps: a step counts as automated when it has no `manualStep()` inside (`runStep` is automated)
+- **BDD column** appears with step definitions style specs: generated tests, Outline matched row by row, missing steps shown as ⊘
+- **Automated case** = implemented in at least one of api/ui/e2e/bdd/auto; Background is shown but not counted
+- Static: files are read as they are - run `npm run dress` first (`play` does) so generated tests are up to date
 - **HTML** is a single self-contained file with filters (not automated / cyborg only / uncovered) and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
 ## ⚡ Markdown-Driven Testing Platform
@@ -496,39 +498,13 @@ test('Go back home from "Signup / Login" page', async ({ homePage }) => {
 })
 ```
 
-- **Patterns**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) (`{string}`, `{int}`, `{word}`, ...) or RegExp; own types with `defineParameterType` from `@/framework/bdd`. The keyword does not affect matching: `Given X` finds `Then('X')`
-- **Fixtures**: the first parameter of a step function destructures the Playwright fixtures it needs - the generated test requests exactly those. List them explicitly, no `...rest`
-- **Arguments**: expression parameters follow the fixtures; a Gherkin DataTable (`DataTable` with `raw()`, `rows()`, `hashes()`, `rowsHash()`) or DocString (string) comes last
-- **Gherkin**: Background → `beforeEach`, Rule → nested `describe`, Scenario Outline → one test per Examples row, tags → Playwright tags
-- **Missing step** → its scenario is generated as `test.fixme`, `stage` prints a definition snippet to paste; `dress` warns
-- **Ambiguous step** (several definitions match) → `stage` and `dress` fail, listing the definitions with their locations
-- `dress` regenerates the tests in memory and fails when a file is outdated; generated tests of removed specs are deleted by `stage`
+- **Steps**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) or RegExp; the keyword does not affect matching; the first parameter destructures the fixtures the step needs
+- **Missing step** → scenario generated as `test.fixme` + a snippet from `stage`; **ambiguous step** → `stage` and `dress` fail with locations
+- **Hooks** `Before/After/BeforeAll/AfterAll` with tag expressions, **special tags** `@skip`, `@fixme`, `@fail`, `@slow`, `@retries:N`, `@timeout:N`
+- **`runStep` in cyborg tests**: the same step definitions in a mixed walkthrough - `stage` never edits these calls, `dress` reports what would fail with the exact fix
+- Run: `npm run play bdd`. English Gherkin keywords only for now
 
-**Hooks** (same `./bdd` import), chosen by [tag expressions](https://github.com/cucumber/tag-expressions) when `stage` generates the test:
-
-```typescript
-Before({ name: 'Clear cart', tags: '@cart and not @api' }, async ({ cartPage }) => { ... })
-After(async ({ page }) => { ... }) // no tags - every scenario
-BeforeAll({ tags: '@shop' }, async ({ browser }) => { ... }) // worker fixtures only
-```
-
-- `Before` / `After` → `test.beforeEach` / `test.afterEach`; scenario tags include its Feature, Rule and Examples tags. Scenarios with different hooks are grouped in anonymous `test.describe` blocks (report titles unchanged)
-- Order as in Cucumber: Before hooks → Background → steps → After hooks (reverse definition order)
-- `BeforeAll` / `AfterAll` → `test.beforeAll` / `test.afterAll` of the feature, matched against Feature tags; they run once per worker
-- Unnamed hook title: `<file>#<n>` (n-th hook of its kind in the file); names are unique per kind
-
-**Special tags** (they stay Playwright tags too, so `npm run play bdd @slow` works):
-
-| Tag                        | Generated                                                                       |
-| -------------------------- | ------------------------------------------------------------------------------- |
-| `@skip`, `@fixme`, `@fail` | `test.skip(…)`, `test.fixme(…)`, `test.fail(…)` - also when set on Feature/Rule |
-| `@slow`                    | `test.slow()` in the test                                                       |
-| `@retries:N`, `@timeout:N` | `test.describe.configure({ retries, timeout })` on the level the tag is written |
-
-Invalid values (`@retries:abc`) and different values on one level fail `stage`.
-
-- Run: `npm run play bdd`. The spec also gets a cyborg test like any other (disable with `CONFIG.noCyborg`)
-- English Gherkin keywords only for now
+Full guide: [docs/step-definitions.md](docs/step-definitions.md).
 
 ## ✅ Validation
 

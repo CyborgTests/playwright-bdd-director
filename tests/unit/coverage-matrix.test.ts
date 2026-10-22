@@ -23,7 +23,7 @@ beforeEach(() => {
 afterEach(() => {
   resetSharedProject()
   try {
-    fs.rmSync(testDir, { recursive: true, force: true })
+    fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
   } catch {
     // Ignore cleanup errors - directory is unique, won't conflict with other tests
   }
@@ -188,6 +188,61 @@ describe('buildCoverageMatrix', () => {
       ['Open login', false, 'implemented']
     ])
     expect(suite.summary).toMatchObject({ totalCases: 1, automatedCases: 1, automatedPercent: 100 })
+  })
+
+  it('should read generated bdd tests: Outline rows, hook groups, fixme as disabled', () => {
+    const spec = writeFile(
+      'test-suites/bdd/nav.feature',
+      `Feature: Nav
+
+  Background:
+    Given home page is open
+
+  Scenario Outline: Open <page>
+    When user clicks "<page>"
+
+    Examples:
+      | page   |
+      | Login  |
+      | Signup |
+
+  Scenario: Search
+    When user searches
+`
+    )
+    const bdd = writeFile(
+      'tests/bdd/nav.bdd.test.ts',
+      testFile(
+        'test.describe',
+        `  test.beforeAll('BeforeAll: Seed', async () => {
+    await runHook('BeforeAll', 'Seed')
+  })
+  test.describe(() => {
+    test.beforeEach('Background', async ({ page }) => {
+      await runStep('Given home page is open', { page })
+    })
+    test('Open Login', async ({ page }) => {
+      await runStep('When user clicks "Login"', { page })
+    })
+    test('Open Signup', async ({ page }) => {
+      await runStep('When user clicks "Signup"', { page })
+    })
+    test.fixme('Search', async () => {
+      await runStep('When user searches')
+    })
+  })`
+      )
+    )
+
+    const matrix = build([spec], [bdd])
+
+    expect(matrix.layers).toEqual(['cyborg', 'api', 'ui', 'e2e', 'bdd'])
+    expect(matrix.suites[0].cases.map((tc) => [tc.ttl, tc.cells.bdd])).toEqual([
+      ['Background', 'implemented'],
+      ['Open <page>', 'implemented'],
+      ['Search', 'disabled']
+    ])
+    expect(matrix.summary).toMatchObject({ totalCases: 2, automatedCases: 1 })
   })
 
   it('should collect unparsable files as errors and keep going', () => {

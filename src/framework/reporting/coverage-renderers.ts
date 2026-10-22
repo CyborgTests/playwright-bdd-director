@@ -28,7 +28,7 @@ const MD_STATUS: Record<CellStatus, string> = {
 const STATUS_LABEL: Record<CellStatus, string> = {
   implemented: 'implemented',
   skeleton: 'empty skeleton',
-  disabled: 'skip / fixme',
+  disabled: 'skip / fixme / fail',
   missing: 'missing',
   'n/a': 'cyborg disabled for suite'
 }
@@ -38,6 +38,7 @@ const LAYER_LABEL: Record<CoverageLayer, string> = {
   api: 'API',
   ui: 'UI',
   e2e: 'E2E',
+  bdd: 'BDD',
   auto: 'Auto'
 }
 
@@ -297,7 +298,7 @@ tr[data-state="background"] th[scope="row"] { color: var(--muted); font-style: i
 </div>
 ${suites}
 <p class="empty hidden">No test cases match this filter.</p>
-<p class="legend">Cells: ✔ implemented · ○ empty skeleton · ⊘ skip / fixme · — missing · cyborg ✔ x/y = automated/total steps. Background is shown but not counted.</p>
+<p class="legend">Cells: ✔ implemented · ○ empty skeleton · ⊘ skip / fixme / fail · — missing · cyborg ✔ x/y = automated/total steps. Background is shown but not counted.</p>
 ${errors}
 </main>
 <script>

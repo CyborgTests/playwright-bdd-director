@@ -7,6 +7,7 @@ export const AST_IDENTIFIERS = {
   TEST_DESCRIBE: 'test.describe',
   TEST: 'test',
   MANUAL_STEP: 'manualStep',
+  RUN_STEP: 'runStep',
   TEST_STEP: 'test.step'
 } as const
 

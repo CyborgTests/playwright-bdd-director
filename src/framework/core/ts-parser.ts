@@ -1,4 +1,4 @@
-import { CallExpression, SyntaxKind } from 'ts-morph'
+import { CallExpression, Node, SyntaxKind } from 'ts-morph'
 
 import { AST_IDENTIFIERS, PATTERNS } from '../constants/test-files'
 import { parseIDAndTitle } from '../utils/helpers'
@@ -20,15 +20,15 @@ export interface ParsedTestCase {
   stepTtls: string[]
   stepCallKinds: StepCallKind[]
   stepHasManual: boolean[] // manualStep() itself or test.step() wrapping a manualStep()
-  modifier: TestModifier | null // test.skip/fixme() or inside describe.skip/fixme()
+  modifier: TestModifier | null // test.skip/fixme/fail() or inside describe.skip/fixme()
   hasImplementation: boolean // body calls something besides steps (not an empty skeleton)
   tags: string[] // test('title', { tag: [...] }, fn) - see extractTags
   isHook: boolean // named beforeAll/afterAll or Background beforeEach - has no tags (isHookCall)
   examples: ExamplesTable | null // inline data of loop around test (findExamplesLoop)
 }
 
-export type StepCallKind = 'manualStep' | 'test.step'
-export type TestModifier = 'skip' | 'fixme'
+export type StepCallKind = 'manualStep' | 'runStep' | 'test.step'
+export type TestModifier = 'skip' | 'fixme' | 'fail'
 
 export interface ParsedTest {
   suiteID: string | null // "" for [], "TS01" for [TS01], or null for no brackets
@@ -47,16 +47,20 @@ export function parseTestFile(filePath: string): ParsedTest {
 
   /**
    * 1. Find outermost test.describe() calls: one MD suite may span several describes (or be
-   * wrapped in an exported function). Suite title and tags come from the first one.
+   * wrapped in an exported function). Suite title and tags come from the first titled one -
+   * an anonymous `test.describe(() => ...)` only groups tests.
    */
   const describeCalls = findOutermostDescribeCalls(sourceFile)
-  const describeCall = describeCalls[0]
-  if (!describeCall) {
+  if (describeCalls.length === 0) {
     throw new Error(`No test.describe() found in ${filePath}`)
   }
+  const describeCall =
+    describeCalls.find((call) => isTitleArgument(call.getArguments()[0])) ?? describeCalls[0]
 
   // 2. Extract suite ID and ttl
-  const suiteText = getStringLiteralValue(describeCall, 0)
+  const suiteText = isTitleArgument(describeCall.getArguments()[0])
+    ? getStringLiteralValue(describeCall, 0)
+    : undefined
   if (!suiteText) {
     throw new Error(`Cannot extract suite ttl from test.describe() in ${filePath}`)
   }
@@ -122,8 +126,18 @@ export function parseTestFile(filePath: string): ParsedTest {
 function inferStepCallKind(call: CallExpression): StepCallKind {
   const expression = call.getExpression().getText()
 
-  if (expression === 'manualStep') return 'manualStep'
+  if (expression === AST_IDENTIFIERS.MANUAL_STEP) return 'manualStep'
+  if (expression === AST_IDENTIFIERS.RUN_STEP) return 'runStep'
   return 'test.step'
+}
+
+function isTitleArgument(node: Node | undefined): boolean {
+  return (
+    !!node &&
+    (node.isKind(SyntaxKind.StringLiteral) ||
+      node.isKind(SyntaxKind.NoSubstitutionTemplateLiteral) ||
+      node.isKind(SyntaxKind.TemplateExpression))
+  )
 }
 
 function readTestExamples(testCall: CallExpression): ExamplesTable | null {
@@ -138,8 +152,9 @@ function hasManualStepCall(call: CallExpression): boolean {
 }
 
 /**
- * Static skip/fixme of test case: `test.skip('title', fn)`, `test.fixme('title', fn)` or any
- * enclosing `describe.skip/fixme`. Runtime `test.skip(condition)` inside the body is ignored.
+ * Static skip/fixme/fail of test case: `test.skip('title', fn)`, `test.fixme('title', fn)`,
+ * `test.fail('title', fn)` or any enclosing `describe.skip/fixme`. Runtime `test.skip(condition)`
+ * inside the body is ignored.
  */
 function inferModifier(testCall: CallExpression): TestModifier | null {
   const calls = [
@@ -150,6 +165,7 @@ function inferModifier(testCall: CallExpression): TestModifier | null {
     const expression = call.getExpression().getText()
     if (expression.endsWith('.skip')) return 'skip'
     if (expression.endsWith('.fixme')) return 'fixme'
+    if (expression.endsWith('.fail')) return 'fail'
   }
   return null
 }

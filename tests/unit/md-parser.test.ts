@@ -18,7 +18,7 @@ beforeEach(() => {
 afterEach(() => {
   // Cleanup temp directory
   if (fs.existsSync(TEST_DIR)) {
-    fs.rmSync(TEST_DIR, { recursive: true, force: true })
+    fs.rmSync(TEST_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }) // Windows: files briefly locked
   }
   clearMDCache()
 })

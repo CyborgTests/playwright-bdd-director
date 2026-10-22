@@ -473,7 +473,7 @@ function tagNames(tags: readonly Tag[]): string[] {
 /**
  * Import of step file at "src/steps/x.steps.ts:12": "@/steps/x.steps" (alias), else relative
  */
-function toModuleSpecifier(location: string, testPath: string): string {
+export function toModuleSpecifier(location: string, testPath: string): string {
   const file = location.replace(/:\d+$/, '').replace(/\.ts$/, '')
   if (file.startsWith('src/')) return `@/${file.slice('src/'.length)}`
   const relative = toPosix(path.relative(path.dirname(testPath), file))

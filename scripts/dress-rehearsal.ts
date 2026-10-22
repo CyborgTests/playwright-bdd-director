@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { checkRunSteps } from '@/framework/bdd/run-step-check'
 import { buildBddTests, isBddTestOutdated } from '@/framework/bdd/sync'
 import { printErrorGroups } from '@/framework/reporting/console-formatter'
 import { getErrorMessage } from '@/framework/utils/helpers'
@@ -13,8 +14,8 @@ main().catch((error: unknown) => {
 
 /**
  * Dress Rehearsal - validate existing tests without modification
- * Checks that all test files sync with their markdown files and that generated tests of step
- * definitions style specs are up to date
+ * Checks that all test files sync with their markdown files, that generated tests of step
+ * definitions style specs are up to date and that runStep() calls in other tests would run
  * Does NOT generate files, does NOT auto-fix
  */
 async function main() {
@@ -39,6 +40,13 @@ async function main() {
   if (failures.length > 0) {
     console.log(`${getIcon('error')}  BDD tests failed: ${failures.length} file(s)\n`)
     printErrorGroups(failures, { fixMessageAfter: 'Fix: npm run stage' })
+    process.exit(1)
+  }
+
+  const runStepErrors = await checkRunSteps(result.validationResults.map((r) => r.file))
+  if (runStepErrors.length > 0) {
+    console.log(`${getIcon('error')}  runStep failed: ${runStepErrors.length} file(s)\n`)
+    printErrorGroups(runStepErrors.map(({ file, errors }) => ({ title: `File: ${file}`, errors })))
     process.exit(1)
   }
 
