@@ -22,6 +22,29 @@ export interface StepDefinition {
   location: string // "src/steps/auth.steps.ts:12"
 }
 
+export type HookKind = 'Before' | 'After' | 'BeforeAll' | 'AfterAll'
+
+export interface HookOptions {
+  tags?: string // tag expression: '@auth and not @api'; none - every scenario (BeforeAll/AfterAll: feature)
+  name?: string // title in reports and the generated test
+}
+
+type HookFunction<Fixtures> = (fixtures: Fixtures) => unknown
+
+export interface HookDefinition {
+  kind: HookKind
+  title: string // name, else "<file>#<n>" - n-th hook of this kind in the file (stable when lines move)
+  tags?: string
+  fn: (fixtures: Record<string, unknown>) => unknown
+  fixtureNames: string[]
+  location: string
+}
+
+interface DefineHook<Fixtures> {
+  (fn: HookFunction<Fixtures>): void
+  (options: HookOptions, fn: HookFunction<Fixtures>): void
+}
+
 export interface StepMatch {
   definition: StepDefinition
   params: unknown[]
@@ -29,11 +52,13 @@ export interface StepMatch {
 
 const parameterTypes = new ParameterTypeRegistry()
 const definitions: StepDefinition[] = []
+const hooks: HookDefinition[] = []
 
 /**
- * Step definition functions bound to fixtures of a Playwright `test` (types only - the generated
- * test passes the fixtures each step destructures):
- * `export const { Given, When, Then } = createBdd(test)`
+ * Step definition and hook functions bound to fixtures of a Playwright `test` (types only - the
+ * generated test passes the fixtures each step destructures):
+ * `export const { Given, When, Then, Before } = createBdd(test)`.
+ * BeforeAll / AfterAll get worker fixtures only (`browser`, not `page`).
  */
 export function createBdd<TestArgs extends object, WorkerArgs extends object>(
   _test: TestType<TestArgs, WorkerArgs>
@@ -43,11 +68,21 @@ export function createBdd<TestArgs extends object, WorkerArgs extends object>(
     (keyword: StepKeyword): Define =>
     (pattern, fn) =>
       addStepDefinition(keyword, pattern, fn as StepDefinition['fn'])
+  const hook =
+    <Fixtures>(kind: HookKind): DefineHook<Fixtures> =>
+    (optionsOrFn: HookOptions | HookFunction<Fixtures>, fn?: HookFunction<Fixtures>) =>
+      typeof optionsOrFn === 'function'
+        ? addHook(kind, {}, optionsOrFn as HookDefinition['fn'])
+        : addHook(kind, optionsOrFn, fn as HookDefinition['fn'])
   return {
     Given: define('Given'),
     When: define('When'),
     Then: define('Then'),
-    Step: define('Step')
+    Step: define('Step'),
+    Before: hook<TestArgs & WorkerArgs>('Before'),
+    After: hook<TestArgs & WorkerArgs>('After'),
+    BeforeAll: hook<WorkerArgs>('BeforeAll'),
+    AfterAll: hook<WorkerArgs>('AfterAll')
   }
 }
 
@@ -91,13 +126,19 @@ export function getStepDefinitions(): readonly StepDefinition[] {
   return definitions
 }
 
+/** Hooks in definition order */
+export function getHookDefinitions(): readonly HookDefinition[] {
+  return hooks
+}
+
 export function getParameterTypes(): ParameterTypeRegistry {
   return parameterTypes
 }
 
-/** Tests only: forget registered steps (parameter types stay) */
+/** Tests only: forget registered steps and hooks (parameter types stay) */
 export function clearStepDefinitions(): void {
   definitions.length = 0
+  hooks.length = 0
 }
 
 function addStepDefinition(
@@ -116,6 +157,27 @@ function addStepDefinition(
     fn,
     fixtureNames: parseFixtureNames(fn),
     location: getCallerLocation()
+  })
+}
+
+function addHook(kind: HookKind, options: HookOptions, fn: HookDefinition['fn']): void {
+  const location = getCallerLocation()
+  const file = location.replace(/:\d+$/, '').replace(/\.ts$/, '')
+  const index = hooks.filter((h) => h.kind === kind && h.location.startsWith(`${file}.`)).length
+  const title = options.name?.trim() || `${file}#${index + 1}`
+  const duplicate = hooks.find((h) => h.kind === kind && h.title === title)
+  if (duplicate) {
+    throw new Error(
+      `Duplicate ${kind} hook "${title}": ${duplicate.location}, ${location}\n  Fix: Give the hooks distinct names`
+    )
+  }
+  hooks.push({
+    kind,
+    title,
+    tags: options.tags?.trim() || undefined,
+    fn,
+    fixtureNames: parseFixtureNames(fn),
+    location
   })
 }
 

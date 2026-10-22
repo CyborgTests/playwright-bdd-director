@@ -157,7 +157,7 @@ interface FixOptions {
 
 /**
  * Fix test cases to match MD specification: rename paired cases, insert missing ones as
- * skeletons next to their MD neighbours, report extra and reordered ones (code is never deleted)
+ * skeletons next to their MD neighbors, report extra and reordered ones (code is never deleted)
  */
 function fixTestCases(
   describeCall: CallExpression,
@@ -270,7 +270,7 @@ function templatizeLiterals(
 
 /**
  * Sync inline data of parametrized test case with the spec table. Generated files also get the
- * loop added around a test (`canWrap`); a loop over non-inline data or an unparametrized spec
+ * loop added around a test (`canWrap`); a loop over non-inline data or a non-parametrized spec
  * case with a test in a loop is left for manual review.
  */
 function fixExamples(
@@ -359,8 +359,8 @@ function fixTestSteps(
     getCallbackBlock(testCall),
     stepCalls.map((call) => getStatementIn(call))
   )
-  const neighbourIsTestStep = stepCalls[0]?.getExpression().getText().endsWith('.step')
-  const useTestStep = neighbourIsTestStep ?? fileType === 'AUTO'
+  const neighborIsTestStep = stepCalls[0]?.getExpression().getText().endsWith('.step')
+  const useTestStep = neighborIsTestStep ?? fileType === 'AUTO'
 
   for (const op of alignByTitle(currentSteps, expectedSteps, (a, b) => a === b)) {
     if (op.kind === 'extra') {
@@ -591,7 +591,7 @@ function preserveSuffix(currentTtl: string, expectedTtl: string): string {
 
 /**
  * Check if automated test file contains only empty/TODO steps (no real implementation)
- * Empty-code autotests can be safely auto-updated when MD spec changes
+ * Empty-code automated tests can be safely auto-updated when MD spec changes
  * @returns true if all steps are empty or contain only comments
  */
 export function isEmptyAutoTest(testFilePath: string): boolean {

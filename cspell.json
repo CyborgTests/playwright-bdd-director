@@ -6,7 +6,10 @@
     "apikey",
     "aswift",
     "automationexercise",
+    "bigdecimal",
+    "coldplay",
     "cyborgtests",
+    "destructures",
     "domcontentloaded",
     "doubleclick",
     "firstname",
@@ -19,13 +22,20 @@
     "monocart",
     "networkidle",
     "nodir",
+    "officedocument",
+    "openxmlformats",
     "pagead",
     "pformat",
     "Pohanovskyi",
     "SDET",
+    "Segoe",
+    "spreadsheetml",
     "strikethrough",
     "Subfolders",
+    "templatize",
+    "Tshirt",
     "tsmorph",
     "Ttls"
-  ]
+  ],
+  "ignoreRegExpList": ["/[\\u0400-\\u04FF]+/g"]
 }

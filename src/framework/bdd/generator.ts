@@ -1,5 +1,6 @@
 import { CucumberExpressionGenerator } from '@cucumber/cucumber-expressions'
-import type { Background, Rule, Scenario, Step, Tag } from '@cucumber/messages'
+import type { Rule, Scenario, Step, Tag } from '@cucumber/messages'
+import { parse as parseTagExpression } from '@cucumber/tag-expressions'
 import { glob } from 'glob'
 import path from 'path'
 import prettier from 'prettier'
@@ -9,8 +10,14 @@ import { CONFIG } from '../config'
 import { parseGherkinDocument } from '../core/gherkin-parser'
 import { quoteString } from '../generation/examples-code'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
-import { getMarkdownBaseName } from '../utils/helpers'
-import { getParameterTypes, matchStepDefinitions } from './registry'
+import { getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
+import {
+  getHookDefinitions,
+  getParameterTypes,
+  type HookDefinition,
+  type HookKind,
+  matchStepDefinitions
+} from './registry'
 import { formatAmbiguous } from './runtime'
 
 export interface MissingStep {
@@ -37,13 +44,33 @@ interface Context {
   ambiguous: string[]
   missing: MissingStep[]
   testPath: string
+  background: string[] // Background beforeEach, repeated in every hook group after its Before hooks
 }
+
+/** Test with the Before / After hooks matching its tags - tests are grouped by them */
+interface TestUnit {
+  lines: string[]
+  hooks: HookDefinition[]
+}
+
+type Child = { unit: TestUnit } | { rule: Rule; children: Child[] }
 
 const SNIPPET_TYPES: Record<string, string> = {
   int: 'number',
   float: 'number',
   bigdecimal: 'number'
 }
+
+const PLAYWRIGHT_HOOKS: Record<HookKind, string> = {
+  Before: 'beforeEach',
+  After: 'afterEach',
+  BeforeAll: 'beforeAll',
+  AfterAll: 'afterAll'
+}
+
+/** Special tags turned into Playwright modifiers; they stay test tags too (`play @slow`) */
+const MODIFIER_TAGS = ['@skip', '@fixme', '@fail'] as const
+const CONFIGURE_TAG = /^@(retries|timeout):(.*)$/
 
 /**
  * Import step definition files (CONFIG.bdd.steps) - each Given/When/Then call registers a definition
@@ -57,32 +84,55 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
 /**
  * Test file of a step definitions style spec (step definitions must be loaded):
  * Feature → describe, Background → beforeEach, Rule → nested describe, Scenario → test,
- * Outline → test per Examples row; each step → `await runStep('Given …', { fixtures })`
+ * Outline → test per Examples row; each step → `await runStep('Given …', { fixtures })`.
+ * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the feature,
+ * Before / After → beforeEach / afterEach, tests with different hooks grouped in anonymous describes.
+ * Special tags: @skip / @fixme / @fail / @slow → test modifiers, @retries:N / @timeout:N → configure.
  */
 export async function generateBddTest(specPath: string, testPath: string): Promise<BddGeneration> {
   const feature = parseGherkinDocument(specPath).feature
   if (!feature) throw new Error(`No "Feature:" in ${specPath}`)
 
-  const context: Context = { modules: new Set(), ambiguous: [], missing: [], testPath }
+  const context: Context = {
+    modules: new Set(),
+    ambiguous: [],
+    missing: [],
+    testPath,
+    background: []
+  }
   const baseName = getMarkdownBaseName(specPath)
+  const featureTags = tagNames(feature.tags)
   const suiteTags = [
     'TAG.TEST.AUTO',
     'TAG.TYPE.BDD',
     `TAG.SUITE.${getTagConstant(extractSuiteName(baseName))}`,
-    ...tagNames(feature.tags).map(quoteString)
+    ...featureTags.map(quoteString)
   ]
 
-  const body = feature.children.flatMap((child) => {
-    if (child.background) return emitBackground(child.background, context)
-    if (child.scenario) return emitScenario(child.scenario, context)
-    if (child.rule) return emitRule(child.rule, context)
+  const background = feature.children.find((child) => child.background)?.background
+  if (background) context.background = emitBackground(background.steps, context)
+
+  const children = feature.children.flatMap((child): Child[] => {
+    if (child.scenario) return collectScenario(child.scenario, featureTags, context)
+    if (child.rule) return [collectRule(child.rule, featureTags, context)]
     return []
   })
 
+  const featureHooks = (kind: HookKind) => matchingHooks(kind, featureTags)
+  const body = [
+    ...configureLines(featureTags, `Feature "${feature.name.trim()}"`),
+    ...featureHooks('BeforeAll').flatMap((hook) => emitHook(hook, context)),
+    ...featureHooks('AfterAll')
+      .reverse()
+      .flatMap((hook) => emitHook(hook, context)),
+    ...emitChildren(children, context, false)
+  ]
+
   const sideEffects = [...context.modules].sort().map((module) => `import '${module}'`)
+  const runtime = hasHooks(body) ? 'runHook, runStep' : 'runStep'
   const imports = [
     [CONFIG.bdd.fixtures, `import { test } from '${CONFIG.bdd.fixtures}'`],
-    ['@/framework/bdd', `import { runStep } from '@/framework/bdd'`],
+    ['@/framework/bdd', `import { ${runtime} } from '@/framework/bdd'`],
     ['@/test-constants/tags', `import { TAG } from '@/test-constants/tags'`]
   ]
     .sort(([a], [b]) => a.toLowerCase().localeCompare(b.toLowerCase()))
@@ -106,8 +156,8 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   return { specPath, testPath, content, missing: context.missing, ambiguous: context.ambiguous }
 }
 
-function emitBackground(background: Background, context: Context): string[] {
-  const { lines, fixtures, missing } = emitSteps(background.steps, {}, context)
+function emitBackground(steps: readonly Step[], context: Context): string[] {
+  const { lines, fixtures, missing } = emitSteps(steps, {}, context)
   // Background cannot be skipped as a whole: mark every test of the suite fixme at runtime
   const fixme = missing.length > 0 ? [`test.fixme(true, ${quoteString(missingNote(missing))})`] : []
   return [
@@ -119,51 +169,151 @@ function emitBackground(background: Background, context: Context): string[] {
   ]
 }
 
-function emitRule(rule: Rule, context: Context): string[] {
+function collectRule(rule: Rule, inherited: string[], context: Context): Child {
   if (rule.children.some((child) => child.background)) {
     throw new Error(`Background inside Rule is not supported yet: "${rule.name}"`)
   }
-  const details = rule.tags.length > 0 ? `${tagDetails(rule.tags)}, ` : ''
-  return [
-    `test.describe(${quoteString(rule.name.trim())}, ${details}() => {`,
-    ...rule.children.flatMap((child) =>
-      child.scenario ? emitScenario(child.scenario, context) : []
-    ),
-    '})',
-    ''
-  ]
+  const tags = [...inherited, ...tagNames(rule.tags)]
+  return {
+    rule,
+    children: rule.children.flatMap((child) =>
+      child.scenario ? collectScenario(child.scenario, tags, context) : []
+    )
+  }
 }
 
-function emitScenario(scenario: Scenario, context: Context): string[] {
+function collectScenario(scenario: Scenario, inherited: string[], context: Context): Child[] {
   const examples = scenario.examples.filter((block) => block.tableHeader)
-  if (examples.length === 0) return emitTest(scenario.name, scenario, {}, context)
+  if (examples.length === 0) {
+    return [{ unit: emitTest(scenario, {}, tagNames(scenario.tags), inherited, context) }]
+  }
 
   return examples.flatMap((block) => {
     const columns = block.tableHeader!.cells.map((cell) => cell.value)
-    return block.tableBody.flatMap((row) => {
+    const own = [...tagNames(scenario.tags), ...tagNames(block.tags)]
+    return block.tableBody.map((row) => {
       const values = Object.fromEntries(columns.map((column, i) => [column, row.cells[i].value]))
-      return emitTest(scenario.name, scenario, values, context)
+      return { unit: emitTest(scenario, values, own, inherited, context) }
     })
   })
 }
 
+/**
+ * Children with Before / After hooks and Background. When all tests share the hooks they are
+ * declared once at this level; otherwise consecutive tests with the same hooks are grouped
+ * (rules decide for their own tests) - Background goes after Before hooks to keep Cucumber order.
+ */
+function emitChildren(children: Child[], context: Context, hooksDone: boolean): string[] {
+  if (hooksDone) {
+    return children.flatMap((child) =>
+      'unit' in child ? child.unit.lines : emitRule(child, context, true)
+    )
+  }
+
+  const units = flattenUnits(children)
+  if (new Set(units.map((unit) => hookKey(unit.hooks))).size <= 1) {
+    return [...emitSetup(units[0]?.hooks ?? [], context), ...emitChildren(children, context, true)]
+  }
+
+  const lines: string[] = []
+  let group: TestUnit[] = []
+  const flush = () => {
+    if (group.length === 0) return
+    const setup = emitSetup(group[0].hooks, context)
+    const tests = group.flatMap((unit) => unit.lines)
+    lines.push(
+      ...(setup.length > 0 ? ['test.describe(() => {', ...setup, ...tests, '})', ''] : tests)
+    )
+    group = []
+  }
+  for (const child of children) {
+    if ('rule' in child) {
+      flush()
+      lines.push(...emitRule(child, context, false))
+    } else {
+      if (group.length > 0 && hookKey(group[0].hooks) !== hookKey(child.unit.hooks)) flush()
+      group.push(child.unit)
+    }
+  }
+  flush()
+  return lines
+}
+
+function emitRule(child: { rule: Rule; children: Child[] }, context: Context, hooksDone: boolean) {
+  const { rule } = child
+  const details = rule.tags.length > 0 ? `${tagDetails(tagNames(rule.tags))}, ` : ''
+  return [
+    `test.describe(${quoteString(rule.name.trim())}, ${details}() => {`,
+    ...configureLines(tagNames(rule.tags), `Rule "${rule.name.trim()}"`),
+    ...emitChildren(child.children, context, hooksDone),
+    '})',
+    ''
+  ]
+}
+
+/** Before hooks, Background, After hooks (reverse definition order, as Cucumber runs them) */
+function emitSetup(hooks: HookDefinition[], context: Context): string[] {
+  const before = hooks.filter((hook) => hook.kind === 'Before')
+  const after = hooks.filter((hook) => hook.kind === 'After').reverse()
+  return [
+    ...before.flatMap((hook) => emitHook(hook, context)),
+    ...context.background,
+    ...after.flatMap((hook) => emitHook(hook, context))
+  ]
+}
+
+function emitHook(hook: HookDefinition, context: Context): string[] {
+  context.modules.add(toModuleSpecifier(hook.location, context.testPath))
+  const fixtures = new Set(hook.fixtureNames)
+  const args = [
+    quoteString(hook.kind),
+    quoteString(hook.title),
+    fixtures.size > 0 ? fixtureParam(fixtures) : ''
+  ]
+    .filter(Boolean)
+    .join(', ')
+  return [
+    `test.${PLAYWRIGHT_HOOKS[hook.kind]}(${quoteString(`${hook.kind}: ${hook.title}`)}, async (${fixtureParam(fixtures)}) => {`,
+    `await runHook(${args})`,
+    '})',
+    ''
+  ]
+}
+
+/**
+ * @param own - tags of the scenario and its Examples block (test tags, configure level)
+ * @param inherited - tags of Feature and Rule (hooks and modifiers apply them too)
+ */
 function emitTest(
-  name: string,
   scenario: Scenario,
   values: Record<string, string>,
+  own: string[],
+  inherited: string[],
   context: Context
-): string[] {
+): TestUnit {
   const { lines, fixtures, missing } = emitSteps(scenario.steps, values, context)
-  const title = quoteString(substitute(name.trim(), values))
-  const details = scenario.tags.length > 0 ? `${tagDetails(scenario.tags)}, ` : ''
-  const declare = missing.length > 0 ? 'test.fixme' : 'test'
-  return [
+  const name = substitute(scenario.name.trim(), values)
+  const tags = [...inherited, ...own]
+  const details = own.length > 0 ? `${tagDetails(own)}, ` : ''
+  const modifier =
+    missing.length > 0 ? 'fixme' : MODIFIER_TAGS.find((tag) => tags.includes(tag))?.slice(1)
+  const declare = modifier ? `test.${modifier}` : 'test'
+  const declaration = [
     ...(missing.length > 0 ? [`// ${missingNote(missing)}`] : []),
-    `${declare}(${title}, ${details}async (${fixtureParam(fixtures)}) => {`,
+    `${declare}(${quoteString(name)}, ${details}async (${fixtureParam(fixtures)}) => {`,
+    ...(tags.includes('@slow') ? ['test.slow()'] : []),
     ...lines,
     '})',
     ''
   ]
+  const configure = configureLines(own, `Scenario "${name}"`)
+  return {
+    lines:
+      configure.length > 0
+        ? ['test.describe(() => {', ...configure, ...declaration, '})', '']
+        : declaration,
+    hooks: [...matchingHooks('Before', tags), ...matchingHooks('After', tags)]
+  }
 }
 
 function emitSteps(
@@ -201,6 +351,66 @@ function emitSteps(
     emitted.lines.push(`await runStep(${args})`)
   }
   return emitted
+}
+
+/**
+ * Hooks of a kind whose tag expression matches the tags (no expression - always), definition order
+ * @throws Error for an invalid tag expression, with the hook location
+ */
+function matchingHooks(kind: HookKind, tags: string[]): HookDefinition[] {
+  return getHookDefinitions().filter((hook) => {
+    if (hook.kind !== kind) return false
+    if (!hook.tags) return true
+    try {
+      return parseTagExpression(hook.tags).evaluate(tags)
+    } catch (error: unknown) {
+      throw new Error(
+        `Invalid tag expression "${hook.tags}" of ${kind} hook at ${hook.location}: ${getErrorMessage(error)}`,
+        { cause: error }
+      )
+    }
+  })
+}
+
+/**
+ * `test.describe.configure({ retries, timeout })` from @retries:N / @timeout:N of one level
+ * @throws Error for a non-numeric value or two different values of the same option
+ */
+function configureLines(tags: string[], where: string): string[] {
+  const options = new Map<string, number>()
+  for (const tag of tags) {
+    const match = tag.match(CONFIGURE_TAG)
+    if (!match) continue
+    const [, option, raw] = match
+    const value = Number(raw)
+    const valid = /^\d+$/.test(raw) && (option === 'retries' || value > 0)
+    if (!valid) {
+      throw new Error(
+        `Invalid tag "${tag}" on ${where}\n  Fix: Use @${option}:<${option === 'retries' ? 'count' : 'milliseconds'}>, e.g. @${option}:${option === 'retries' ? 2 : 60000}`
+      )
+    }
+    if (options.has(option) && options.get(option) !== value) {
+      throw new Error(`Conflicting @${option} tags on ${where}\n  Fix: Keep one @${option} tag`)
+    }
+    options.set(option, value)
+  }
+  if (options.size === 0) return []
+  const config = [...options].map(([option, value]) => `${option}: ${value}`).join(', ')
+  return [`test.describe.configure({ ${config} })`, '']
+}
+
+function flattenUnits(children: Child[]): TestUnit[] {
+  return children.flatMap((child) =>
+    'unit' in child ? [child.unit] : flattenUnits(child.children)
+  )
+}
+
+function hookKey(hooks: HookDefinition[]): string {
+  return hooks.map((hook) => `${hook.kind}:${hook.title}`).join('\n')
+}
+
+function hasHooks(lines: string[]): boolean {
+  return lines.some((line) => line.startsWith('await runHook('))
 }
 
 function stepArgument(step: Step, values: Record<string, string>): string {
@@ -252,8 +462,8 @@ function fixtureParam(fixtures: Set<string>): string {
   return fixtures.size > 0 ? `{ ${[...fixtures].join(', ')} }` : ''
 }
 
-function tagDetails(tags: readonly Tag[]): string {
-  return `{ tag: [${tagNames(tags).map(quoteString).join(', ')}] }`
+function tagDetails(tags: string[]): string {
+  return `{ tag: [${tags.map(quoteString).join(', ')}] }`
 }
 
 function tagNames(tags: readonly Tag[]): string[] {

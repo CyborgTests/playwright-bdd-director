@@ -190,7 +190,7 @@ describe('buildCoverageMatrix', () => {
     expect(suite.summary).toMatchObject({ totalCases: 1, automatedCases: 1, automatedPercent: 100 })
   })
 
-  it('should collect unparseable files as errors and keep going', () => {
+  it('should collect unparsable files as errors and keep going', () => {
     const broken = writeFile('test-suites/broken.md', 'no suite heading here\n')
     const spec = writeFile('test-suites/shop.md', SPEC)
     const badTest = writeFile('tests/automated/ui/shop.ui.test.ts', `export const x = 1\n`)

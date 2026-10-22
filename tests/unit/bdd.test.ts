@@ -9,13 +9,14 @@ import {
   clearStepDefinitions,
   createBdd,
   defineParameterType,
+  getHookDefinitions,
   matchStepDefinitions,
   parseFixtureNames
 } from '@/framework/bdd/registry'
-import { DataTable, findStepDefinition, stripStepKeyword } from '@/framework/bdd/runtime'
+import { DataTable, findStepDefinition, runHook, stripStepKeyword } from '@/framework/bdd/runtime'
 import { getBddSpecKey, getBddTestPath } from '@/framework/utils/helpers'
 
-const { Given, When, Then } = createBdd(test)
+const { Given, When, Then, Before, After, BeforeAll, AfterAll } = createBdd(test)
 let testDir: string
 
 beforeEach(() => {
@@ -89,6 +90,35 @@ describe('step definitions', () => {
     expect(() => findStepDefinition('Then cart is empty')).toThrow(
       /Ambiguous step "Then cart is empty" matches 2 definitions:\n.*Then\('cart is \{word\}'\)/
     )
+  })
+})
+
+describe('hooks', () => {
+  it('should title unnamed hooks by file and number, reject duplicate names', () => {
+    Before(async () => {})
+    Before({ name: 'Clear cart', tags: '@cart' }, async () => {})
+    After(async () => {})
+
+    expect(getHookDefinitions().map((hook) => hook.title)).toEqual([
+      'tests/unit/bdd.test#1',
+      'Clear cart',
+      'tests/unit/bdd.test#1'
+    ])
+    expect(() => Before({ name: 'Clear cart' }, async () => {})).toThrow(
+      'Duplicate Before hook "Clear cart"'
+    )
+  })
+
+  it('should run hook by kind and title with fixtures', async () => {
+    const calls: unknown[] = []
+    After({ name: 'Logout' }, async ({ page }) => {
+      calls.push(page)
+    })
+
+    await runHook('After', 'Logout', { page: 'page' })
+
+    expect(calls).toEqual(['page'])
+    await expect(runHook('Before', 'Logout')).rejects.toThrow('Missing Before hook "Logout"')
   })
 })
 
@@ -191,6 +221,98 @@ Feature: Shop
     expect(missing[0].snippet).toBe(
       "When('user searches for {string} {int} times', async ({ page }, string: string, int: number) => {\n  // TODO: implement step\n})"
     )
+  })
+
+  it('should emit hooks by tags and group tests with different hooks', async () => {
+    Given('user is logged in', async ({ page }) => page)
+    BeforeAll({ name: 'Seed', tags: '@shop' }, async ({ browser }) => browser)
+    AfterAll({ name: 'Drop data', tags: '@admin' }, async () => {})
+    Before({ name: 'Open', tags: 'not @api' }, async ({ page }) => page)
+    After({ name: 'Clean' }, async ({ request }) => request)
+
+    const { content } = await generate(`@shop
+Feature: Shop
+  Background:
+    Given user is logged in
+
+  Scenario: One
+    Given user is logged in
+
+  @api
+  Scenario: Two
+    Given user is logged in
+`)
+
+    expect(content).toContain("import { runHook, runStep } from '@/framework/bdd'")
+    expect(content).toContain(
+      "test.beforeAll('BeforeAll: Seed', async ({ browser }) => {\n    await runHook('BeforeAll', 'Seed', { browser })"
+    )
+    expect(content).not.toContain('Drop data')
+    const groups = content.split('test.describe(() => {')
+    expect(groups).toHaveLength(3)
+    expect(groups[1]).toMatch(
+      /beforeEach\('Before: Open'[\s\S]*beforeEach\('Background'[\s\S]*afterEach\('After: Clean'[\s\S]*test\('One'/
+    )
+    expect(groups[2]).not.toContain('Before: Open')
+    expect(groups[2]).toMatch(
+      /beforeEach\('Background'[\s\S]*afterEach\('After: Clean'[\s\S]*test\('Two'/
+    )
+  })
+
+  it('should declare hooks once when all tests share them', async () => {
+    Given('user is logged in', async () => {})
+    Before(async ({ page }) => page)
+
+    const { content } = await generate(`Feature: Shop
+  Scenario: One
+    Given user is logged in
+`)
+
+    expect(content).not.toContain('test.describe(() => {')
+    expect(content).toContain(
+      "test.beforeEach('Before: tests/unit/bdd.test#1', async ({ page }) => {"
+    )
+  })
+
+  it('should turn special tags into modifiers and configure', async () => {
+    Given('user is logged in', async () => {})
+
+    const { content } = await generate(`@timeout:60000
+Feature: Shop
+  @skip
+  Scenario: Skipped
+    Given user is logged in
+
+  @slow @retries:2
+  Scenario: Slow
+    Given user is logged in
+
+  Rule: Broken
+    @fail
+    Scenario: Failing
+      Given user is logged in
+`)
+
+    expect(content).toContain('test.describe.configure({ timeout: 60000 })')
+    expect(content).toContain("test.skip('Skipped', { tag: ['@skip'] }, async () => {")
+    expect(content).toMatch(
+      /test\.describe\(\(\) => \{\s+test\.describe\.configure\(\{ retries: 2 \}\)\s+test\('Slow', \{ tag: \['@slow', '@retries:2'\] \}, async \(\) => \{\s+test\.slow\(\)/
+    )
+    expect(content).toContain("test.fail('Failing', { tag: ['@fail'] }, async () => {")
+  })
+
+  it('should reject invalid and conflicting configure tags', async () => {
+    await expect(
+      generate(`Feature: Shop
+  @retries:abc
+  Scenario: One
+`)
+    ).rejects.toThrow('Invalid tag "@retries:abc" on Scenario "One"')
+    await expect(
+      generate(`@timeout:1000 @timeout:2000
+Feature: Shop
+`)
+    ).rejects.toThrow('Conflicting @timeout tags on Feature "Shop"')
   })
 
   it('should collect ambiguous steps', async () => {

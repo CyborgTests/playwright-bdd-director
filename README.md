@@ -503,6 +503,30 @@ test('Go back home from "Signup / Login" page', async ({ homePage }) => {
 - **Missing step** → its scenario is generated as `test.fixme`, `stage` prints a definition snippet to paste; `dress` warns
 - **Ambiguous step** (several definitions match) → `stage` and `dress` fail, listing the definitions with their locations
 - `dress` regenerates the tests in memory and fails when a file is outdated; generated tests of removed specs are deleted by `stage`
+
+**Hooks** (same `./bdd` import), chosen by [tag expressions](https://github.com/cucumber/tag-expressions) when `stage` generates the test:
+
+```typescript
+Before({ name: 'Clear cart', tags: '@cart and not @api' }, async ({ cartPage }) => { ... })
+After(async ({ page }) => { ... }) // no tags - every scenario
+BeforeAll({ tags: '@shop' }, async ({ browser }) => { ... }) // worker fixtures only
+```
+
+- `Before` / `After` → `test.beforeEach` / `test.afterEach`; scenario tags include its Feature, Rule and Examples tags. Scenarios with different hooks are grouped in anonymous `test.describe` blocks (report titles unchanged)
+- Order as in Cucumber: Before hooks → Background → steps → After hooks (reverse definition order)
+- `BeforeAll` / `AfterAll` → `test.beforeAll` / `test.afterAll` of the feature, matched against Feature tags; they run once per worker
+- Unnamed hook title: `<file>#<n>` (n-th hook of its kind in the file); names are unique per kind
+
+**Special tags** (they stay Playwright tags too, so `npm run play bdd @slow` works):
+
+| Tag                        | Generated                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `@skip`, `@fixme`, `@fail` | `test.skip(…)`, `test.fixme(…)`, `test.fail(…)` - also when set on Feature/Rule |
+| `@slow`                    | `test.slow()` in the test                                                       |
+| `@retries:N`, `@timeout:N` | `test.describe.configure({ retries, timeout })` on the level the tag is written |
+
+Invalid values (`@retries:abc`) and different values on one level fail `stage`.
+
 - Run: `npm run play bdd`. The spec also gets a cyborg test like any other (disable with `CONFIG.noCyborg`)
 - English Gherkin keywords only for now
 

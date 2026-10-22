@@ -1,6 +1,6 @@
 import { test } from '@playwright/test'
 
-import { matchStepDefinitions, type StepMatch } from './registry'
+import { getHookDefinitions, type HookKind, matchStepDefinitions, type StepMatch } from './registry'
 
 /** Gherkin step keyword at the start of a step title (English) */
 const STEP_KEYWORD = /^(Given|When|Then|And|But|\*)\s+/
@@ -51,6 +51,23 @@ export async function runStep(
   await test.step(title, async () => {
     await definition.fn(fixtures, ...params, ...extra)
   })
+}
+
+/**
+ * Run hook chosen by the generator (title from the registry). Its Playwright hook (beforeEach,
+ * afterAll, ...) gives the report entry, so no extra test.step.
+ * @throws Error when the hook was renamed or removed since the test was generated
+ */
+export async function runHook(
+  kind: HookKind,
+  title: string,
+  fixtures: Record<string, unknown> = {}
+): Promise<void> {
+  const hook = getHookDefinitions().find((h) => h.kind === kind && h.title === title)
+  if (!hook) {
+    throw new Error(`Missing ${kind} hook "${title}"\n  Fix: Run npm run stage to regenerate tests`)
+  }
+  await hook.fn(fixtures)
 }
 
 /**
