@@ -1,0 +1,207 @@
+import { test } from '@playwright/test'
+import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
+import { generateBddTest } from '@/framework/bdd/generator'
+import {
+  clearStepDefinitions,
+  createBdd,
+  defineParameterType,
+  matchStepDefinitions,
+  parseFixtureNames
+} from '@/framework/bdd/registry'
+import { DataTable, findStepDefinition, stripStepKeyword } from '@/framework/bdd/runtime'
+import { getBddSpecKey, getBddTestPath } from '@/framework/utils/helpers'
+
+const { Given, When, Then } = createBdd(test)
+let testDir: string
+
+beforeEach(() => {
+  clearStepDefinitions()
+  testDir = path.join(process.cwd(), `.test-tmp-bdd-${crypto.randomBytes(4).toString('hex')}`)
+  fs.mkdirSync(testDir, { recursive: true })
+})
+
+afterEach(() => {
+  clearStepDefinitions()
+  fs.rmSync(testDir, { recursive: true, force: true })
+})
+
+describe('parseFixtureNames', () => {
+  it('should read destructured names, ignoring aliases and defaults', () => {
+    expect(
+      parseFixtureNames(
+        async ({ page, loginPage: login = null }: { page: unknown; loginPage?: unknown }) => [
+          page,
+          login
+        ]
+      )
+    ).toEqual(['page', 'loginPage'])
+  })
+
+  it('should give no fixtures for a step without destructuring', () => {
+    expect(parseFixtureNames(async () => {})).toEqual([])
+  })
+
+  it('should reject rest syntax', () => {
+    expect(() =>
+      parseFixtureNames(async ({ page, ...rest }: Record<string, unknown>) => [page, rest])
+    ).toThrow('Step fixtures cannot use rest syntax')
+  })
+})
+
+describe('step definitions', () => {
+  it('should match text without keyword and convert parameters', () => {
+    Given('user has {int} items in {string} cart', async () => {})
+
+    const [match] = matchStepDefinitions('user has 3 items in "main" cart')
+
+    expect(match.params).toEqual([3, 'main'])
+    expect(match.definition.keyword).toBe('Given')
+    expect(match.definition.location).toMatch(/^tests\/unit\/bdd\.test\.ts:\d+$/)
+  })
+
+  it('should support RegExp and custom parameter types', () => {
+    defineParameterType({ name: 'color', regexp: /red|green/, transformer: (s) => s.toUpperCase() })
+    Then(/^light is (on|off)$/, async () => {})
+    When('user picks {color}', async () => {})
+
+    expect(matchStepDefinitions('light is on')[0].params).toEqual(['on'])
+    expect(matchStepDefinitions('user picks red')[0].params).toEqual(['RED'])
+  })
+
+  it('should find the only definition for a title, keyword ignored', () => {
+    Then('cart is empty', async () => {})
+
+    expect(stripStepKeyword('And cart is empty')).toBe('cart is empty')
+    expect(findStepDefinition('Given cart is empty').definition.keyword).toBe('Then')
+  })
+
+  it('should report missing and ambiguous definitions', () => {
+    Then('cart is {word}', async () => {})
+    Then('cart is empty', async () => {})
+
+    expect(() => findStepDefinition('Then total is 0')).toThrow(
+      'Missing step definition for "Then total is 0"'
+    )
+    expect(() => findStepDefinition('Then cart is empty')).toThrow(
+      /Ambiguous step "Then cart is empty" matches 2 definitions:\n.*Then\('cart is \{word\}'\)/
+    )
+  })
+})
+
+describe('DataTable', () => {
+  it('should give raw rows, rows without header, hashes and rowsHash', () => {
+    const table = new DataTable([
+      ['name', 'price'],
+      ['Blue Top', '500']
+    ])
+
+    expect(table.raw()).toEqual([
+      ['name', 'price'],
+      ['Blue Top', '500']
+    ])
+    expect(table.rows()).toEqual([['Blue Top', '500']])
+    expect(table.hashes()).toEqual([{ name: 'Blue Top', price: '500' }])
+    expect(table.rowsHash()).toEqual({ name: 'price', 'Blue Top': '500' })
+  })
+})
+
+describe('bdd spec paths', () => {
+  it('should detect step definitions style specs and mirror their path', () => {
+    expect(getBddSpecKey('test-suites/bdd/shop/cart.feature', ['bdd'], 'test-suites')).toBe(
+      'shop/cart'
+    )
+    expect(getBddSpecKey('test-suites/bdd/cart.md', ['bdd'], 'test-suites')).toBeNull()
+    expect(getBddSpecKey('test-suites/cart.feature', ['bdd'], 'test-suites')).toBeNull()
+    expect(getBddTestPath('shop/cart', 'tests/bdd')).toBe(
+      path.join('tests', 'bdd', 'shop', 'cart.bdd.test.ts')
+    )
+  })
+})
+
+describe('generateBddTest', () => {
+  const generate = (feature: string) => {
+    const specPath = path.join(testDir, 'shop.feature')
+    fs.writeFileSync(specPath, feature, 'utf-8')
+    return generateBddTest(specPath, path.join(testDir, 'shop.bdd.test.ts'))
+  }
+
+  it('should generate describe, Background, Rule, Outline rows and step calls with fixtures', async () => {
+    Given('user opens the home page', async ({ page }) => page)
+    When('user adds {string} to cart', async ({ page, request }) => [page, request])
+    Then('cart has:', async () => {})
+    Then('note says:', async () => {})
+
+    const { content, missing, ambiguous } = await generate(`@shop
+Feature: Shop
+  Background:
+    Given user opens the home page
+
+  @smoke
+  Scenario Outline: Add <product>
+    When user adds "<product>" to cart
+    Then cart has:
+      | name      |
+      | <product> |
+
+    Examples:
+      | product  |
+      | Blue Top |
+      | Men Tshirt |
+
+  Rule: Notes
+    Scenario: Leave note
+      Then note says:
+        """
+        Hello
+        """
+`)
+
+    expect(missing).toEqual([])
+    expect(ambiguous).toEqual([])
+    expect(content).toContain("import '../tests/unit/bdd.test'")
+    expect(content).toContain("{ tag: [TAG.TEST.AUTO, TAG.TYPE.BDD, TAG.SUITE.SHOP, '@shop'] }")
+    expect(content).toContain("test.beforeEach('Background', async ({ page }) => {")
+    expect(content).toContain(
+      "test('Add Blue Top', { tag: ['@smoke'] }, async ({ page, request }) => {"
+    )
+    expect(content).toContain(
+      `await runStep('When user adds "Men Tshirt" to cart', { page, request })`
+    )
+    expect(content).toContain(
+      "await runStep('Then cart has:', {}, { dataTable: [['name'], ['Blue Top']] })"
+    )
+    expect(content).toContain("test.describe('Notes', () => {")
+    expect(content).toContain("await runStep('Then note says:', {}, { docString: 'Hello' })")
+  })
+
+  it('should generate scenario with missing steps as fixme and suggest snippets', async () => {
+    const { content, missing } = await generate(`Feature: Shop
+  Scenario: Search
+    When user searches for "Blue Top" 2 times
+`)
+
+    expect(content).toContain(
+      '// Missing step definitions: When user searches for "Blue Top" 2 times'
+    )
+    expect(content).toContain("test.fixme('Search', async () => {")
+    expect(missing[0].snippet).toBe(
+      "When('user searches for {string} {int} times', async ({ page }, string: string, int: number) => {\n  // TODO: implement step\n})"
+    )
+  })
+
+  it('should collect ambiguous steps', async () => {
+    Then('cart is {word}', async () => {})
+    Then('cart is empty', async () => {})
+
+    const { ambiguous } = await generate(`Feature: Shop
+  Scenario: Empty
+    Then cart is empty
+`)
+
+    expect(ambiguous[0]).toContain('Ambiguous step "Then cart is empty" matches 2 definitions')
+  })
+})

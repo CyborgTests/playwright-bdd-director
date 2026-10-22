@@ -20,7 +20,7 @@ export const cyborgProject: Project = {
  */
 export const automatedProject: Project = {
   name: 'automated',
-  testMatch: /.*\.(auto|api|ui|e2e)\.test\.ts$/,
+  testMatch: /.*\.(auto|api|ui|e2e|bdd)\.test\.ts$/,
   timeout: 45000,
   use: {
     ...defaultDevice,

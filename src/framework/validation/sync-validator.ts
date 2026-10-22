@@ -223,6 +223,9 @@ function validateMDTSSync(
     const fileName = path.basename(testFile)
     const baseName = getTestFileBaseName(fileName)
 
+    // Generated tests of step definitions style specs are checked by regeneration (bdd/sync)
+    if (fileName.toLowerCase().endsWith('.bdd.test.ts')) continue
+
     const markdownFile = markdownByBaseName.get(baseName)
     if (!markdownFile) continue
 

@@ -7,7 +7,12 @@ import { CONFIG } from '@/framework/config'
 import { SPEC_FILE_GLOB } from '@/framework/constants/markdown'
 import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 import { generateAutoTestFile } from '@/framework/generation/test-generator'
-import { getErrorMessage, getMarkdownBaseName, getSuiteSubDir } from '@/framework/utils/helpers'
+import {
+  getBddSpecKey,
+  getErrorMessage,
+  getMarkdownBaseName,
+  getSuiteSubDir
+} from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
 const dryRun = process.argv.includes('--dry-run')
@@ -34,6 +39,9 @@ function main() {
   const generatedFiles: string[] = []
 
   for (const markdownFile of markdownFiles) {
+    // Step definitions style specs are automated by their generated test (stage)
+    if (getBddSpecKey(markdownFile) !== null) continue
+
     const baseName = getMarkdownBaseName(markdownFile)
     const candidates = glob.sync(`${CONFIG.paths.testsDir}/**/${baseName}.*.test.ts`)
 

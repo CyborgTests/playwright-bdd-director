@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
 import { execSync } from 'child_process'
+import fs from 'fs'
 import { glob } from 'glob'
 import path from 'path'
 
+import { buildBddTests, isBddTestOutdated } from '@/framework/bdd/sync'
 import { CONFIG } from '@/framework/config'
 import { matchFiles } from '@/framework/core/file-matcher'
 import { clearMDCache } from '@/framework/core/md-parser'
@@ -12,8 +14,10 @@ import {
   autoFixTestFile,
   isEmptyAutoTest
 } from '@/framework/generation/auto-fixer'
+import { addSuiteTag, extractSuiteName } from '@/framework/generation/tags-updater'
 import { archiveOrphanedTests } from '@/framework/generation/test-archiver'
 import { generateCyborgTestFile } from '@/framework/generation/test-generator'
+import { printErrorGroups } from '@/framework/reporting/console-formatter'
 import {
   collectValidationMetrics,
   type DirectorMetrics,
@@ -35,20 +39,18 @@ import { autoFixMDFormatting } from '@/framework/validation/md-validator'
 import { reportValidationErrors } from '@/framework/validation/reporter'
 import { validate, type ValidatorResult } from '@/framework/validation/sync-validator'
 
-try {
-  main()
-} catch (error: unknown) {
-  console.error(`${getIcon('error')}  `, getErrorMessage(error))
-  process.exit(1)
-} finally {
-  resetSharedProject()
-}
+main()
+  .catch((error: unknown) => {
+    console.error(`${getIcon('error')}  `, getErrorMessage(error))
+    process.exit(1)
+  })
+  .finally(resetSharedProject)
 
 /**
  * MD-TS Director - full staging pipeline
  * Orchestrates all phases from MD formatting to final validation
  */
-function main() {
+async function main() {
   const startTime = Date.now()
   console.log(`${getIcon('start')}  Director staging the play...\n`)
 
@@ -71,6 +73,9 @@ function main() {
 
   // Phase 6: Auto-fix empty automated test files
   const phase6 = autoFixEmptyAutoTestFiles(phase2.validation)
+
+  // Phase 6b: Generate tests of step definitions style specs
+  const phaseBdd = await generateBddTestFiles(phase2.validation)
 
   // Phase 7: Format and lint tests
   const phase7 = formatAndLintTests()
@@ -97,10 +102,20 @@ function main() {
     ...phase5.reviewFiles,
     ...phase6.reviewFiles
   ])
+  printBddResults(phaseBdd)
 
   // Final validation
   const finalValidation = validate()
   reportValidationErrors(finalValidation)
+
+  if (phaseBdd.errors.length > 0) {
+    console.log(`\n${getIcon('error')}  BDD tests failed: ${phaseBdd.errors.length} spec(s)\n`)
+    printErrorGroups(
+      phaseBdd.errors.map(({ file, errors }) => ({ title: `Spec: ${file}`, errors })),
+      { fixMessageAfter: 'Fix: the spec or step definitions, then npm run stage' }
+    )
+    process.exit(1)
+  }
 
   // Collect and display metrics
   const baseMetrics = collectValidationMetrics(finalValidation, startTime)
@@ -128,6 +143,57 @@ function main() {
     `\n${getIcon('success')}  Stage is set! ${finalValidation.validationResults.length} file(s) ready.\n`
   )
   process.exit(0)
+}
+
+/**
+ * Phase 6b: (re)write generated tests of step definitions style specs, remove stale ones
+ */
+async function generateBddTestFiles(validation: ValidatorResult) {
+  const startTime = Date.now()
+  const bdd = await buildBddTests(validation.markdownFiles)
+  const written: string[] = []
+
+  for (const generation of bdd.generations) {
+    addSuiteTag(extractSuiteName(getMarkdownBaseName(generation.specPath)))
+    if (!isBddTestOutdated(generation)) continue
+    fs.mkdirSync(path.dirname(generation.testPath), { recursive: true })
+    fs.writeFileSync(generation.testPath, generation.content)
+    written.push(generation.testPath)
+  }
+  bdd.staleFiles.forEach((file) => fs.rmSync(file))
+
+  return {
+    timeMs: Date.now() - startTime,
+    written,
+    removed: bdd.staleFiles,
+    missing: bdd.generations.flatMap((generation) => generation.missing),
+    errors: bdd.errors
+  }
+}
+
+function printBddResults(result: Awaited<ReturnType<typeof generateBddTestFiles>>): void {
+  if (result.written.length > 0) {
+    console.log('')
+    console.log(`${getIcon('success')}  Generated BDD tests:`)
+    result.written.forEach((file) => console.log(`    • ${file}`))
+  }
+  if (result.removed.length > 0) {
+    console.log('')
+    console.log(`${getIcon('warning')}  Removed BDD tests without spec:`)
+    result.removed.forEach((file) => console.log(`    • ${file}`))
+  }
+  if (result.missing.length > 0) {
+    // One snippet per step text - the same step may be missing in several scenarios
+    const snippets = [...new Map(result.missing.map((m) => [m.snippet, m])).values()]
+    console.log('')
+    console.log(
+      `${getIcon('warning')}  Missing step definitions (scenarios generated as fixme) - add to ${CONFIG.bdd.steps}:`
+    )
+    snippets.forEach(({ title, snippet }) => {
+      console.log(`\n    // ${title}`)
+      snippet.split('\n').forEach((line) => console.log(`    ${line}`))
+    })
+  }
 }
 
 /**

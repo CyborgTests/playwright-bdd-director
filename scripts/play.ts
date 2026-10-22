@@ -16,7 +16,7 @@ import { getIcon } from '@/framework/utils/icons'
  */
 
 interface PlayConfig {
-  testTypes?: ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e')[]
+  testTypes?: ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')[]
   suiteNames?: string[]
   tags?: string[] // spec tags as written: '@smoke'
   workers?: number
@@ -109,6 +109,7 @@ Test Types:
   api       Run API tests (@api)
   ui        Run UI tests (@ui)
   e2e       Run E2E tests (@e2e)
+  bdd       Run tests generated from step definitions style specs (@bdd)
 
 Examples:
   npm run play auto                 # All automated tests
@@ -157,15 +158,17 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
     return {}
   }
 
-  const validTypes: readonly ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e')[] = [
+  const validTypes: readonly ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')[] = [
     'auto',
     'cyborg',
     'api',
     'ui',
-    'e2e'
+    'e2e',
+    'bdd'
   ]
-  const providedTypes = args.filter((arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' =>
-    validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
+  const providedTypes = args.filter(
+    (arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd' =>
+      validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')
   )
 
   // Validate argument order: all test types must come before suite names
@@ -175,7 +178,7 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]
-      if (validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')) {
+      if (validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')) {
         lastTypeIndex = i
       } else if (firstSuiteIndex === -1) {
         firstSuiteIndex = i
@@ -198,7 +201,7 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
   // If we have valid test types, use them
   if (providedTypes.length > 0) {
     const suiteNames = args.filter(
-      (arg) => !validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e')
+      (arg) => !validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')
     )
     return {
       testTypes: providedTypes,

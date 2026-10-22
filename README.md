@@ -468,6 +468,44 @@ for (const example of [
 - The coverage matrix shows the rows count: `Login as <role> ×2`
 - Not supported yet: tags on Gherkin `Examples` (per-row tags)
 
+### 7. Step definitions style (Gherkin)
+
+For teams used to Cucumber: `.feature` files in `test-suites/bdd/` (`CONFIG.bdd.dirs`) are automated by **step definitions** - each step is implemented once and reused by every scenario. `stage` generates the test, nobody edits it.
+
+```typescript
+// src/steps/navigation.steps.ts (CONFIG.bdd.steps: src/steps/**/*.steps.ts)
+import { Given, Then, When } from './bdd' // createBdd(test) - typed with fixtures of the base test
+
+Given('user opens the home page', async ({ homePage }) => {
+  await homePage.navigateToHome()
+})
+
+When('user clicks {string} button in header', async ({ homePage }, button: string) => { ... })
+```
+
+`test-suites/bdd/header-navigation.feature` → `tests/bdd/header-navigation.bdd.test.ts`:
+
+```typescript
+test.beforeEach('Background', async ({ homePage }) => {
+  await runStep('Given user opens the home page', { homePage })
+})
+
+test('Go back home from "Signup / Login" page', async ({ homePage }) => {
+  await runStep('When user clicks "Home" button in header', { homePage })
+  ...
+})
+```
+
+- **Patterns**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) (`{string}`, `{int}`, `{word}`, ...) or RegExp; own types with `defineParameterType` from `@/framework/bdd`. The keyword does not affect matching: `Given X` finds `Then('X')`
+- **Fixtures**: the first parameter of a step function destructures the Playwright fixtures it needs - the generated test requests exactly those. List them explicitly, no `...rest`
+- **Arguments**: expression parameters follow the fixtures; a Gherkin DataTable (`DataTable` with `raw()`, `rows()`, `hashes()`, `rowsHash()`) or DocString (string) comes last
+- **Gherkin**: Background → `beforeEach`, Rule → nested `describe`, Scenario Outline → one test per Examples row, tags → Playwright tags
+- **Missing step** → its scenario is generated as `test.fixme`, `stage` prints a definition snippet to paste; `dress` warns
+- **Ambiguous step** (several definitions match) → `stage` and `dress` fail, listing the definitions with their locations
+- `dress` regenerates the tests in memory and fails when a file is outdated; generated tests of removed specs are deleted by `stage`
+- Run: `npm run play bdd`. The spec also gets a cyborg test like any other (disable with `CONFIG.noCyborg`)
+- English Gherkin keywords only for now
+
 ## ✅ Validation
 
 ### 1. What Validator Checks
@@ -702,6 +740,8 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 | `TESTS_AUTO_DIR`       | `tests/automated/todo`         | Generated AUTO test skeletons                    |
 | `TESTS_CYBORG_DIR`     | `tests/cyborg`                 | Generated cyborg test skeletons                  |
 | `TESTS_ARCHIVED_DIR`   | `tests/archived`               | Archived orphaned tests                          |
+| `TESTS_BDD_DIR`        | `tests/bdd`                    | Generated tests of step definitions style specs  |
+| `BDD_STEPS`            | `src/steps/**/*.steps.ts`      | Step definition files                            |
 | `METRICS_ENABLED`      | `false`                        | Enable metrics JSON output                       |
 | `METRICS_FILE`         | `.metrics.json`                | Metrics output file path                         |
 | `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix` | Coverage matrix reports path (without extension) |
@@ -781,6 +821,9 @@ npm run play cyborg auto            # All cyborg + automated tests
 
 # Multiple types + suite
 npm run play api ui auth            # API + UI tests for auth suite
+
+# Step definitions style (generated from test-suites/bdd/**/*.feature)
+npm run play bdd                    # All generated BDD tests
 
 # Suite only (no type filter)
 npm run play auth                   # All auth tests (any type)

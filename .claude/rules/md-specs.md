@@ -16,6 +16,7 @@ paths:
 - `Tags: @smoke @JIRA-1` right under a `##`/`###` heading tags the suite / case (Playwright tags, strings next to `TAG.*` in tests).
 - A markdown table under a `###` heading (after `Tags:`) makes the case parametrized: `<column>` placeholders in title/steps; TS loops over inline string data (`for (const example of [{ column: '…' }])`) with `${example.column}` in titles; the title needs a unique-valued placeholder.
 - Gherkin `.feature` is an alternative spec format with the same contract: Feature → suite, Scenario → case, step → step with its keyword kept (`Given user …`); `@tag` → tags (Rule tags go to its scenarios); tables, doc strings are details. Steps are written in tests, as for MD (README "Gherkin").
+- `.feature` files in `test-suites/bdd/` (`CONFIG.bdd.dirs`) use step definitions instead: `src/steps/**/*.steps.ts` (`Given/When/Then` from `./bdd`, fixtures destructured in the first parameter); `stage` fully generates `tests/bdd/**/*.bdd.test.ts` - never edit it, change the spec or the steps.
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
 - IDs and titles are globally unique across all MD files.
 

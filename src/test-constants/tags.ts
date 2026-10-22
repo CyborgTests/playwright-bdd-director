@@ -24,7 +24,8 @@ export const TAG = {
   TYPE: {
     API: '@api',
     UI: '@ui',
-    E2E: '@e2e'
+    E2E: '@e2e',
+    BDD: '@bdd'
   },
 
   /**
@@ -39,6 +40,7 @@ export const TAG = {
     NUMBER_1: '@1',
     NUMBER_11: '@11',
     LOGIN: '@login',
-    NAVIGATION: '@navigation'
+    NAVIGATION: '@navigation',
+    HEADER_NAVIGATION: '@header-navigation'
   }
 } as const

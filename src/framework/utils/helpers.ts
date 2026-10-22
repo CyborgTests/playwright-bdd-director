@@ -158,6 +158,28 @@ export function isCyborgDisabledFor(
 }
 
 /**
+ * Path of a step definitions style spec inside its bdd folder, null for other specs
+ * (only `.feature` files in CONFIG.bdd.dirs): "test-suites/bdd/shop/cart.feature" -> "shop/cart"
+ */
+export function getBddSpecKey(
+  specPath: string,
+  dirs: readonly string[] = CONFIG.bdd.dirs,
+  testSuitesDir = CONFIG.paths.testSuites
+): string | null {
+  if (!specPath.endsWith('.feature')) return null
+  const suiteKey = getSuiteKey(specPath, testSuitesDir)
+  const dir = dirs.find((entry) => suiteKey.startsWith(`${entry}/`))
+  return dir === undefined ? null : suiteKey.slice(dir.length + 1)
+}
+
+/**
+ * Generated test of a step definitions style spec: "shop/cart" -> "tests/bdd/shop/cart.bdd.test.ts"
+ */
+export function getBddTestPath(bddSpecKey: string, testsDir = CONFIG.bdd.testsDir): string {
+  return path.join(testsDir, `${bddSpecKey}.bdd.test.ts`)
+}
+
+/**
  * Extract base name from test file name
  * Example: "todo.MANUAL.test.ts" -> "todo"
  * @throws Error if fileName is invalid (empty or no segments)

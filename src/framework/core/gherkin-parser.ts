@@ -65,7 +65,7 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
   return { suiteID: suite.id ?? '', suiteTtl: suite.ttl, suiteTags, testCases }
 }
 
-function parseGherkinDocument(featurePath: string) {
+export function parseGherkinDocument(featurePath: string) {
   const parser = new Parser(
     new AstBuilder(IdGenerator.incrementing()),
     new GherkinClassicTokenMatcher()
