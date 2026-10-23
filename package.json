@@ -11,6 +11,7 @@
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "autogen": "tsx scripts/auto-skeletons.ts",
     "matrix": "tsx scripts/coverage-matrix.ts",
+    "ci": "tsx scripts/ci.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

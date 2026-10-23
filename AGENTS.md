@@ -25,6 +25,7 @@ npm run dress                        # read-only MD ↔ TS sync check
 npm run play <types...> [suites...] [@tags...]  # dress + run; types: auto|cyborg|api|ui|e2e|bdd, e.g. `npm run play api auth @smoke`
 npm run autogen [-- --dry-run]       # AUTO skeletons into tests/automated/todo for MDs without automation
 npm run matrix [-- --html --json --md --min=80]  # spec ↔ tests coverage matrix (static, no run)
+npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)
 npm run show | review                # Playwright UI mode with Director | Monocart report
 npm run test:run                     # Vitest unit tests (framework)
 npm run build                        # Director UI + trace-viewer, then re-patch Playwright

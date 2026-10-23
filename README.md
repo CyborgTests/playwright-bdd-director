@@ -167,6 +167,22 @@ npm run matrix -- @smoke                 # only test cases tagged @smoke
 - Static: files are read as they are - run `npm run dress` first (`play` does) so generated tests are up to date
 - **HTML** is a single self-contained file with filters (not automated / cyborg only / uncovered) and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
+### 12. Run in CI
+
+One command for any CI service (GitHub Actions, GitLab CI, Jenkins, Azure DevOps, ...):
+
+```bash
+npm ci                                # install dependencies
+npx playwright install --with-deps    # browsers
+npm run ci                            # dress -> automated tests -> coverage matrix
+```
+
+- `dress` fails first when specs and tests are out of sync - no test runs then
+- Runs every automated test (`play auto`); cyborg tests need a person and are skipped
+- Failed tests do not stop the coverage matrix and reports; the exit code is 1 when any stage failed
+- `CI_MIN_COVERAGE=80 npm run ci` also fails when automated coverage is below 80%
+- Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results), `cucumber-report.json`, `monocart-report/`, `coverage-matrix.{html,json,md}`
+
 ## ⚡ Markdown-Driven Testing Platform
 
 Playwright BDD Director is part of the [CyborgTests](https://github.com/CyborgTests) ecosystem - a suite of tools that combine human insight with automation power.
@@ -738,20 +754,21 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable               | Default                             | Description                                      |
-| ---------------------- | ----------------------------------- | ------------------------------------------------ |
-| `TEST_SUITES_DIR`      | `test-suites`                       | Markdown test suites directory                   |
-| `TESTS_DIR`            | `tests`                             | Root tests directory                             |
-| `TESTS_AUTO_DIR`       | `tests/automated/todo`              | Generated AUTO test skeletons                    |
-| `TESTS_CYBORG_DIR`     | `tests/cyborg`                      | Generated cyborg test skeletons                  |
-| `TESTS_ARCHIVED_DIR`   | `tests/archived`                    | Archived orphaned tests                          |
-| `TESTS_BDD_DIR`        | `tests/bdd`                         | Generated tests of step definitions style specs  |
-| `BDD_STEPS`            | `src/steps/**/*.steps.ts`           | Step definition files                            |
-| `METRICS_ENABLED`      | `false`                             | Enable metrics JSON output                       |
-| `METRICS_FILE`         | `.metrics.json`                     | Metrics output file path                         |
-| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`      | Coverage matrix reports path (without extension) |
-| `CUCUMBER_REPORT_FILE` | `test-results/cucumber-report.json` | Cucumber JSON of every run                       |
-| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`            | JUnit XML of every run                           |
+| Variable               | Default                             | Description                                              |
+| ---------------------- | ----------------------------------- | -------------------------------------------------------- |
+| `TEST_SUITES_DIR`      | `test-suites`                       | Markdown test suites directory                           |
+| `TESTS_DIR`            | `tests`                             | Root tests directory                                     |
+| `TESTS_AUTO_DIR`       | `tests/automated/todo`              | Generated AUTO test skeletons                            |
+| `TESTS_CYBORG_DIR`     | `tests/cyborg`                      | Generated cyborg test skeletons                          |
+| `TESTS_ARCHIVED_DIR`   | `tests/archived`                    | Archived orphaned tests                                  |
+| `TESTS_BDD_DIR`        | `tests/bdd`                         | Generated tests of step definitions style specs          |
+| `BDD_STEPS`            | `src/steps/**/*.steps.ts`           | Step definition files                                    |
+| `METRICS_ENABLED`      | `false`                             | Enable metrics JSON output                               |
+| `METRICS_FILE`         | `.metrics.json`                     | Metrics output file path                                 |
+| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`      | Coverage matrix reports path (without extension)         |
+| `CUCUMBER_REPORT_FILE` | `test-results/cucumber-report.json` | Cucumber JSON of every run                               |
+| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`            | JUnit XML of every run                                   |
+| `CI_MIN_COVERAGE`      | -                                   | `npm run ci` fails below this automated coverage percent |
 
 **Suites without cyborg tests:** list them in `CONFIG.noCyborg` (paths inside `test-suites/` without `.md`): a folder (`'api'`) covers all its MDs, a file (`'e2e/checkout'`) a single MD. `stage` neither generates nor auto-fixes cyborg files for them - they pair with automated tests only. An existing cyborg file is still checked by `dress`, so delete it.
 

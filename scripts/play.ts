@@ -4,7 +4,8 @@ import { execSync } from 'child_process'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
- * CLI wrapper for running playwright tests with different tags
+ * CLI wrapper for running playwright tests with different tags. Validation is not done here:
+ * `npm run play` runs `dress` first, `npm run coldplay` skips it.
  * Usage: npx tsx scripts/play.ts <testType> [suiteName]
  *
  * Examples:
@@ -54,23 +55,6 @@ function buildPlaywrightCommand(config: PlayConfig): string {
   }
 
   return cmd
-}
-
-/**
- * Run dress rehearsal (validation) before tests
- */
-function runDressRehearsal(): void {
-  console.log(`${getIcon('start')}  Running dress rehearsal...`)
-  try {
-    execSync('tsx scripts/dress-rehearsal.ts', { stdio: 'pipe' })
-    console.log(`${getIcon('success')}  Validation passed\n`)
-  } catch (error: unknown) {
-    // Show dress output - otherwise failure gives no hint which file or step broke
-    const { stdout, stderr } = error as { stdout?: Buffer; stderr?: Buffer }
-    console.error(`${stdout ?? ''}${stderr ?? ''}`)
-    console.error(`${getIcon('error')}  Dress rehearsal failed. Fix errors before running tests.`)
-    process.exit(1)
-  }
 }
 
 /**
@@ -126,7 +110,7 @@ Examples:
   npm run play ui auth @smoke       # UI auth tests tagged @smoke
 
 Note:
-  - Dress rehearsal (validation) runs automatically before tests
+  - npm run play runs dress rehearsal (validation) first, npm run coldplay skips it
   - Cyborg tests use fullyParallel: false (sequential execution)
   - Auto tests use default worker count from playwright.config.ts
 `)
@@ -225,7 +209,6 @@ function main() {
     process.exit(0)
   }
 
-  runDressRehearsal()
   runPlaywrightTests(config)
 }
 
