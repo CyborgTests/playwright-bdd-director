@@ -10,6 +10,8 @@ export const cyborgProject: Project = {
   testMatch: /.*\.cyborg\.test\.ts$/,
   timeout: 0,
   fullyParallel: false,
+  // One person walks the tests: one browser and control panel at a time, other projects stay parallel
+  workers: 1,
   use: {
     headless: false
   }

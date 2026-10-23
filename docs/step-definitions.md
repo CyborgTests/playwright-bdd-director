@@ -166,19 +166,19 @@ The matrix reads files as they are - run `npm run dress` first (`npm run play` d
 
 ## Coming from Cucumber-style tools
 
-| You know                                 | Here                                                                    |
-| ---------------------------------------- | ----------------------------------------------------------------------- |
-| features folder / glob in a config       | `test-suites/bdd/` (`CONFIG.bdd.dirs`)                                  |
-| step definitions glob                    | `src/steps/**/*.steps.ts` (`CONFIG.bdd.steps`, `BDD_STEPS`)             |
-| separate generate command                | `npm run stage` (also formats and validates everything else)            |
-| generated tests in a hidden folder       | `tests/bdd/` - committed, reviewed in pull requests, checked by `dress` |
-| `Given/When/Then` with fixtures          | the same, from `createBdd(test)` in `src/steps/bdd.ts`                  |
-| `Before/After/BeforeAll/AfterAll` + tags | the same API: `Before({ tags, name }, fn)`                              |
-| World / `this` shared between steps      | Playwright fixtures: share state through a fixture or a Page Object     |
-| step context fixtures (test info, tags)  | `test.info()` inside a step or hook                                     |
-| `BeforeStep` / `AfterStep`               | not available - put the logic into the step, a Page Object or a fixture |
-| `@only`                                  | `npm run play bdd @tag` (`.only` is forbidden by lint)                  |
-| Cucumber reports                         | Playwright / Monocart reports, the coverage matrix                      |
+| You know                                 | Here                                                                                            |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| features folder / glob in a config       | `test-suites/bdd/` (`CONFIG.bdd.dirs`)                                                          |
+| step definitions glob                    | `src/steps/**/*.steps.ts` (`CONFIG.bdd.steps`, `BDD_STEPS`)                                     |
+| separate generate command                | `npm run stage` (also formats and validates everything else)                                    |
+| generated tests in a hidden folder       | `tests/bdd/` - committed, reviewed in pull requests, checked by `dress`                         |
+| `Given/When/Then` with fixtures          | the same, from `createBdd(test)` in `src/steps/bdd.ts`                                          |
+| `Before/After/BeforeAll/AfterAll` + tags | the same API: `Before({ tags, name }, fn)`                                                      |
+| World / `this` shared between steps      | Playwright fixtures: share state through a fixture or a Page Object                             |
+| step context fixtures (test info, tags)  | `test.info()` inside a step or hook                                                             |
+| `BeforeStep` / `AfterStep`               | not available - put the logic into the step, a Page Object or a fixture                         |
+| `@only`                                  | `npm run play bdd @tag` (`.only` is forbidden by lint)                                          |
+| Cucumber reports                         | Cucumber JSON on every run (`test-results/cucumber-report.json`), Monocart, the coverage matrix |
 
 ## Limitations
 

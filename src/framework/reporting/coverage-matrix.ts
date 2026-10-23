@@ -11,7 +11,7 @@ import {
   getTestFileBaseName,
   isBackgroundTitle,
   isCyborgDisabledFor,
-  matchIDWithSuffix
+  matchesSpecCase
 } from '../utils/helpers'
 
 export const COVERAGE_LAYERS = ['cyborg', 'api', 'ui', 'e2e', 'bdd', 'auto'] as const
@@ -122,18 +122,7 @@ export function buildCoverageMatrix(
 
     const cases = parsed.testCases.map((mdCase): CaseCoverage => {
       // Generated (bdd) tests run one test per examples row, titles filled with the row values
-      const rowTitles = new Set(
-        mdCase.examples?.rows.map((row) =>
-          mdCase.ttl.replace(/<([^<>\n]+)>/g, (match, column: string) => {
-            const index = mdCase.examples!.columns.indexOf(column)
-            return index < 0 ? match : row[index]
-          })
-        )
-      )
-      const matchesCase = (tsCase: ParsedTestCase): boolean =>
-        mdCase.id
-          ? tsCase.id !== null && matchIDWithSuffix(mdCase.id, tsCase.id)
-          : tsCase.ttl === mdCase.ttl || rowTitles.has(tsCase.ttl)
+      const matchesCase = (tsCase: ParsedTestCase): boolean => matchesSpecCase(mdCase, tsCase)
       const matchesByLayer = new Map(
         COVERAGE_LAYERS.map((layer) => [layer, (testsByLayer.get(layer) ?? []).filter(matchesCase)])
       )

@@ -128,6 +128,11 @@ After tests finish, close the UI window - the terminal will become available aga
 npm run review
 ```
 
+Every run also writes reports for test management tools and CI:
+
+- `test-results/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) of every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps of cyborg tests too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`): `Tags: @TEST_PROJ-123` in MD, `@TEST_PROJ-123` in Gherkin
+- `test-results/junit.xml` - **JUnit XML** (TestRail, Zephyr, any CI)
+
 ### 11. Check coverage
 
 See which spec test cases are covered by cyborg, API, UI and E2E tests - no test run needed:
@@ -733,18 +738,20 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable               | Default                        | Description                                      |
-| ---------------------- | ------------------------------ | ------------------------------------------------ |
-| `TEST_SUITES_DIR`      | `test-suites`                  | Markdown test suites directory                   |
-| `TESTS_DIR`            | `tests`                        | Root tests directory                             |
-| `TESTS_AUTO_DIR`       | `tests/automated/todo`         | Generated AUTO test skeletons                    |
-| `TESTS_CYBORG_DIR`     | `tests/cyborg`                 | Generated cyborg test skeletons                  |
-| `TESTS_ARCHIVED_DIR`   | `tests/archived`               | Archived orphaned tests                          |
-| `TESTS_BDD_DIR`        | `tests/bdd`                    | Generated tests of step definitions style specs  |
-| `BDD_STEPS`            | `src/steps/**/*.steps.ts`      | Step definition files                            |
-| `METRICS_ENABLED`      | `false`                        | Enable metrics JSON output                       |
-| `METRICS_FILE`         | `.metrics.json`                | Metrics output file path                         |
-| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix` | Coverage matrix reports path (without extension) |
+| Variable               | Default                             | Description                                      |
+| ---------------------- | ----------------------------------- | ------------------------------------------------ |
+| `TEST_SUITES_DIR`      | `test-suites`                       | Markdown test suites directory                   |
+| `TESTS_DIR`            | `tests`                             | Root tests directory                             |
+| `TESTS_AUTO_DIR`       | `tests/automated/todo`              | Generated AUTO test skeletons                    |
+| `TESTS_CYBORG_DIR`     | `tests/cyborg`                      | Generated cyborg test skeletons                  |
+| `TESTS_ARCHIVED_DIR`   | `tests/archived`                    | Archived orphaned tests                          |
+| `TESTS_BDD_DIR`        | `tests/bdd`                         | Generated tests of step definitions style specs  |
+| `BDD_STEPS`            | `src/steps/**/*.steps.ts`           | Step definition files                            |
+| `METRICS_ENABLED`      | `false`                             | Enable metrics JSON output                       |
+| `METRICS_FILE`         | `.metrics.json`                     | Metrics output file path                         |
+| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`      | Coverage matrix reports path (without extension) |
+| `CUCUMBER_REPORT_FILE` | `test-results/cucumber-report.json` | Cucumber JSON of every run                       |
+| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`            | JUnit XML of every run                           |
 
 **Suites without cyborg tests:** list them in `CONFIG.noCyborg` (paths inside `test-suites/` without `.md`): a folder (`'api'`) covers all its MDs, a file (`'e2e/checkout'`) a single MD. `stage` neither generates nor auto-fixes cyborg files for them - they pair with automated tests only. An existing cyborg file is still checked by `dress`, so delete it.
 

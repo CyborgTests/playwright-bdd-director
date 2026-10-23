@@ -96,13 +96,24 @@ export function findStepDefinition(title: string, language?: string): StepMatch 
  * @throws Error for an unknown language code
  */
 export function stripStepKeyword(title: string, language = 'en'): string {
-  const keyword = getStepKeywords(language).find((candidate) => startsWithKeyword(title, candidate))
-  return keyword ? title.slice(keyword.length).trimStart() : title
+  return splitStepKeyword(title, language)?.text ?? title
 }
 
 /** Keyword followed by whitespace: "And user" yes, "Andrew" / "And" alone no */
 function startsWithKeyword(title: string, keyword: string): boolean {
   return title.startsWith(keyword) && /\s/.test(title.charAt(keyword.length))
+}
+
+/**
+ * Keyword and text of a step title ("Given user …" → "Given", "user …"), null without a keyword
+ * of the language
+ */
+export function splitStepKeyword(
+  title: string,
+  language = 'en'
+): { keyword: string; text: string } | null {
+  const keyword = getStepKeywords(language).find((candidate) => startsWithKeyword(title, candidate))
+  return keyword ? { keyword, text: title.slice(keyword.length).trimStart() } : null
 }
 
 /** Title starts with a step keyword of the language */

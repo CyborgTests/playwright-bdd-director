@@ -10,7 +10,7 @@ import { CONFIG } from '../config'
 import { getBackgroundTitle, parseGherkinDocument } from '../core/gherkin-parser'
 import { quoteString } from '../generation/examples-code'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
-import { getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
+import { fillPlaceholders, getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
 import {
   getHookDefinitions,
   getParameterTypes,
@@ -316,7 +316,7 @@ function emitTest(
   context: Context
 ): TestUnit {
   const { lines, fixtures, missing } = emitSteps(scenario.steps, values, context)
-  const name = substitute(scenario.name.trim(), values)
+  const name = fillPlaceholders(scenario.name.trim(), values)
   const tags = [...inherited, ...own]
   const details = own.length > 0 ? `${tagDetails(own)}, ` : ''
   const modifier =
@@ -349,7 +349,7 @@ function emitSteps(
   let lastKeyword = 'Given'
 
   for (const step of steps) {
-    const text = substitute(step.text.trim(), values)
+    const text = fillPlaceholders(step.text.trim(), values)
     const title = `${step.keyword.trim()} ${text}`
     lastKeyword = snippetKeyword(step, lastKeyword)
     const matches = matchStepDefinitions(text)
@@ -443,12 +443,12 @@ function stepOptions(step: Step, values: Record<string, string>, language: strin
   if (step.dataTable) {
     const rows = step.dataTable.rows.map(
       (row) =>
-        `[${row.cells.map((cell) => quoteString(substitute(cell.value, values))).join(', ')}]`
+        `[${row.cells.map((cell) => quoteString(fillPlaceholders(cell.value, values))).join(', ')}]`
     )
     options.push(`dataTable: [${rows.join(', ')}]`)
   }
   if (step.docString) {
-    options.push(`docString: ${quoteString(substitute(step.docString.content, values))}`)
+    options.push(`docString: ${quoteString(fillPlaceholders(step.docString.content, values))}`)
   }
   if (language !== 'en') options.push(`language: ${quoteString(language)}`)
   return options.length > 0 ? `{ ${options.join(', ')} }` : ''
@@ -476,10 +476,6 @@ function snippetKeyword(step: Step, previous: string): string {
   if (step.keywordType === 'Action') return 'When'
   if (step.keywordType === 'Outcome') return 'Then'
   return previous
-}
-
-function substitute(text: string, values: Record<string, string>): string {
-  return text.replace(/<([^<>\n]+)>/g, (match, name: string) => values[name] ?? match)
 }
 
 function missingNote(missing: MissingStep[]): string {

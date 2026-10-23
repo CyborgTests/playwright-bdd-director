@@ -246,6 +246,42 @@ export function matchIDWithSuffix(markdownID: string, testID: string): boolean {
 }
 
 /**
+ * `<column>` placeholders filled with row values; unknown columns stay as written
+ */
+export function fillPlaceholders(text: string, values: Readonly<Record<string, string>>): string {
+  return text.replace(/<([^<>\n]+)>/g, (match, column: string) => values[column] ?? match)
+}
+
+/**
+ * Values of the examples row whose filled-in case title equals `ttl` - a test generated (or run)
+ * per row: "Login as <role>" + "Login as admin" → { role: 'admin' }. Null for no such row.
+ */
+export function findExampleRow(
+  testCase: Pick<TestCase, 'ttl' | 'examples'>,
+  ttl: string
+): Record<string, string> | null {
+  for (const row of testCase.examples?.rows ?? []) {
+    const values = Object.fromEntries(
+      testCase.examples!.columns.map((column, i) => [column, row[i]])
+    )
+    if (fillPlaceholders(testCase.ttl, values) === ttl) return values
+  }
+  return null
+}
+
+/**
+ * Test implements spec case: by ID (with suffix) when the case has one, else by title - as
+ * declared (`<column>` kept) or filled with an examples row
+ */
+export function matchesSpecCase(
+  specCase: Pick<TestCase, 'id' | 'ttl' | 'examples'>,
+  test: { id: string | null; ttl: string }
+): boolean {
+  if (specCase.id) return test.id !== null && matchIDWithSuffix(specCase.id, test.id)
+  return test.ttl === specCase.ttl || findExampleRow(specCase, test.ttl) !== null
+}
+
+/**
  * Check if test file matches base name and type
  * @example isMatchingTestFile('tests/automated/todo.auto.test.ts', 'todo', 'AUTO') → true
  */

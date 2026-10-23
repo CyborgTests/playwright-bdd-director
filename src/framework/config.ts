@@ -12,6 +12,9 @@ export const CONFIG = {
     tagsFile: 'src/test-constants/tags.ts',
     // Coverage matrix reports: <path>.json / .html / .md
     coverageMatrix: process.env.COVERAGE_MATRIX_FILE ?? 'test-results/coverage-matrix',
+    // Written on every run for test management tools and CI
+    cucumberReport: process.env.CUCUMBER_REPORT_FILE ?? 'test-results/cucumber-report.json',
+    junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
     packageJson: 'package.json'
   },
   /**
