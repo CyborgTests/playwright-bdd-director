@@ -1,5 +1,5 @@
 Feature: Header Navigation With Step Definitions
-  The same header flows as navigation.feature, automated by shared step definitions
+  The same header flows as navigation.md, automated by shared step definitions
 
   Background:
     Given user opens the home page

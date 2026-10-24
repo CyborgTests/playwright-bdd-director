@@ -33,7 +33,7 @@ async function main() {
     })),
     ...bdd.staleFiles.map((file) => ({
       title: `File: ${file}`,
-      errors: ['Generated test without step definitions style spec']
+      errors: ['Generated test without Gherkin spec']
     }))
   ]
   if (failures.length > 0) {

@@ -92,7 +92,7 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
 }
 
 /**
- * Test file of a step definitions style spec (step definitions must be loaded):
+ * Automated test of a Gherkin spec (step definitions must be loaded):
  * Feature → describe, Background → beforeEach (Rule Background too), Rule → nested describe, Scenario → test,
  * Outline → test per Examples row; each step → `await runStep('Given …', { fixtures })`.
  * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the feature,

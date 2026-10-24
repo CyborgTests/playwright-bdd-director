@@ -5,7 +5,12 @@ Path-scoped conventions live in `.claude/rules/`, procedures in `.agents/skills/
 
 ## What this repo is
 
-Markdown-driven testing framework on top of the native Playwright runner. `test-suites/*.md` is the source of truth; the Director keeps cyborg (human-in-the-loop, `@cyborgtests/test`) and automated tests in sync with it. Three layers share the repo:
+Spec-driven testing framework on top of the native Playwright runner. Specs in `test-suites/` are the source of truth, the extension picks the approach:
+
+- `*.md` — the Director keeps hand-written cyborg (human-in-the-loop, `@cyborgtests/test`) and automated tests in sync.
+- Gherkin `*.feature` — `stage` generates both tests from step definitions (`src/steps/`).
+
+Three layers share the repo:
 
 - **Framework** — `src/framework/**` + `scripts/*.ts`: parse MD/TS (ts-morph), validate, generate, auto-fix, archive. Unit-tested with Vitest in `tests/unit/**`.
 - **Director UI** — `packages/director/**` (React + Vite), embedded into Playwright UI through `scripts/patch-playwright.js` (postinstall) and forked Playwright packages in `packages/*`.
@@ -36,7 +41,8 @@ Selection works only through tags (`--grep`) — `play` builds the pattern and `
 
 ## Boundaries
 
-- `test-suites/*.md` — source of truth. Change behavior/wording here, never only in tests.
+- `test-suites/*.{md,feature}` — source of truth. Change behavior/wording here, never only in tests.
+- `tests/automated/bdd/**`, `tests/cyborg/bdd/**` — generated from `.feature` specs by `stage`, never edit; change the spec or step definitions.
 - `tests/cyborg/**` titles and steps, and empty skeletons in `tests/automated/todo/**`, are rewritten by `stage`. Step bodies (fixture calls, `manualStep`) are hand-written.
 - `src/test-constants/tags.ts` → `TAG.SUITE` is filled by `stage` from MD file names.
 - `tests/archived/**` — orphans moved there by `stage`; never runs, don't edit.

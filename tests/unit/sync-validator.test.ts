@@ -152,5 +152,32 @@ describe('validate', () => {
       expect(result.success).toBe(false)
       expect(result.errors.mdStructure?.[0].errors[0]).toContain('Invalid Gherkin')
     })
+
+    it('should reject a hand-written test of a Gherkin spec and skip its generated tests', () => {
+      fs.writeFileSync(
+        path.join(tempDir, 'test-suites', 'shop.feature'),
+        'Feature: Shop\n  Scenario: Buy\n    Given cart is full\n',
+        'utf-8'
+      )
+      const describe = "test.describe('Shop', () => {\n  test('Other', async () => {})\n})\n"
+      for (const file of [
+        'tests/automated/ui/shop.ui.test.ts',
+        'tests/automated/bdd/shop.auto.test.ts',
+        'tests/cyborg/bdd/shop.cyborg.test.ts'
+      ]) {
+        fs.mkdirSync(path.join(tempDir, path.dirname(file)), { recursive: true })
+        fs.writeFileSync(path.join(tempDir, file), describe, 'utf-8')
+      }
+
+      const result = validate()
+
+      expect(result.success).toBe(false)
+      expect(
+        result.errors.validationFailures?.map((f) => f.file.split(path.sep).join('/'))
+      ).toEqual(['tests/automated/ui/shop.ui.test.ts'])
+      expect(result.errors.validationFailures?.[0].errors[0]).toContain(
+        'Hand-written test of Gherkin spec'
+      )
+    })
   })
 })

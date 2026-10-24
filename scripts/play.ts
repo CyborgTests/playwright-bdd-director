@@ -93,7 +93,7 @@ Test Types:
   api       Run API tests (@api)
   ui        Run UI tests (@ui)
   e2e       Run E2E tests (@e2e)
-  bdd       Run tests generated from step definitions style specs (@bdd)
+  bdd       Run automated tests generated from Gherkin specs (@bdd)
 
 Examples:
   npm run play auto                 # All automated tests

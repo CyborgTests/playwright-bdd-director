@@ -5,7 +5,7 @@ description: Use when creating, editing, renaming or deleting a Markdown test su
 
 # Markdown-Driven Suites
 
-`test-suites/<base>.md` → `npm run stage` → `tests/cyborg/<base>.cyborg.test.ts` (+ `TAG.SUITE.<BASE>`), checked by `npm run dress`.
+`test-suites/<base>.md` → `npm run stage` → `tests/cyborg/<base>.cyborg.test.ts` (+ `TAG.SUITE.<BASE>`), checked by `npm run dress`. Gherkin `.feature` specs differ: both their tests are generated whole (`md-specs` rule, `docs/step-definitions.md`).
 
 ## Before you start
 

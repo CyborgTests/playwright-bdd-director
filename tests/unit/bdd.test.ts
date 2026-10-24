@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { generateBddCyborgTest } from '@/framework/bdd/cyborg-generator'
 import { generateBddTest } from '@/framework/bdd/generator'
 import {
   clearStepDefinitions,
@@ -14,7 +15,12 @@ import {
   parseFixtureNames
 } from '@/framework/bdd/registry'
 import { DataTable, findStepDefinition, runHook, stripStepKeyword } from '@/framework/bdd/runtime'
-import { getBddSpecKey, getBddTestPath, isBddTestFile } from '@/framework/utils/helpers'
+import {
+  getBddCyborgPath,
+  getBddSpecKey,
+  getBddTestPath,
+  isBddTestFile
+} from '@/framework/utils/helpers'
 
 const { Given, When, Then, Before, After, BeforeAll, AfterAll } = createBdd(test)
 let testDir: string
@@ -140,25 +146,90 @@ describe('DataTable', () => {
 })
 
 describe('bdd spec paths', () => {
-  it('should detect step definitions style specs and mirror their path', () => {
-    expect(getBddSpecKey('test-suites/bdd/shop/cart.feature', ['bdd'], 'test-suites')).toBe(
-      'shop/cart'
-    )
-    expect(getBddSpecKey('test-suites/bdd/cart.md', ['bdd'], 'test-suites')).toBeNull()
-    expect(getBddSpecKey('test-suites/cart.feature', ['bdd'], 'test-suites')).toBeNull()
+  it('should treat every Gherkin spec as step definitions style and mirror its path', () => {
+    expect(getBddSpecKey('test-suites/shop/cart.feature', 'test-suites')).toBe('shop/cart')
+    expect(getBddSpecKey('test-suites/cart.feature', 'test-suites')).toBe('cart')
+    expect(getBddSpecKey('test-suites/cart.md', 'test-suites')).toBeNull()
     expect(getBddTestPath('shop/cart', 'tests/automated/bdd')).toBe(
       path.join('tests', 'automated', 'bdd', 'shop', 'cart.auto.test.ts')
+    )
+    expect(getBddCyborgPath('shop/cart', 'tests/cyborg/bdd')).toBe(
+      path.join('tests', 'cyborg', 'bdd', 'shop', 'cart.cyborg.test.ts')
     )
   })
 
   it('should tell generated tests by their folder, not by the file name', () => {
-    const dir = 'tests/automated/bdd'
+    const dirs = ['tests/automated/bdd', 'tests/cyborg/bdd']
 
-    expect(isBddTestFile('tests/automated/bdd/shop/cart.auto.test.ts', dir)).toBe(true)
-    expect(isBddTestFile(path.resolve('tests/automated/bdd/cart.auto.test.ts'), dir)).toBe(true)
-    expect(isBddTestFile('tests/automated/todo/cart.auto.test.ts', dir)).toBe(false)
-    expect(isBddTestFile('tests/automated/bdd-old/cart.auto.test.ts', dir)).toBe(false)
-    expect(isBddTestFile(dir, dir)).toBe(false)
+    expect(isBddTestFile('tests/automated/bdd/shop/cart.auto.test.ts', dirs)).toBe(true)
+    expect(isBddTestFile(path.resolve('tests/cyborg/bdd/cart.cyborg.test.ts'), dirs)).toBe(true)
+    expect(isBddTestFile('tests/automated/todo/cart.auto.test.ts', dirs)).toBe(false)
+    expect(isBddTestFile('tests/cyborg/cart.cyborg.test.ts', dirs)).toBe(false)
+    expect(isBddTestFile('tests/automated/bdd-old/cart.auto.test.ts', dirs)).toBe(false)
+    expect(isBddTestFile('tests/automated/bdd', dirs)).toBe(false)
+  })
+})
+
+describe('generateBddCyborgTest', () => {
+  it('should give a person every step, Outline rows and Rules, @skip / @fixme only', async () => {
+    const specPath = path.join(testDir, 'shop.feature')
+    fs.writeFileSync(
+      specPath,
+      `@shop @retries:2
+Feature: Shop
+  Background:
+    Given user opens the home page
+
+  @fixme
+  Scenario Outline: Add <product>
+    When user adds "<product>"
+
+    @smoke
+    Examples:
+      | product  |
+      | Blue Top |
+
+  Rule: Notes
+    Background:
+      Given cart is open
+
+    @fail @slow
+    Scenario: Leave note
+      Then note says:
+        """
+        Hello
+        """
+
+    Scenario: Empty
+`,
+      'utf-8'
+    )
+
+    const { content, missing, ambiguous } = await generateBddCyborgTest(
+      specPath,
+      path.join(testDir, 'shop.cyborg.test.ts')
+    )
+
+    expect([missing, ambiguous]).toEqual([[], []])
+    const flat = content.replace(/\s+/g, ' ')
+    expect(flat).toContain("import test from '@cyborgtests/test'")
+    expect(flat).toContain(
+      "'[CYBORG] Shop', { tag: [TAG.TEST.CYBORG, TAG.SUITE.SHOP, '@shop', '@retries:2'] }"
+    )
+    expect(flat).toContain(
+      "test.beforeEach('Background', async ({ manualStep }) => { await manualStep('Given user opens the home page') })"
+    )
+    expect(flat).toContain(
+      `test.fixme('Add Blue Top', { tag: ['@fixme', '@smoke'] }, async ({ manualStep }) => { await manualStep('When user adds "Blue Top"') })`
+    )
+    expect(flat).toContain(
+      "test.describe('Notes', () => { test.beforeEach('Background: Notes', async ({ manualStep }) => { await manualStep('Given cart is open') })"
+    )
+    expect(flat).toContain(
+      "test('Leave note', { tag: ['@fail', '@slow'] }, async ({ manualStep }) => { await manualStep('Then note says:') })"
+    )
+    expect(flat).toContain("test('Empty', async () => {})")
+    expect(content).not.toContain('configure')
   })
 })
 

@@ -196,7 +196,7 @@ describe('buildCoverageMatrix', () => {
 
   it('should read generated bdd tests: Outline rows, hook groups, fixme as disabled', () => {
     const spec = writeFile(
-      'test-suites/bdd/nav.feature',
+      'test-suites/nav.feature',
       `Feature: Nav
 
   Background:

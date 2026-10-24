@@ -238,21 +238,6 @@ Feature: Shop
       expect(() => parseGherkinFile(filePath)).toThrow('Duplicate test case IDs')
     })
 
-    it('should reject Background inside Rule', () => {
-      const filePath = createFeature(
-        'rule-bg.feature',
-        `Feature: Shop
-  Rule: Discounts
-    Background:
-      Given coupon exists
-    Scenario: Apply coupon
-      Then total is reduced
-`
-      )
-
-      expect(() => parseGherkinFile(filePath)).toThrow('Background inside Rule is not supported')
-    })
-
     it('should reject tags Playwright tag rules do not allow', () => {
       const filePath = createFeature(
         'bad-tag.feature',
@@ -323,17 +308,6 @@ ${examples}`
     expect(() => parseGherkinFile(filePath)).toThrow('blocks have different columns')
   })
 
-  it('should reject tagged Examples for now', () => {
-    const filePath = outline(`
-    @smoke
-    Examples:
-      | role  |
-      | admin |
-`)
-
-    expect(() => parseGherkinFile(filePath)).toThrow('have tags - not supported yet')
-  })
-
   it('should reject Outline title without placeholder', () => {
     const filePath = outline(
       `
@@ -348,7 +322,7 @@ ${examples}`
   })
 })
 
-describe('parseGherkinFile - step definitions style', () => {
+describe('parseGherkinFile - Rule Background and Examples tags', () => {
   const feature = `Feature: Shop
   Rule: Cart
     Background:
@@ -363,21 +337,13 @@ describe('parseGherkinFile - step definitions style', () => {
         | Blue Top |
 `
 
-  it('should lead Rule scenarios with Rule Background steps and add Examples tags in step definitions style', () => {
+  it('should lead Rule scenarios with Rule Background steps and add Examples tags', () => {
     const filePath = createFeature('bdd.feature', feature)
 
-    const { testCases } = parseGherkinFile(filePath, { isBdd: true })
+    const { testCases } = parseGherkinFile(filePath)
 
     expect(testCases.map((tc) => [tc.ttl, tc.stepTtls, tc.tags])).toEqual([
       ['Add <product>', ['Given cart is empty', 'When user adds "<product>"'], ['@smoke']]
     ])
-  })
-
-  it('should reject them in Director style specs', () => {
-    const filePath = createFeature('director.feature', feature)
-
-    expect(() => parseGherkinFile(filePath, { isBdd: false })).toThrow(
-      'Background inside Rule is not supported yet'
-    )
   })
 })

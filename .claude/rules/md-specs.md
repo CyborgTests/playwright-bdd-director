@@ -1,7 +1,9 @@
 ---
-description: Markdown test-suite format (test-suites/*.md), IDs and implementation suffixes, file naming and MD ↔ TS sync contract.
+description: Spec formats (test-suites/*.md, Gherkin *.feature with generated tests), IDs and implementation suffixes, file naming and spec ↔ TS sync contract.
 paths:
   - 'test-suites/**/*.md'
+  - 'test-suites/**/*.feature'
+  - 'src/steps/**/*.ts'
   - 'tests/automated/**/*.ts'
   - 'tests/cyborg/**/*.ts'
   - 'src/test-constants/tags.ts'
@@ -15,10 +17,10 @@ paths:
 - One MD file = one suite. Base name is unique across `test-suites/**` and becomes the suite tag (`auth.md` → `TAG.SUITE.AUTH` = `@auth`).
 - `Tags: @smoke @JIRA-1` right under a `##`/`###` heading tags the suite / case (Playwright tags, strings next to `TAG.*` in tests).
 - A markdown table under a `###` heading (after `Tags:`) makes the case parametrized: `<column>` placeholders in title/steps; TS loops over inline string data (`for (const example of [{ column: '…' }])`) with `${example.column}` in titles; the title needs a unique-valued placeholder.
-- Gherkin `.feature` is an alternative spec format with the same contract: Feature → suite, Scenario → case, step → step with its keyword kept (`Given user …`); `@tag` → tags (Rule tags go to its scenarios); tables, doc strings are details. Steps are written in tests, as for MD (README "Gherkin").
-- `.feature` files in `test-suites/bdd/` (`CONFIG.bdd.dirs`) use step definitions instead: `src/steps/**/*.steps.ts` (`Given/When/Then` from `./bdd`, fixtures destructured in the first parameter).
-- `stage` fully generates their tests `tests/automated/bdd/**/*.auto.test.ts` (the folder marks them) - never edit them, change the spec or the steps.
-- Hooks, step context, Page Object steps, special tags: `docs/step-definitions.md`. Step functions (`Given(…)` returns one) are called directly from other tests; `runStep` is for generated tests only.
+- The extension picks the approach: `.md` tests are written by people and synced; a Gherkin `.feature` is automated by step definitions `src/steps/**/*.steps.ts` (`Given/When/Then` from `./bdd`, fixtures destructured in the first parameter).
+- `stage` fully generates the tests of a `.feature`: `tests/automated/bdd/**/*.auto.test.ts` and `tests/cyborg/bdd/**/*.cyborg.test.ts` (every step `manualStep`). The folders mark them - never edit them, change the spec or the steps.
+- A hand-written test of a `.feature` spec fails `dress` - move the spec to `.md` to keep it.
+- Hooks, step context, special tags: `docs/step-definitions.md`. New steps go to step files with fixtures; World style and Page Object decorators are for migrated suites only. Step functions (`Given(…)` returns one) are called directly from other tests; `runStep` is for generated tests only.
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
 - IDs and titles are globally unique across all MD files.
 

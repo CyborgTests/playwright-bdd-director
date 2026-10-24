@@ -158,22 +158,18 @@ export function isCyborgDisabledFor(
 }
 
 /**
- * Path of a step definitions style spec inside its bdd folder, null for other specs
- * (only `.feature` files in CONFIG.bdd.dirs): "test-suites/bdd/shop/cart.feature" -> "shop/cart"
+ * Path of a Gherkin spec inside test suites, null for a Markdown spec - a `.feature` file is
+ * automated by step definitions, its tests are generated: "test-suites/shop/cart.feature" -> "shop/cart"
  */
 export function getBddSpecKey(
   specPath: string,
-  dirs: readonly string[] = CONFIG.bdd.dirs,
   testSuitesDir = CONFIG.paths.testSuites
 ): string | null {
-  if (!specPath.endsWith('.feature')) return null
-  const suiteKey = getSuiteKey(specPath, testSuitesDir)
-  const dir = dirs.find((entry) => suiteKey.startsWith(`${entry}/`))
-  return dir === undefined ? null : suiteKey.slice(dir.length + 1)
+  return specPath.endsWith('.feature') ? getSuiteKey(specPath, testSuitesDir) : null
 }
 
 /**
- * Generated test of a step definitions style spec - an AUTO test whose folder marks it:
+ * Generated automated test of a Gherkin spec - an AUTO test whose folder marks it:
  * "shop/cart" -> "tests/automated/bdd/shop/cart.auto.test.ts"
  */
 export function getBddTestPath(bddSpecKey: string, testsDir = CONFIG.bdd.testsDir): string {
@@ -181,12 +177,24 @@ export function getBddTestPath(bddSpecKey: string, testsDir = CONFIG.bdd.testsDi
 }
 
 /**
- * Test generated from a step definitions style spec: any file inside CONFIG.bdd.testsDir.
+ * Generated cyborg test of a Gherkin spec: "shop/cart" -> "tests/cyborg/bdd/shop/cart.cyborg.test.ts"
+ */
+export function getBddCyborgPath(bddSpecKey: string, cyborgDir = CONFIG.bdd.cyborgDir): string {
+  return path.join(cyborgDir, `${bddSpecKey}.cyborg.test.ts`)
+}
+
+/**
+ * Test generated from a Gherkin spec: any file inside CONFIG.bdd.testsDir / cyborgDir.
  * stage owns it - never validated, auto-fixed or archived as a hand-written test.
  */
-export function isBddTestFile(testFile: string, testsDir = CONFIG.bdd.testsDir): boolean {
-  const relative = path.relative(path.resolve(testsDir), path.resolve(testFile))
-  return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+export function isBddTestFile(
+  testFile: string,
+  dirs: readonly string[] = [CONFIG.bdd.testsDir, CONFIG.bdd.cyborgDir]
+): boolean {
+  return dirs.some((dir) => {
+    const relative = path.relative(path.resolve(dir), path.resolve(testFile))
+    return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+  })
 }
 
 /**

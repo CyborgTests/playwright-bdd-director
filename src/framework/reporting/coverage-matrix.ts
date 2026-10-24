@@ -211,7 +211,7 @@ function groupTestFiles(
     const fileName = path.basename(testFile)
     const segments = fileName.toLowerCase().split('.')
     // Generated tests are AUTO files - their folder makes them the bdd layer
-    const layer = isBddTestFile(testFile, bddTestsDir)
+    const layer = isBddTestFile(testFile, [bddTestsDir])
       ? 'bdd'
       : COVERAGE_LAYERS.find((candidate) => segments.slice(1).includes(candidate))
     if (!layer) continue

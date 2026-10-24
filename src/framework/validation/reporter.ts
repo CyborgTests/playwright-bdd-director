@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { printErrorGroups } from '../reporting/console-formatter'
 import { getIcon } from '../utils/icons'
-import type { ValidatorResult } from './sync-validator'
+import { GHERKIN_TEST_ERROR, type ValidatorResult } from './sync-validator'
 
 /**
  * Report validation errors and exit if any critical errors found
@@ -61,6 +61,9 @@ export function reportValidationErrors(result: ValidatorResult): void {
       const hasUnexpectedIdErrors = result.errors.validationFailures.some((f) =>
         f.errors.some((err) => err.includes('Unexpected ID') || err.includes('Unexpected Suite ID'))
       )
+      const hasGherkinTestErrors = result.errors.validationFailures.some((f) =>
+        f.errors.some((err) => err.includes(GHERKIN_TEST_ERROR))
+      )
       const hasStageFixableErrors = result.errors.validationFailures.some(
         (f) =>
           !f.isCyborgWithTestStep &&
@@ -68,7 +71,8 @@ export function reportValidationErrors(result: ValidatorResult): void {
             (err) =>
               !err.includes('Tag Problems:') &&
               !err.includes('Unexpected ID') &&
-              !err.includes('Unexpected Suite ID')
+              !err.includes('Unexpected Suite ID') &&
+              !err.includes(GHERKIN_TEST_ERROR)
           )
       )
 
@@ -76,6 +80,7 @@ export function reportValidationErrors(result: ValidatorResult): void {
       const manualFixes: string[] = []
       if (hasTagErrors) manualFixes.push('tags')
       if (hasUnexpectedIdErrors) manualFixes.push('IDs')
+      if (hasGherkinTestErrors) manualFixes.push('hand-written tests of Gherkin specs')
 
       let fixMessage: string
       if (hasCyborgWithTestStep && !hasStageFixableErrors && manualFixes.length === 0) {

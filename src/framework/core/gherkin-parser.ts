@@ -16,7 +16,6 @@ import {
   assertUniqueTestCaseIds,
   assertValidExamples,
   assertValidTags,
-  getBddSpecKey,
   getErrorMessage,
   isBackgroundTitle,
   parseIDAndTitle
@@ -31,17 +30,13 @@ import type { ExamplesTable, ParsedMD, TestCase } from './md-parser'
  * - step title keeps its keyword as written: "Given user is on login page", "And ..."
  * - Background → test case "Background" (or "Background: name"), implemented by a named
  *   test.beforeEach (see isBackgroundTitle)
- * - Rule groups its scenarios only (flattened in source order)
- * - step definitions style specs (CONFIG.bdd.dirs) also allow Background inside Rule and tags on
- *   Examples (added to the test case tags) - their tests are generated, not written by hand
- * - tags: Feature → suite tags, Rule + Scenario → test case tags (Background has none)
+ * - Rule groups its scenarios only (flattened in source order); its Background steps lead the
+ *   steps of its scenarios
+ * - tags: Feature → suite tags, Rule + Scenario + Examples → test case tags (Background has none)
  * - descriptions, data tables and doc strings are details, ignored like MD bullet lines
  * - `[ID]` in Feature / Scenario names follows the MD convention
  */
-export function parseGherkinFile(
-  featurePath: string,
-  { isBdd = getBddSpecKey(featurePath) !== null }: { isBdd?: boolean } = {}
-): ParsedMD {
+export function parseGherkinFile(featurePath: string): ParsedMD {
   const feature = parseGherkinDocument(featurePath).feature
 
   if (!feature) {
@@ -55,7 +50,7 @@ export function parseGherkinFile(
   }
 
   const suite = parseIDAndTitle(feature.name.trim())
-  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath, [], isBdd))
+  const testCases = feature.children.flatMap((child) => toTestCases(child, featurePath, []))
 
   if (testCases.every((tc) => isBackgroundTitle(tc.ttl))) {
     throw new Error(
@@ -91,18 +86,15 @@ function toTestCases(
   child: FeatureChild | RuleChild,
   featurePath: string,
   ruleTags: string[],
-  isBdd: boolean,
   ruleSteps: string[] = []
 ): TestCase[] {
   if (child.background) return [toBackgroundCase(child.background)]
 
   if (child.scenario) {
     const { id, ttl } = parseIDAndTitle(child.scenario.name.trim())
-    const examplesTags = isBdd
-      ? child.scenario.examples.flatMap((block) => toTagNames(block.tags))
-      : []
+    const examplesTags = child.scenario.examples.flatMap((block) => toTagNames(block.tags))
     const tags = [...new Set([...ruleTags, ...toTagNames(child.scenario.tags), ...examplesTags])]
-    const examples = toExamplesTable(child.scenario.examples, ttl, featurePath, isBdd)
+    const examples = toExamplesTable(child.scenario.examples, ttl, featurePath)
     const stepTtls = [...ruleSteps, ...child.scenario.steps.map(toStepTtl)]
     return [{ id, ttl, stepTtls, tags, examples }]
   }
@@ -110,19 +102,13 @@ function toTestCases(
   if ('rule' in child && child.rule) {
     const { rule } = child
     const background = rule.children.find((ruleChild) => ruleChild.background)?.background
-    if (!isBdd && background) {
-      throw new Error(
-        `Background inside Rule is not supported yet: "${rule.name}" in ${featurePath}\n` +
-          `  Fix: Move the Background to Feature level (supported in step definitions style specs)`
-      )
-    }
     // Rule Background steps run before each scenario of the Rule only: in the case model (cyborg
     // tests, matrix) they lead its scenarios' steps - a beforeEach would also run for other tests
     const steps = background?.steps.map(toStepTtl) ?? []
     const tags = toTagNames(rule.tags)
     return rule.children
       .filter((ruleChild) => !ruleChild.background)
-      .flatMap((ruleChild) => toTestCases(ruleChild, featurePath, tags, isBdd, steps))
+      .flatMap((ruleChild) => toTestCases(ruleChild, featurePath, tags, steps))
   }
 
   return []
@@ -148,27 +134,19 @@ export function getBackgroundTitle(background: Background, ruleName?: string): s
 }
 
 /**
- * Outline Examples blocks joined into one table. Tags on Examples would need per-row tags in
- * hand-written tests - allowed only in step definitions style specs (isBdd), whose tests are
- * generated.
+ * Outline Examples blocks joined into one table (their tags tag the case - generated tests give
+ * each row its block tags)
  */
 function toExamplesTable(
   blocks: readonly Examples[],
   caseTtl: string,
-  featurePath: string,
-  isBdd: boolean
+  featurePath: string
 ): ExamplesTable | null {
   const withHeader = blocks.filter((block) => block.tableHeader)
   if (withHeader.length === 0) return null
 
   const fail = (problem: string, fix: string): never => {
     throw new Error(buildExamplesError(problem, caseTtl, featurePath, fix))
-  }
-  if (!isBdd && withHeader.some((block) => block.tags.length > 0)) {
-    fail(
-      'have tags - not supported yet',
-      'Move the tags to the Scenario Outline (Examples tags work in step definitions style specs)'
-    )
   }
 
   const cells = (row: { cells: readonly { value: string }[] }) => row.cells.map((c) => c.value)

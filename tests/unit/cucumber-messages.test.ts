@@ -129,7 +129,7 @@ describe('buildCucumberMessages', () => {
 `
     const envelopes = buildCucumberMessages(
       [
-        feature('test-suites/bdd/shop.feature', [
+        feature('test-suites/shop.feature', [
           element({ name: 'Add Men Tshirt', steps: [step('When ', 'user adds "Men Tshirt"')] })
         ])
       ],
@@ -146,7 +146,7 @@ describe('buildCucumberMessages', () => {
   it('should skip pickle steps the run has no result for', () => {
     const envelopes = buildCucumberMessages(
       [
-        feature('test-suites/bdd/shop.feature', [
+        feature('test-suites/shop.feature', [
           element({ name: 'Buy', steps: [step('Given ', 'cart is full')] })
         ])
       ],

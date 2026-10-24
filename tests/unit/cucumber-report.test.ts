@@ -111,7 +111,7 @@ describe('buildCucumberReport', () => {
           }
         ]
       },
-      { path: 'test-suites/bdd/shop.feature', language: 'en' }
+      { path: 'test-suites/shop.feature', language: 'en' }
     )
 
     const [result] = buildCucumberReport(
@@ -226,7 +226,7 @@ describe('buildCucumberReport', () => {
           }
         ]
       },
-      { path: 'test-suites/bdd/shop.feature', language: 'uk' }
+      { path: 'test-suites/shop.feature', language: 'uk' }
     )
 
     const [result] = buildCucumberReport(

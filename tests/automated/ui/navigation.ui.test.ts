@@ -6,40 +6,40 @@ test.describe(
   { tag: [TAG.TEST.AUTO, TAG.TYPE.UI, TAG.SUITE.NAVIGATION] },
   () => {
     test.beforeEach('Background', async ({ homePage }) => {
-      await test.step('Given user opens the home page', async () => {
+      await test.step('Open Home Page', async () => {
         await homePage.navigateToHome()
       })
     })
 
     test(
-      'Open "Signup / Login" page from header',
+      'Open "Signup / Login" Page from Header',
       { tag: ['@smoke'] },
       async ({ homePage, loginPage }) => {
-        await test.step('When user clicks "Signup / Login" button in header', async () => {
+        await test.step('Click "Signup / Login" Button in Header', async () => {
           await homePage.clickSignupLoginBtn()
         })
 
-        await test.step('Then "Login to your account" form is visible', async () => {
+        await test.step('Verify "Login to your account" Form is visible', async () => {
           await loginPage.expectLoginFormVisible()
         })
 
-        await test.step('And "New User Signup!" form is visible', async () => {
+        await test.step('Verify "New User Signup!" Form is visible', async () => {
           await loginPage.expectSignupFormVisible()
         })
       }
     )
 
-    test('Return to home page from "Signup / Login" page', async ({ homePage }) => {
-      await test.step('Given user clicks "Signup / Login" button in header', async () => {
+    test('Return to Home Page from "Signup / Login" Page', async ({ homePage }) => {
+      await test.step('Click "Signup / Login" Button in Header', async () => {
         await homePage.clickSignupLoginBtn()
         await homePage.expectOnLoginPage()
       })
 
-      await test.step('When user clicks "Home" button in header', async () => {
+      await test.step('Click "Home" Button in Header', async () => {
         await homePage.clickHomeBtn()
       })
 
-      await test.step('Then home page is shown', async () => {
+      await test.step('Verify Home Page is shown', async () => {
         await homePage.expectOnHomePage()
       })
     })
