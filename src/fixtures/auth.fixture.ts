@@ -22,7 +22,8 @@ interface AuthFixture {
 function generateTestUser(): TestUser {
   return {
     name: faker.person.firstName(),
-    email: faker.internet.email(),
+    // The demo site is shared: plain faker emails repeat across its users, a UUID does not
+    email: `${faker.string.uuid()}@example.com`,
     password: faker.internet.password({ length: 12, memorable: true }),
     title: faker.helpers.arrayElement(['Mr', 'Mrs']),
     birth_day: faker.number.int({ min: 1, max: 31 }).toString(),

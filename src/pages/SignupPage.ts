@@ -1,4 +1,4 @@
-import { type Locator, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 import { TestUser } from '@/schemas/auth.types'
 
@@ -20,6 +20,7 @@ export class SignupPage extends BasePage {
   private readonly zipcodeInput: Locator
   private readonly mobileNumberInput: Locator
   private readonly createAccountBtn: Locator
+  private readonly accountInfoHeading: Locator
 
   private readonly monthMap: Record<string, string> = {
     Jan: 'January',
@@ -53,6 +54,7 @@ export class SignupPage extends BasePage {
     this.zipcodeInput = this.page.locator('[data-qa="zipcode"]')
     this.mobileNumberInput = this.page.locator('[data-qa="mobile_number"]')
     this.createAccountBtn = this.page.locator('[data-qa="create-account"]')
+    this.accountInfoHeading = this.page.getByRole('heading', { name: 'Enter Account Information' })
   }
 
   async registerUser(user: TestUser): Promise<void> {
@@ -80,5 +82,16 @@ export class SignupPage extends BasePage {
 
   async clickCreateAccountBtn(): Promise<void> {
     await this.createAccountBtn.click()
+  }
+
+  /**
+   * Fail-fast, not soft: a rejected signup ("Email Address already exist!") stays on the login
+   * page, and every next step would wait for a form that never comes
+   */
+  async expectAccountInfoFormOpened(): Promise<void> {
+    await expect(
+      this.accountInfoHeading,
+      'Signup rejected - see the message under the "New User Signup!" form'
+    ).toBeVisible()
   }
 }

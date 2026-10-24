@@ -34,6 +34,19 @@ Tags: @smoke
 
 ---
 
+### Open "<brand>" Brand Products from Sidebar
+
+| brand |
+| ----- |
+| Polo  |
+| H&M   |
+
+#### Click "<brand>" Brand in Sidebar
+
+#### Verify "Brand - <brand> Products" Heading is visible
+
+---
+
 ### Subscribe to Newsletter from Footer
 
 - Not automated yet: steps without step definitions are walked by a person (cyborg test)

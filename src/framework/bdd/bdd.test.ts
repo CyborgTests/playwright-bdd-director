@@ -589,6 +589,25 @@ Feature: Shop
     )
   })
 
+  it('should keep cyborg tests without a time limit under @timeout of any level', async () => {
+    Given('user is logged in', done)
+
+    const { content } = await generate(`@ui @timeout:60000
+Feature: Shop
+  Scenario: Auto
+    Given user is logged in
+
+  @timeout:30000 @retries:1
+  Scenario: Cyborg
+    Given user checks the colors
+`)
+
+    expect(content).toContain('test.describe.configure({ timeout: 60000 })')
+    expect(content).toMatch(
+      /test\.describe\(\(\) => \{\s+test\.describe\.configure\(\{ timeout: 0, retries: 1 \}\)\s+test\(\s+'Cyborg'/
+    )
+  })
+
   it('should reject invalid and conflicting configure tags', async () => {
     await expect(
       generate(`@ui

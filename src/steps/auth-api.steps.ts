@@ -45,3 +45,8 @@ Step(
     await authClient.expectLoginFailed(response)
   }
 )
+
+// Skeleton from `npm run steps auth-api`: an API test with a step without code stays test.fixme
+Step('Update City and verify it is saved', async ({}) => {
+  // TODO: implement step
+})

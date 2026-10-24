@@ -11,6 +11,7 @@ export class HomePage extends BasePage {
   private readonly loggedInHeader: Locator
   private readonly accountCreatedMsg: Locator
   private readonly accountDeletedMsg: Locator
+  private readonly brandsSidebar: Locator
 
   constructor(page: Page) {
     super(page, '/')
@@ -23,6 +24,12 @@ export class HomePage extends BasePage {
     this.continueBtn = this.page.locator('[data-qa="continue-button"]')
     this.accountCreatedMsg = this.page.locator('[data-qa="account-created"]')
     this.accountDeletedMsg = this.page.locator('[data-qa="account-deleted"]')
+    this.brandsSidebar = this.page.locator('.brands-name')
+  }
+
+  // Link names carry the product count ("(6)Polo") - the href holds the brand alone
+  private brandLink(brand: string): Locator {
+    return this.brandsSidebar.locator(`a[href="/brand_products/${brand}"]`)
   }
 
   async navigateToHome(): Promise<void> {
@@ -39,6 +46,10 @@ export class HomePage extends BasePage {
 
   async clickSignupLoginBtn(): Promise<void> {
     await this.signupLoginBtn.click()
+  }
+
+  async clickBrand(brand: string): Promise<void> {
+    await this.brandLink(brand).click()
   }
 
   async clickDeleteAccountBtn(): Promise<void> {

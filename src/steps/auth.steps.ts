@@ -7,10 +7,15 @@ Step('Navigate to and Verify "Signup\\/Login" Page', async ({ loginPage }) => {
   await loginPage.expectSignupFormVisible()
 })
 
-Step('Complete "New User Signup!" Form with valid User data', async ({ loginPage, testUser }) => {
-  await loginPage.fillSignupForm(testUser.name, testUser.email)
-  await loginPage.clickSignupBtn()
-})
+Step(
+  'Complete "New User Signup!" Form with valid User data',
+  async ({ loginPage, signupPage, testUser }) => {
+    await loginPage.fillSignupForm(testUser.name, testUser.email)
+    await loginPage.clickSignupBtn()
+
+    await signupPage.expectAccountInfoFormOpened()
+  }
+)
 
 Step(
   'Complete Account Information and verify successful Account creation',

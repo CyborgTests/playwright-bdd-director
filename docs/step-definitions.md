@@ -16,6 +16,8 @@ Every spec in `test-suites/` - Markdown or Gherkin - is automated by **step defi
 - [Migrating from other tools](#migrating-from-other-tools)
 - [Limitations](#limitations)
 
+The example suites in `test-suites/` use these features on a real site - README "Working Example" maps each one to its spec and code.
+
 ## How it works
 
 - A step **with** a step definition runs automatically: `autoStep('Open Home Page', { homePage })`.
@@ -76,7 +78,7 @@ Both formats generate the same kind of tests, share step definitions, hooks, tag
 
 - Markdown: `##` suite, `###` test case, `####` step, `Tags:` lines, an examples table under a test case, `### Background`; bullet lines are notes for people. `npm run stage` formats the files and puts `---` before every test case.
 - Gherkin: anything the Gherkin parser accepts - Background, Rule (with its own Background), Scenario Outline with Examples (tagged too), DataTable, DocString, `# language:`.
-- Markdown steps have no keyword - define them with `Step(…)`. Gherkin keywords do not affect matching either, so one definition can serve both formats only when the texts match; different wordings share code by calling one step function from another (`src/steps/navigation.steps.ts`).
+- Markdown steps have no keyword - define them with `Step(…)`. Gherkin keywords do not affect matching either, so one definition can serve both formats only when the texts match; different wordings share code by calling one step function from another (`src/steps/cart.steps.ts`).
 
 ## Layers
 
@@ -120,14 +122,22 @@ export const {
 
   `DataTable`: `raw()` all rows, `rows()` without header, `hashes()` objects keyed by header, `rowsHash()` two columns as key-value. DocString is a `string`.
 
-- **Step function**: `Given/When/Then/Step` return the function, typed - call it from another step with only the fixtures it uses, or register it under another wording:
+- **Step function**: `Given/When/Then/Step` return the function, typed - call it from another step with only the fixtures it uses, or register it under another wording (`Step('Add {string} to Cart', addToCart)`):
 
   ```typescript
-  const openHomePage = Given('user opens the home page', async ({ homePage }) => {
-    await homePage.navigateToHome()
-  })
+  const addToCart = When(
+    'user adds {string} to cart',
+    async ({ productsPage }, product: string) => {
+      await productsPage.addToCart(product)
+    }
+  )
 
-  Step('Open Home Page', openHomePage) // Markdown wording of the same step
+  Given('cart has {string}', async ({ productsPage, cartPage }, product: string) => {
+    await addToCart({ productsPage }, product)
+    await cartPage.navigateToCart()
+
+    await cartPage.expectInCart(product)
+  })
   ```
 
 - **No definition / no code** → the step is manual; `dress` lists it, `npm run steps <suite>` writes skeletons.
@@ -193,21 +203,36 @@ AfterStep({ name: 'Screenshot', tags: '@ui' }, async ({ page, bdd }) => {
 - `Before` / `After` → `test.beforeEach` / `test.afterEach`. A test's tags include its suite, Rule and Examples tags, its layer, `@auto` / `@cyborg` and the suite tag - `Before({ tags: '@cyborg' }, …)` prepares only the tests a person walks. Tests with different hooks are grouped in anonymous `test.describe` blocks, so report titles do not change.
 - A hook requesting `page` opens a browser - tag it `not @api` when API tests do not need one (`src/steps/hooks.steps.ts`).
 - `BeforeStep` / `AfterStep` run inside every automated step of the matching tests, Background steps included. The generated test registers them first: `test.beforeEach('AfterStep: Screenshot', … useStepHook(…))`. `AfterStep` runs after a failed or skipped step too (`bdd.step.error`); a failing `AfterStep` fails the step.
+- `BeforeStep` fits a concern of every step of some tests that the steps themselves should not know: prepare the page, measure, or leave out steps an environment cannot do. `bdd.step.skip()` marks the step skipped and the test goes on:
+
+  ```typescript
+  // Downloads are checked locally - the CI browser has no download folder
+  BeforeStep({ name: 'No downloads in CI', tags: '@download' }, async ({ bdd }) => {
+    if (process.env.CI && /download/i.test(bdd.step?.title ?? ''))
+      bdd.step?.skip('no downloads in CI')
+  })
+  ```
+
+  Skipping hides a check: prefer `@skip` on the whole test unless the rest of the test still proves something.
+
 - Order: Before hooks → Background → steps (each wrapped by BeforeStep / AfterStep) → After hooks; After and AfterStep hooks in reverse definition order.
 - `BeforeAll` / `AfterAll` → `test.beforeAll` / `test.afterAll` of the suite, matched against suite tags and the suite tag. Like any Playwright `beforeAll`, they run once per worker.
 - Report title: `Before: <name>`; an unnamed hook is `<file>#<n>` (n-th hook of its kind in the file). Names are unique per kind.
 
 ## Special tags
 
-They stay Playwright tags too, so `npm run play @slow` works.
+They stay Playwright tags too, so `npm run play @slow` works. Written on a Feature, Rule, Scenario or Examples - the level decides which tests they cover.
 
-| Tag                        | Generated                                                                       |
-| -------------------------- | ------------------------------------------------------------------------------- |
-| `@skip`, `@fixme`, `@fail` | `test.skip(…)`, `test.fixme(…)`, `test.fail(…)` - also when set on suite / Rule |
-| `@slow`                    | `test.slow()` in the test                                                       |
-| `@retries:N`, `@timeout:N` | `test.describe.configure({ retries, timeout })` on the level the tag is written |
+| Tag          | Generated                                                  | Use when                                                                                                                                                                           |
+| ------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@skip`      | `test.skip(…)`                                             | the case does not apply here or yet: the feature is off on this environment, not built, out of scope for a release. Not for bugs - the reason is not a defect                      |
+| `@fixme`     | `test.fixme(…)`                                            | a confirmed bug blocks the flow, so running the test proves nothing (it hangs, or fails before reaching what it checks). The test does not run; note the bug next to the tag       |
+| `@fail`      | `test.fail(…)`                                             | a confirmed bug the test still reaches: it runs, must fail and counts as passed. Once the bug is fixed it fails - the reminder to drop the tag (`cart.feature`, quantity 0 and -2) |
+| `@slow`      | `test.slow()` in the test                                  | the test is legitimately slow - triples its timeout (`products.feature`)                                                                                                           |
+| `@retries:N` | `test.describe.configure({ retries })` on the tagged level | a dependency outside your control is unstable. A test that passes only on retry is not green - read the first attempt (`cart.feature`, placing an order)                           |
+| `@timeout:N` | `test.describe.configure({ timeout })` on the tagged level | a group needs a limit other than the project's (`cart.feature`, Rule Checkout: API registration, login and an order)                                                               |
 
-An invalid value (`@retries:abc`) or two different values on one level stop the run.
+`@skip`, `@fixme` and `@fail` on a Feature or Rule cover all its tests. Cyborg tests have no time limit, so `@slow` and `@timeout` do not change them. An invalid value (`@retries:abc`) or two different values on one level stop the run.
 
 ## Reports
 
@@ -281,7 +306,7 @@ export class HomePage extends BasePage {
 
 - Import the decorators from `@/framework/bdd`, not `./bdd` - Page Objects are imported by fixtures, the steps file imports fixtures, so `./bdd` would be an import cycle. The fixture name is not typed there: a wrong one fails `npx tsc` on the generated test and the run.
 - Parameters are those of the expression, then DataTable / DocString; no fixtures object. A method without code is a step without definition, as anywhere.
-- **Subclasses**: steps of a base class run on any subclass registered for a fixture.
+- **Subclasses**: steps of a base class run on any subclass registered for a fixture - for a page that works differently in some tests (a mobile layout behind a menu button, a tenant with its own theme) while the specs stay the same.
   - `@StepsFor('mobileHomePage', { tags: '@mobile' })` - tests matching the tags use `mobileHomePage` for every step of `HomePage` (the most derived matching subclass wins; unrelated subclasses matching the same test stop the run).
   - Without tags, a subclass is used when another step of the same test already needs it - one object for the test steps (a Background picks its own).
   - An overridden method (`override async clickHeaderBtn`) runs the override; decorating it again with the same pattern is not a second step.

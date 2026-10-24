@@ -1,24 +1,21 @@
-import { Given, Step, Then, When } from './bdd'
+import { Step } from './bdd'
 
-const openHomePage = Given('user opens the home page', async ({ homePage }) => {
+Step('Open Home Page', async ({ homePage }) => {
   await homePage.navigateToHome()
 })
 
-const clickHeaderButton = When(
-  'user clicks {string} button in header',
-  async ({ homePage }, button: string) => {
-    switch (button) {
-      case 'Signup / Login':
-        return homePage.clickSignupLoginBtn()
-      case 'Home':
-        return homePage.clickHomeBtn()
-      default:
-        throw new Error(`Unknown header button "${button}"`)
-    }
+Step('Click {string} Button in Header', async ({ homePage }, button: string) => {
+  switch (button) {
+    case 'Signup / Login':
+      return homePage.clickSignupLoginBtn()
+    case 'Home':
+      return homePage.clickHomeBtn()
+    default:
+      throw new Error(`Unknown header button "${button}"`)
   }
-)
+})
 
-const expectFormVisible = Then('{string} form is visible', async ({ loginPage }, form: string) => {
+Step('Verify {string} Form is visible', async ({ loginPage }, form: string) => {
   switch (form) {
     case 'Login to your account':
       return loginPage.expectLoginFormVisible()
@@ -29,12 +26,27 @@ const expectFormVisible = Then('{string} form is visible', async ({ loginPage },
   }
 })
 
-const expectHomePage = Then('home page is shown', async ({ homePage }) => {
+Step('Verify Home Page is shown', async ({ homePage }) => {
   await homePage.expectOnHomePage()
 })
 
-// navigation.md words the same steps its own way - one implementation serves both specs
-Step('Open Home Page', openHomePage)
-Step('Click {string} Button in Header', clickHeaderButton)
-Step('Verify {string} Form is visible', expectFormVisible)
-Step('Verify Home Page is shown', expectHomePage)
+Step('Click {string} Brand in Sidebar', async ({ homePage }, brand: string) => {
+  await homePage.clickBrand(brand)
+})
+
+Step('Verify {string} Heading is visible', async ({ homePage }, heading: string) => {
+  await homePage.expectHeadingVisible(heading)
+})
+
+// Skeletons from `npm run steps navigation`: without code their steps stay manual (cyborg test)
+Step('Scroll down to Footer', async ({}) => {
+  // TODO: implement step
+})
+
+Step('Enter Email Address and click Arrow Button', async ({}) => {
+  // TODO: implement step
+})
+
+Step('Verify {string} Message is visible', async ({}, _string: string) => {
+  // TODO: implement step
+})

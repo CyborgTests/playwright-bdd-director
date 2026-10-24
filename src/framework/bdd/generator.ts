@@ -463,7 +463,9 @@ function emitTest(
     steps: { automated: totalSteps - allManual.length, total: totalSteps }
   })
 
-  const configure = configureLines(own.flat(), `Scenario "${name}"`)
+  // A person walks a cyborg test at their own pace: its own level lifts any @timeout above it
+  const unlimited = kind === 'cyborg' && levels.flat().some((tag) => tag.startsWith('@timeout:'))
+  const configure = configureLines(own.flat(), `Scenario "${name}"`, unlimited)
   return {
     lines:
       configure.length > 0
@@ -656,9 +658,10 @@ function evaluateTags(expression: string, tags: string[], owner: string): boolea
 
 /**
  * `test.describe.configure({ retries, timeout })` from @retries:N / @timeout:N of one level
+ * @param unlimited - timeout 0 (none) whatever the tags say
  * @throws Error for a non-numeric value or two different values of the same option
  */
-function configureLines(tags: string[], where: string): string[] {
+function configureLines(tags: string[], where: string, unlimited = false): string[] {
   const options = new Map<string, number>()
   for (const tag of tags) {
     const match = tag.match(CONFIGURE_TAG)
@@ -676,6 +679,7 @@ function configureLines(tags: string[], where: string): string[] {
     }
     options.set(option, value)
   }
+  if (unlimited) options.set('timeout', 0)
   if (options.size === 0) return []
   const config = [...options].map(([option, value]) => `${option}: ${value}`).join(', ')
   return [`test.describe.configure({ ${config} })`, '']

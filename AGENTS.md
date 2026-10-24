@@ -13,7 +13,7 @@ Three layers share the repo:
 
 - **Framework** — `src/framework/**` + `scripts/*.ts`: parse specs, generate tests, step registry and runtime, coverage matrix, reports. Unit-tested with Vitest next to the modules (`*.test.ts`).
 - **Director UI** — `packages/director/**` (React + Vite), embedded into Playwright UI through `scripts/patch-playwright.js` (postinstall) and forked Playwright packages in `packages/*`.
-- **Example test layer** — `auth`, `auth-api`, `navigation`, `header-navigation` specs against automationexercise.com: `src/{steps,pages,fixtures,clients,schemas,test-helpers,test-utils}`.
+- **Example test layer** — `auth`, `auth-api`, `navigation`, `cart`, `products`, `contact-us` specs against automationexercise.com (README "Working Example" maps them to features): `src/{steps,pages,fixtures,clients,schemas,test-helpers,test-utils}`.
 
 ## Stack
 

@@ -29,7 +29,7 @@ paths:
 - A step with a definition → `autoStep`; without one, or with one without code (empty body or comments only, `// TODO` or not) → `manualStep` walked by a person.
 - Any manual step → the test is `@cyborg` (UI/E2E only; an `@api` test stays `test.fixme`); all steps automated → `@auto`. A manual Background step makes every test under it cyborg.
 - Steps: `Given/When/Then/Step` from `./bdd`, fixtures destructured in the first parameter; Markdown steps have no keyword (`Step(…)`); `/` and `( )` in Cucumber Expressions need escaping for literal text. Different wordings share code by passing one step function to another definition.
-- Hooks, step context, special tags: `docs/step-definitions.md`. New steps go to step files with fixtures; World style and Page Object decorators are for migrated suites only. `autoStep` is for generated tests only.
+- Hooks, step context, special tags: `docs/step-definitions.md`. New steps go to step files with fixtures; World style and Page Object decorators are for migrated suites only (examples: `contact-us.steps.ts`, `ProductsPage`). `autoStep` is for generated tests only.
 
 ## Workflow
 

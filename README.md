@@ -420,13 +420,11 @@ Optional IDs in brackets stay in the test titles and reports: `## [TS01] Suite`,
 
 ```typescript
 // src/steps/navigation.steps.ts
-import { Given, Step } from './bdd' // createBdd(test) - typed with the project fixtures
+import { Step } from './bdd' // createBdd(test) - typed with the project fixtures
 
-const openHomePage = Given('user opens the home page', async ({ homePage }) => {
-  await homePage.navigateToHome()
+Step('Click {string} Brand in Sidebar', async ({ homePage }, brand: string) => {
+  await homePage.clickBrand(brand)
 })
-
-Step('Open Home Page', openHomePage) // Markdown wording of the same step
 ```
 
 - **Patterns**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) or RegExp; the keyword does not affect matching; Markdown steps use `Step(…)`
@@ -446,9 +444,9 @@ playwright-bdd-director/
 ├── test-suites/           # Specs (source of truth): *.md, *.feature
 ├── src/
 │   ├── steps/             # Step definitions (*.steps.ts) and hooks; bdd.ts binds them to the fixtures
-│   ├── fixtures/          # Playwright fixtures (base, auth); index.ts - test of the generated tests
-│   ├── pages/             # Page objects (BasePage, LoginPage, HomePage, SignupPage)
-│   ├── clients/           # API clients (BaseClient, AuthClient)
+│   ├── fixtures/          # Playwright fixtures (base, auth, shop); index.ts - test of the generated tests
+│   ├── pages/             # Page objects (home, login, signup, products, cart, checkout)
+│   ├── clients/           # API clients (BaseClient, AuthClient, ProductsClient)
 │   ├── schemas/           # API response schemas and types
 │   ├── test-helpers/      # Test-specific helpers (sanitize, playwright helpers)
 │   ├── test-utils/        # General test utilities (APIExpect, logger, schema-validator)
@@ -469,9 +467,16 @@ playwright-bdd-director/
 
 The repository automates [automationexercise.com](https://www.automationexercise.com):
 
-- `test-suites/auth.md` (`@ui`) and `test-suites/auth-api.md` (`@api`) - the same auth rules through the browser and the API; `src/steps/auth.steps.ts`, `src/steps/auth-api.steps.ts`
-- `test-suites/navigation.md` (Markdown) and `test-suites/header-navigation.feature` (Gherkin) - the same header flows in both formats, sharing step functions in `src/steps/navigation.steps.ts`; the newsletter test case has no step definitions yet, so it is a cyborg test
-- `src/steps/hooks.steps.ts` - a hook attaching the page URL to failed UI tests
+| Spec                                   | Shows                                                                                                                                                                                                                                                                                                                | Steps and code                  |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `test-suites/auth.md` `@ui`            | Markdown suite, Background, fixtures with cleanup (`testUser`, `registeredUser`)                                                                                                                                                                                                                                     | `src/steps/auth.steps.ts`       |
+| `test-suites/auth-api.md` `@api`       | API layer through clients; "Update User City" has a step without code, so the API test stays `fixme`                                                                                                                                                                                                                 | `src/steps/auth-api.steps.ts`   |
+| `test-suites/navigation.md` `@ui`      | Markdown examples table (brands); the newsletter case is a cyborg test: one automated step, the rest skeletons without code                                                                                                                                                                                          | `src/steps/navigation.steps.ts` |
+| `test-suites/cart.feature` `@ui`       | Gherkin: Background, Scenario Outline with tagged Examples, DataTable, DocString, Rule with its own Background, `@e2e` and `@timeout:90000` on a Rule, `@retries:1`, `@fail` on a real bug (quantity 0 and -2 get into the cart), own parameter type `{price}`, one step calling others, a cyborg scenario (invoice) | `src/steps/cart.steps.ts`       |
+| `test-suites/products.feature` `@ui`   | `# language: uk` - Ukrainian keywords, the same step definitions; steps on Page Object methods (`@StepsFor`, a migration path); `@slow`                                                                                                                                                                              | `src/pages/ProductsPage.ts`     |
+| `test-suites/contact-us.feature` `@ui` | A suite migrated from Cucumber: World style steps on `this`; `BeforeAll` / `AfterAll` create and remove the file it uploads                                                                                                                                                                                          | `src/steps/contact-us.steps.ts` |
+
+Hooks (`src/steps/hooks.steps.ts`): `BeforeAll` checks the catalog API once per worker for `@cart`, `Before` logs in a fresh user for `@logged-in`, `AfterStep` attaches the page URL under a failed step (`bdd.step`).
 
 ```bash
 npm run dress             # specs and step definitions, what a person still walks
@@ -554,14 +559,11 @@ npm run format       # Prettier format
 `dress` output:
 
 ```text
-⚠️  test-suites/navigation.md: 4 step(s) walked by a person
-    • Scroll down to Footer
-    • Verify "Subscription" Heading is visible
-    • Enter Email Address and click Arrow Button
-    • Verify "You have been successfully subscribed!" Message is visible
-    💡  Skeletons: npm run steps navigation
+⚠️  test-suites/cart.feature: 2 step(s) walked by a person
+    • And user downloads the invoice (no code: src/steps/cart.steps.ts:74)
+    • Then invoice shows total amount Rs. 500 (no code: src/steps/cart.steps.ts:78)
 
-✅  4 spec(s) ready for the show: 16 tests - 15 auto, 1 cyborg, 0 fixme
+✅  6 spec(s) ready for the show: 27 tests - 24 auto, 2 cyborg, 1 fixme
 ```
 
 ### Unit Tests

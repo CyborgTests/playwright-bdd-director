@@ -40,6 +40,16 @@ Tags: @smoke
 
 ---
 
+### Update User City
+
+- Not automated yet: an API test with a step left without definition stays test.fixme
+
+#### Register New User and verify Account is created
+
+#### Update City and verify it is saved
+
+---
+
 ### Delete User Account
 
 #### Delete Account and verify Login is rejected afterwards
