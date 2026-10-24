@@ -4,8 +4,8 @@ import { execSync } from 'child_process'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
- * CLI wrapper for running playwright tests with different tags. Validation is not done here:
- * `npm run play` runs `dress` first, `npm run coldplay` skips it.
+ * CLI wrapper for running playwright tests with different tags. Nothing to validate first: the
+ * tests are generated from the specs on every run (playwright.config.ts).
  * Usage: npx tsx scripts/play.ts <testType> [suiteName]
  *
  * Examples:
@@ -16,8 +16,11 @@ import { getIcon } from '@/framework/utils/icons'
  *   npx tsx scripts/play.ts ui @smoke      # UI tests tagged @smoke in spec
  */
 
+const TEST_TYPES = ['auto', 'cyborg', 'api', 'ui', 'e2e'] as const
+type TestType = (typeof TEST_TYPES)[number]
+
 interface PlayConfig {
-  testTypes?: ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')[]
+  testTypes?: TestType[]
   suiteNames?: string[]
   tags?: string[] // spec tags as written: '@smoke'
   workers?: number
@@ -25,17 +28,22 @@ interface PlayConfig {
 
 /**
  * Build grep pattern from test types, suite names and spec tags: alternatives inside a group,
- * groups in tag order of test title (TAG.TEST/TYPE, TAG.SUITE, then spec tags)
+ * every group required in any order; a tag ends at a space or the end (`@auth` is not `@auth-api`)
  */
 function buildGrepPattern(config: PlayConfig): string {
   const groups = [config.testTypes, config.suiteNames, config.tags]
     .filter((names): names is string[] => !!names && names.length > 0)
-    .map((names) => names.map((name) => (name.startsWith('@') ? name : `@${name}`)).join('|'))
+    .map((names) =>
+      names.map((name) => escapeRegExp(name.startsWith('@') ? name : `@${name}`)).join('|')
+    )
 
   // Run all tests - no grep filter
   if (groups.length === 0) return ''
-  if (groups.length === 1) return `"${groups[0]}"`
-  return `"${groups.map((group) => `(${group})`).join('.*')}"`
+  return `"${groups.map((group) => `(?=.*(${group})(\\s|$))`).join('')}"`
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**
@@ -93,7 +101,6 @@ Test Types:
   api       Run API tests (@api)
   ui        Run UI tests (@ui)
   e2e       Run E2E tests (@e2e)
-  bdd       Run automated tests generated from Gherkin specs (@bdd)
 
 Examples:
   npm run play auto                 # All automated tests
@@ -110,9 +117,10 @@ Examples:
   npm run play ui auth @smoke       # UI auth tests tagged @smoke
 
 Note:
-  - npm run play runs dress rehearsal (validation) first, npm run coldplay skips it
-  - Cyborg tests use fullyParallel: false (sequential execution)
-  - Auto tests use default worker count from playwright.config.ts
+  - Tests are generated from the specs on every run; a step without step definition is walked
+    by a person, so a test is cyborg until all its steps are automated
+  - api / ui / e2e alone run automated tests; add cyborg for the cyborg ones (ui / e2e only)
+  - Cyborg tests run one at a time; automated tests use the worker count of playwright.config.ts
 `)
 }
 
@@ -142,18 +150,8 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
     return {}
   }
 
-  const validTypes: readonly ('auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')[] = [
-    'auto',
-    'cyborg',
-    'api',
-    'ui',
-    'e2e',
-    'bdd'
-  ]
-  const providedTypes = args.filter(
-    (arg): arg is 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd' =>
-      validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')
-  )
+  const validTypes: readonly string[] = TEST_TYPES
+  const providedTypes = args.filter((arg): arg is TestType => validTypes.includes(arg))
 
   // Validate argument order: all test types must come before suite names
   if (providedTypes.length > 0) {
@@ -162,7 +160,7 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i]
-      if (validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')) {
+      if (validTypes.includes(arg)) {
         lastTypeIndex = i
       } else if (firstSuiteIndex === -1) {
         firstSuiteIndex = i
@@ -184,9 +182,7 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
 
   // If we have valid test types, use them
   if (providedTypes.length > 0) {
-    const suiteNames = args.filter(
-      (arg) => !validTypes.includes(arg as 'auto' | 'cyborg' | 'api' | 'ui' | 'e2e' | 'bdd')
-    )
+    const suiteNames = args.filter((arg) => !validTypes.includes(arg))
     return {
       testTypes: providedTypes,
       suiteNames: suiteNames.length > 0 ? suiteNames : undefined

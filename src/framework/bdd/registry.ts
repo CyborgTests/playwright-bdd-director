@@ -15,7 +15,7 @@ export type StepKeyword = 'Given' | 'When' | 'Then' | 'Step'
  * Given by the runtime, not a Playwright fixture.
  */
 export interface BddContext {
-  tags: readonly string[] // tags of the test: spec tags plus generated @auto, @bdd and suite tag
+  tags: readonly string[] // tags of the test: spec tags, its layer, kind (@auto / @cyborg) and suite
   scenario: string // test title
   testInfo: TestInfo
   step?: BddStep // steps and BeforeStep / AfterStep hooks
@@ -72,6 +72,7 @@ export interface StepDefinition {
   location: string // "src/steps/auth.steps.ts:12"
   world?: string // world style: fixture passed as `this`, no fixtures parameter
   method?: { owner: PomClass; name: string | symbol } // Page Object method decorated with @Given ...
+  pending: boolean // no code in the body yet - the step stays manual (see hasNoCode)
 }
 
 export type HookKind = 'Before' | 'After' | 'BeforeAll' | 'AfterAll' | 'BeforeStep' | 'AfterStep'
@@ -275,6 +276,11 @@ export function matchStepDefinitions(text: string): StepMatch[] {
   })
 }
 
+/** Step definitions in definition order */
+export function getStepDefinitions(): readonly StepDefinition[] {
+  return definitions
+}
+
 /** Hooks in definition order */
 export function getHookDefinitions(): readonly HookDefinition[] {
   return hooks
@@ -349,7 +355,8 @@ function addStepDefinition(
     fixtureNames: method ? [] : world ? [world] : parseFixtureNames(fn),
     location,
     world,
-    method
+    method,
+    pending: hasNoCode(fn)
   })
 }
 
@@ -419,6 +426,27 @@ export function parseFixtureNames(fn: (...args: never[]) => unknown): string[] {
     }
   }
   return names
+}
+
+/**
+ * Function body without a single statement - empty or comments only, `// TODO` included: such a
+ * definition counts as none, its step stays manual. An expression body (`() => page`) is code.
+ */
+export function hasNoCode(fn: (...args: never[]) => unknown): boolean {
+  const source = fn.toString()
+  let end = source.indexOf('(')
+  if (end < 0) return false
+  for (let depth = 0; end < source.length; end++) {
+    if ('{[('.includes(source[end])) depth++
+    if ('}])'.includes(source[end]) && --depth === 0) break
+  }
+  const rest = source
+    .slice(end + 1)
+    .replace(/^\s*=>/, '')
+    .trimStart()
+  if (!rest.startsWith('{')) return false
+  const body = rest.slice(1, rest.lastIndexOf('}'))
+  return body.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '').trim() === ''
 }
 
 /**

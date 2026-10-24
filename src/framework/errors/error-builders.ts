@@ -1,67 +1,7 @@
-import { getIcon } from '../utils/icons'
-
 /**
  * Error builder helpers - eliminate code duplication in error messages
- * All error messages follow consistent format with icon, context, and fix suggestion
+ * All error messages follow a consistent format: context and fix suggestion
  */
-
-/**
- * Build duplicate ID error message
- * @param elementType - 'Suite ID', 'Test Case ID', 'Step ID'
- * @param id - The duplicate ID value
- * @param files - Array of file paths where ID appears
- */
-export function buildDuplicateIDError(elementType: string, id: string, files: string[]): string {
-  const icon = getIcon(getIconType(elementType))
-  const fileList = files.map((f) => `    • ${f}`).join('\n')
-
-  return (
-    `${icon}  Duplicate ${elementType}: [${id}]\n` +
-    `  Files:\n${fileList}\n` +
-    `  Fix: Change the ID in one of the files to make it unique`
-  )
-}
-
-/**
- * Build duplicate title error message
- * @param elementType - 'Test Suite', 'Test Case'
- * @param title - The duplicate title value
- * @param files - Array of file paths where title appears
- */
-export function buildDuplicateTitleError(
-  elementType: string,
-  title: string,
-  files: string[]
-): string {
-  const icon = getIcon(getIconType(elementType))
-  const fileList = files.map((f) => `    • ${f}`).join('\n')
-
-  return (
-    `${icon}  Duplicate ${elementType} title: "${title}"\n` +
-    `  Files:\n${fileList}\n` +
-    `  Fix: Each ${elementType.toLowerCase()} must have a unique title`
-  )
-}
-
-/**
- * Build duplicate title within file error
- */
-export function buildDuplicateTitleInFileError(
-  file: string,
-  title: string,
-  positions: number[]
-): string {
-  const icon = getIcon('testCase')
-  const positionStr = positions.map((p) => `#${p}`).join(' and ')
-
-  return (
-    `${icon}  Duplicate Test Case title within same file\n` +
-    `  File: ${file}\n` +
-    `  Title: "${title}"\n` +
-    `  Positions: Test Case ${positionStr}\n` +
-    `  Fix: Use unique titles for test cases within the same suite`
-  )
-}
 
 /**
  * Build file not found error
@@ -220,15 +160,4 @@ export function buildBackgroundTagsError(line: string, file: string): string {
     `  File: ${file}\n` +
     `  Fix: Background runs before every test of the suite - put the tags under the ## suite heading`
   )
-}
-
-/**
- * Get icon type from element name
- */
-function getIconType(elementType: string): 'suite' | 'testCase' | 'step' | 'error' {
-  const lower = elementType.toLowerCase()
-  if (lower.includes('suite')) return 'suite'
-  if (lower.includes('test case')) return 'testCase'
-  if (lower.includes('step')) return 'step'
-  return 'error'
 }

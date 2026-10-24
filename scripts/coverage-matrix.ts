@@ -3,13 +3,18 @@ import fs from 'fs'
 import path from 'path'
 
 import { CONFIG } from '@/framework/config'
-import { collectCoverageMatrix, filterCoverageByTags } from '@/framework/reporting/coverage-matrix'
+import {
+  collectCoverageMatrix,
+  type CoverageMatrix,
+  filterCoverageByTags
+} from '@/framework/reporting/coverage-matrix'
 import { renderConsole, renderHtml, renderMarkdown } from '@/framework/reporting/coverage-renderers'
 import { getErrorMessage } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
- * Coverage matrix: which spec test cases are covered by cyborg / api / ui / e2e tests
+ * Coverage matrix: every test generated from the specs - its layer, automated or walked by a
+ * person (cyborg), share of automated steps
  * Usage: npm run matrix [-- @tags] [--json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]
  *
  * Examples:
@@ -17,24 +22,21 @@ import { getIcon } from '@/framework/utils/icons'
  *   npm run matrix -- --html --json        # + test-results/coverage-matrix.{html,json}
  *   npm run matrix -- --md=docs/matrix.md  # Markdown to custom path
  *   npm run matrix -- --min=80             # exit 1 when automated coverage < 80%
- *   npm run matrix -- @smoke               # only test cases tagged @smoke in spec
+ *   npm run matrix -- @smoke               # only tests tagged @smoke in spec
  */
 
 const FORMATS = {
-  json: (matrix: ReturnType<typeof collectCoverageMatrix>) =>
-    `${JSON.stringify(matrix, null, 2)}\n`,
+  json: (matrix: CoverageMatrix) => `${JSON.stringify(matrix, null, 2)}\n`,
   html: renderHtml,
   md: renderMarkdown
 } as const
 
-try {
-  main()
-} catch (error: unknown) {
+main().catch((error: unknown) => {
   console.error(`${getIcon('error')}  `, getErrorMessage(error))
   process.exit(1)
-}
+})
 
-function main() {
+async function main() {
   const args = process.argv.slice(2)
   const minArg = args.find((arg) => arg.startsWith('--min='))
   const minPercent = minArg ? Number(minArg.slice('--min='.length)) : null
@@ -57,13 +59,13 @@ function main() {
   }
 
   const tags = args.filter((arg) => arg.startsWith('@'))
-  const matrix =
-    tags.length > 0 ? filterCoverageByTags(collectCoverageMatrix(), tags) : collectCoverageMatrix()
+  const collected = await collectCoverageMatrix()
+  const matrix = tags.length > 0 ? filterCoverageByTags(collected, tags) : collected
   const color = process.stdout.isTTY && !process.env.NO_COLOR
   console.log(`${renderConsole(matrix, { color })}\n`)
 
   for (const error of matrix.errors) {
-    console.warn(`${getIcon('warning')}  Skipped ${error}`)
+    console.warn(`${getIcon('warning')}  Not generated: ${error}`)
   }
 
   for (const [format, render] of Object.entries(FORMATS)) {

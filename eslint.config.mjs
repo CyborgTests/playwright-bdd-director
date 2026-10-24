@@ -42,6 +42,8 @@ export default tseslint.config(
       'blob-report/**',
       'playwright-report/**',
       '.claude/**',
+      // Tests generated from the specs on every run
+      '.director/**',
       'dist/**',
       'build/**',
       // Forked Playwright packages (ignore)

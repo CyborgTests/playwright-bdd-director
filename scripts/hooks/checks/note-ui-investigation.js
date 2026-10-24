@@ -6,7 +6,7 @@
  * memory of old locators or a prior summary is the most common source of broken tests.
  * Never blocks — renames and comment fixes need no live pass.
  */
-const UI_CODE = /^(tests\/automated\/(ui|e2e)\/.+|tests\/cyborg\/.+|src\/pages\/.+)\.ts$/
+const UI_CODE = /^src\/(pages|steps)\/.+\.ts$/
 
 module.exports = {
   name: 'note-ui-investigation',
@@ -15,7 +15,7 @@ module.exports = {
   run({ relPath }) {
     if (!UI_CODE.test(relPath)) return null
     return {
-      context: `${relPath} is UI test / Page Object code. If the change relies on DOM structure, copy or behavior not observed live in this session, run the ui-explorer skill (Playwright MCP) first instead of guessing from existing locators.`
+      context: `${relPath} is step definition / Page Object code. If the change relies on DOM structure, copy or behavior not observed live in this session, run the ui-explorer skill (Playwright MCP) first instead of guessing from existing locators.`
     }
   }
 }

@@ -5,7 +5,7 @@ paths:
   - 'src/config/**'
   - 'scripts/*.ts'
   - 'scripts/patch-playwright.js'
-  - 'tests/unit/**'
+  - 'scripts/hooks/*.test.ts'
   - 'packages/**'
   - 'playwright.config.ts'
   - 'vitest.config.ts'
@@ -15,19 +15,20 @@ paths:
 
 ## Design
 
-- Layers: `core/` parses (MD, TS via ts-morph, matching), `validation/` decides, `generation/` writes files, `reporting/` prints. Keep parsing and decision logic pure; file I/O and process exit stay at the edges (`scripts/*.ts`, writers in `generation/`).
-- Paths and toggles come from `CONFIG` (`src/framework/config.ts`, env-overridable). Never hardcode `test-suites`, `tests/...` or the tags file path elsewhere.
-- MD heading syntax comes from `MD_HEADINGS` (`constants/markdown.ts`); file-type rules from `constants/test-files.ts`.
+- Layers: `core/` parses specs (Markdown, Gherkin, one spec document), `bdd/` registers step definitions and generates tests (`build.ts` writes them), `validation/` checks and formats Markdown, `reporting/` prints and writes reports.
+- Keep parsing and generation pure; file I/O and process exit stay at the edges (`scripts/*.ts`, `bdd/build.ts`, `bdd/prepare.ts`).
+- Paths and toggles come from `CONFIG` (`src/framework/config.ts`, env-overridable). Never hardcode `test-suites`, `.director/tests` or `src/steps` elsewhere.
+- MD heading syntax comes from `MD_HEADINGS` (`constants/markdown.ts`); kind and layer tags from `constants/tags.ts`.
 - Errors carry an actionable fix hint (`errors/error-builders.ts`); console output goes through `reporting/console-formatter.ts` and `utils/icons.ts`.
-- `stage` must be idempotent: a second run on unchanged input changes nothing. Auto-fix only structure (titles, steps, tags), never implemented step bodies.
+- Generation is deterministic and idempotent: the same specs and step definitions give byte-identical test files; `stage` run twice changes nothing. Generated tests are never committed and never hand-edited.
 - Generated code must pass Prettier + ESLint as emitted (the pipeline formats, but don't rely on it to fix broken syntax).
 - Path handling is cross-platform: `path.join`/`path.resolve`, normalize separators before comparing; keep path-traversal protection in readers.
 
-## Unit tests (Vitest, `tests/unit/**`)
+## Unit tests (Vitest, `<module>.test.ts` next to the module)
 
 - Every behavior change in `src/framework/**` gets a unit test; bug fixes start with a failing test.
-- Test pure functions with inline MD/TS fixtures; use temp dirs for file-writing code, never the real `test-suites/` or `tests/`.
-- `npm run test:run` must stay green; `npm run test:coverage` keeps critical modules (`core`, `validation`, `generation`) at 90%+.
+- Test pure functions with inline specs and step definitions (`clearStepDefinitions()` between tests); use temp dirs for file-writing code, never the real `test-suites/` or `src/steps/`.
+- `npm run test:run` must stay green; `npm run test:coverage` keeps critical modules (`core`, `bdd`, `validation`) at 90%+.
 
 ## Director UI (`packages/director/**`)
 

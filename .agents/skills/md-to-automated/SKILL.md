@@ -1,27 +1,27 @@
 ---
 name: md-to-automated
-description: Use when automating a Markdown suite (test-suites/*.md) or re-syncing an implemented automated test after its MD changed — autogen skeleton, move to api/ui/e2e, implement step by step, keep step text verbatim.
+description: Use when automating the steps of a spec (test-suites/*.md or *.feature) — step definition skeletons, implementing them with Page Objects and clients, until its tests become @auto.
 ---
 
-# Markdown Suite → Automated Test
+# Automate a Suite Step by Step
 
 ## Before you start
 
-- MD is final for this pass and valid (`npm run dress`). Code adapts to MD, never the other way round.
+- The spec is final for this pass and `npm run dress` has no errors. Code adapts to the spec, never the other way round.
 - Rules: `md-specs`, `playwright-tests` (+ `api-testing` for API).
-- Pick the layer(s): API for contract/data rules, UI/E2E for user journeys. One MD case may have several implementations (ID suffixes).
+- Steps of other suites may already cover yours - same text, same definition. Different wording of the same action: register the existing step function under the new text (`Step('…', existingStep)`).
 
 ## Steps
 
-1. **Skeleton**: `npm run autogen -- --dry-run`, then `npm run autogen` (only MDs with no automated test yet) → `tests/automated/todo/<base>.auto.test.ts` (`test.describe.fixme`, every step `// TODO`).
-2. **Move**: to `tests/automated/<api|ui|e2e>/<base>.<api|ui|e2e>.test.ts`; set describe title suffix and tags per `add-test` step 3; remove `.fixme`.
-3. **Implement one test case at a time**:
-   - UI/E2E: reproduce the case live (`ui-explorer`) before writing code.
-   - Fill each `test.step` through fixtures (Page Objects, clients); add missing ones via `add-page-object` / `update-api-client`.
-   - Step not applicable at this layer → keep the step, comment inside (`// WONTDO: <reason>` if permanent).
-   - Run just that case: `npx playwright test <file> -g "<case title>"`; fix before moving on.
-4. **MD changed later** (implemented tests are not rewritten by `stage`): diff the MD against the test — titles, case count/order, step count/text — and update the code verbatim; keep step bodies, rewrite only what the new step means.
-5. **Verify**: `npm run dress` (file absent from findings), `npm run play <type> <base>` green on the first attempt, `npx eslint <file>`.
+1. **List**: `npm run dress` - the steps a person walks in this suite (no definition or one without code).
+2. **Skeletons**: `npm run steps <base>` → `src/steps/<base>.steps.ts`, one per missing expression. A skeleton has no code, so its step stays manual until implemented.
+3. **Implement one step at a time**:
+   - UI/E2E: reproduce it live (`ui-explorer`) before writing code.
+   - Destructure the fixtures it needs (Page Objects, clients, data like `testUser`); add missing ones via `add-page-object` / `update-api-client` and register fixtures in `src/fixtures/`.
+   - Parameters from the expression (`{string}`, `{int}`); rename the `_string` skeleton parameter when using it.
+   - Run the test(s) using it: `npm run play auto <base>` once all steps of a test are done, else `npx playwright test --grep "<title>"`.
+4. **API tests** stay `fixme` until every step is implemented - finish a test case before starting the next.
+5. **Verify**: `npm run dress` (suite no longer listed, no unused definitions), `npm run play <api|ui|e2e> <base>` green on the first attempt, `npx eslint src/steps`.
 6. Review with `senior-aqa-reviewer`.
 
-Done when: every MD case/step maps 1:1 to the test, `dress` is clean and the suite is green.
+Done when: every step of the suite has an implemented definition, its tests are `@auto` and green.

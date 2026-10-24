@@ -50,3 +50,6 @@ yarn-error.log*
 .claude/settings.local.json
 CLAUDE.local.md
 .playwright-mcp/
+
+# Tests generated from the specs on every run
+.director/

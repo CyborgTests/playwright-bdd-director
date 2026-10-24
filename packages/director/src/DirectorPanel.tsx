@@ -128,7 +128,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
         message: 'Stage complete!'
       })
 
-      // Refresh files after stage (may have generated new test files)
+      // Refresh files after stage (specs may have been reformatted)
       const { getFiles } = await import('./wsClient')
       const updatedFiles = await getFiles()
       onFilesRefresh?.(updatedFiles)

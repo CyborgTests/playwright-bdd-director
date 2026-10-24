@@ -9,3 +9,6 @@ packages/trace/
 packages/trace-viewer/
 packages/web/
 packages/*/dist/
+
+# Tests generated from the specs on every run
+.director/

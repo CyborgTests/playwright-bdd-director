@@ -1,3 +1,4 @@
+@ui
 Feature: Header Navigation With Step Definitions
   The same header flows as navigation.md, automated by shared step definitions
 

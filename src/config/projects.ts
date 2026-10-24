@@ -3,11 +3,11 @@ import { Project } from '@playwright/test'
 import { defaultDevice } from './devices'
 
 /**
- * Cyborg project configuration
+ * Cyborg tests: generated tests with at least one step a person walks
  */
 export const cyborgProject: Project = {
   name: 'cyborg',
-  testMatch: /.*\.cyborg\.test\.ts$/,
+  grep: /@cyborg/,
   timeout: 0,
   fullyParallel: false,
   // One person walks the tests: one browser and control panel at a time, other projects stay parallel
@@ -18,11 +18,11 @@ export const cyborgProject: Project = {
 }
 
 /**
- * Automated project configuration
+ * Automated tests: generated tests whose every step has a step definition
  */
 export const automatedProject: Project = {
   name: 'automated',
-  testMatch: /.*\.(auto|api|ui|e2e)\.test\.ts$/,
+  grep: /@auto/,
   timeout: 45000,
   use: {
     ...defaultDevice,

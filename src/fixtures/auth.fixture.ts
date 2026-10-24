@@ -1,8 +1,6 @@
 import { faker } from '@faker-js/faker'
 
 import { AuthClient } from '@/clients/AuthClient'
-import { HomePage } from '@/pages/HomePage'
-import { LoginPage } from '@/pages/LoginPage'
 import { TestUser } from '@/schemas/auth.types'
 
 import { test as base } from './base.fixture'
@@ -13,13 +11,8 @@ import { test as base } from './base.fixture'
  */
 interface AuthFixture {
   authClient: AuthClient
-  testUser: TestUser
-  authenticatedUser: {
-    authClient: AuthClient
-    homePage: HomePage
-    loginPage: LoginPage
-    testUser: TestUser
-  }
+  testUser: TestUser // fresh user data; its account is deleted after the test if one was created
+  registeredUser: TestUser // testUser with an account registered through the API
   wrongPassword: string
 }
 
@@ -56,12 +49,19 @@ function generateTestUser(): TestUser {
 
 /**
  * Auth test fixture extending base fixture
- * Provides auth-specific utilities: testUser, authClient, authenticatedUser, etc.
+ * Provides auth-specific utilities: testUser, registeredUser, authClient, wrongPassword
  */
 export const test = base.extend<AuthFixture>({
-  testUser: async ({}, use) => {
+  testUser: async ({ apiContext }, use) => {
     const user = generateTestUser()
     await use(user)
+    // Cleanup: registration steps or registeredUser may have created the account; ignore when none
+    await new AuthClient(apiContext).deleteAccount(user.email, user.password).catch(() => {})
+  },
+
+  registeredUser: async ({ testUser, authClient }, use) => {
+    await authClient.expectRegistered(await authClient.register(testUser))
+    await use(testUser)
   },
 
   wrongPassword: async ({}, use) => {
@@ -71,22 +71,6 @@ export const test = base.extend<AuthFixture>({
 
   authClient: async ({ apiContext }, use) => {
     await use(new AuthClient(apiContext))
-  },
-
-  authenticatedUser: async ({ testUser, apiContext, homePage, loginPage }, use) => {
-    const authClient = new AuthClient(apiContext)
-    await authClient.register(testUser)
-
-    try {
-      await use({ testUser, authClient, homePage, loginPage })
-    } finally {
-      // Cleanup: ignore errors if account already deleted
-      try {
-        await authClient.deleteAccount(testUser.email, testUser.password)
-      } catch {
-        // Ignore — account may already be deleted by test
-      }
-    }
   }
 })
 

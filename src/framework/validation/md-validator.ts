@@ -190,6 +190,7 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
  * - Exactly one space after ##/###/####/-
  * - Correct blank lines between headers and comments
  * - Remove multiple blank lines
+ * - `---` separator before every test case (###), nowhere else
  * Returns true if file was modified
  */
 export function autoFixMDFormatting(filePath: string): boolean {
@@ -199,7 +200,8 @@ export function autoFixMDFormatting(filePath: string): boolean {
   } catch {
     return false
   }
-  const lines = content.split('\n')
+  // Separators are placed anew below - one before every test case
+  const lines = content.split('\n').filter((line) => line.trim() !== MD_HORIZONTAL_RULE)
 
   const isComment = (line: string): boolean => {
     const trimmed = line.trim()
@@ -317,7 +319,16 @@ export function autoFixMDFormatting(filePath: string): boolean {
     }
   }
 
-  const newContent = finalLines.join('\n')
+  const separated: string[] = []
+  for (const line of finalLines) {
+    if (isHeading(line, 3)) {
+      if (separated.length > 0 && !isBlank(separated[separated.length - 1])) separated.push('')
+      separated.push(MD_HORIZONTAL_RULE, '')
+    }
+    separated.push(line)
+  }
+
+  const newContent = separated.join('\n')
   const modified = content !== newContent
 
   if (modified) {

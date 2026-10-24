@@ -20,7 +20,7 @@ description: Use to diagnose a failing or flaky Playwright test — reads traces
    - test data — collision, missing cleanup, dependence on another test's data;
    - environment — site down, ads/overlays (see ad blocking in `base.fixture.ts`), network;
    - app regression — assertion is right, the app changed;
-   - framework — `dress`/sync failure or generated code issue → `md-sync-checker` / `framework-change`.
+   - framework — generation stopped the run (`npm run dress` shows why) or generated code issue → `framework-change`.
 4. **Still unclear** → reproduce live with `ui-explorer`; a diagnosis without trace evidence or live reproduction is unverified.
 5. **Recommend**: root cause, `file:line`, evidence, the minimal fix — never weakening assertions. App bug → `test.fixme()` + `FIXME:`.
 

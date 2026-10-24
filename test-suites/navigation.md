@@ -1,10 +1,16 @@
 ## Site Navigation
 
-- Open key pages of AutomationExercise from the header
+Tags: @ui
+
+- Open key pages of AutomationExercise from the header and footer
+
+---
 
 ### Background
 
 #### Open Home Page
+
+---
 
 ### Open "Signup / Login" Page from Header
 
@@ -16,6 +22,8 @@ Tags: @smoke
 
 #### Verify "New User Signup!" Form is visible
 
+---
+
 ### Return to Home Page from "Signup / Login" Page
 
 #### Click "Signup / Login" Button in Header
@@ -23,3 +31,17 @@ Tags: @smoke
 #### Click "Home" Button in Header
 
 #### Verify Home Page is shown
+
+---
+
+### Subscribe to Newsletter from Footer
+
+- Not automated yet: steps without step definitions are walked by a person (cyborg test)
+
+#### Scroll down to Footer
+
+#### Verify "Subscription" Heading is visible
+
+#### Enter Email Address and click Arrow Button
+
+#### Verify "You have been successfully subscribed!" Message is visible

@@ -1,6 +1,10 @@
 ## [] Authentication Tests
 
-- Manual, Hybrid, API and UI coverage for User auth flows
+Tags: @ui
+
+- UI coverage of User auth flows; API coverage lives in auth-api.md
+
+---
 
 ### User Registration
 
@@ -27,6 +31,8 @@
 - Click "Create Account" Button
 - Verify "Account Created Successfully!" Message appears
 
+---
+
 ### Login With Wrong Password
 
 - Verify system rejects Login with incorrect Password
@@ -42,6 +48,8 @@
 
 - Click "Login" Button
 - Verify "Invalid Email or Password!" Error Message appears
+
+---
 
 ### Verify Login Without Email
 
@@ -60,6 +68,8 @@
 - Click "Login" button
 - Verify validation error appears
 - Verify user remains on login page
+
+---
 
 ### User Login
 
@@ -80,6 +90,8 @@ Tags: @smoke
 - Click "Login" Button
 - Verify User is redirected to Account Page
 - Verify "Logged in as [user name]" Message appears in header
+
+---
 
 ### Delete User Account
 

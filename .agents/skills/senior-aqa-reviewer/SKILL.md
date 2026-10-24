@@ -1,6 +1,6 @@
 ---
 name: senior-aqa-reviewer
-description: Use before handing off new or changed tests, Page Objects, clients or fixtures — a senior AQA review of architecture, assertion depth, determinism, data isolation and MD sync.
+description: Use before handing off new or changed step definitions, Page Objects, clients or fixtures — a senior AQA review of architecture, assertion depth, determinism, data isolation and spec fit.
 ---
 
 # Senior AQA Review
@@ -13,7 +13,7 @@ description: Use before handing off new or changed tests, Page Objects, clients 
 ## Steps
 
 1. **Architecture**: Page Objects / clients / fixtures responsibilities; no raw `page.*` / `request.*` in tests; `private readonly` locators; method order; fixture injection.
-2. **Design**: AAA; every MD step is a `test.step` with verbatim text; negative paths covered where the MD or endpoint implies them.
+2. **Design**: each step definition does exactly what its spec step says (action and check); AAA across the test; negative paths covered where the spec or endpoint implies them.
 3. **Assertion depth**: business outcome asserted, not only visibility; API — exact status + schema + values.
 4. **Determinism**: no sleeps / `waitForLoadState`; sync on responses or web-first assertions after async actions; locators semantic and scoped; unique faker data; cleanup on failure paths.
 5. **Hygiene**: no `.only`, `page.pause()`, `console.log`, empty catch, commented-out code; annotations (`TODO/FIXME/NOTE/WONTDO`) used correctly.

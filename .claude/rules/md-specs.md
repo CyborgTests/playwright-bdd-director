@@ -1,50 +1,38 @@
 ---
-description: Spec formats (test-suites/*.md, Gherkin *.feature with generated tests), IDs and implementation suffixes, file naming and spec ↔ TS sync contract.
+description: Specs (test-suites/*.md and Gherkin *.feature), layers, tags and IDs, and how step definitions turn them into generated auto / cyborg tests.
 paths:
   - 'test-suites/**/*.md'
   - 'test-suites/**/*.feature'
   - 'src/steps/**/*.ts'
-  - 'tests/automated/**/*.ts'
-  - 'tests/cyborg/**/*.ts'
-  - 'src/test-constants/tags.ts'
 ---
 
-# Markdown Specs & Sync Contract
+# Specs & Generated Tests
 
 ## Format
 
-- `## ` suite, `### ` test case, `#### ` step. Bullet lines (`- …`) under any heading are free-form details/test data, `---` is an optional separator — both ignored by the validator.
-- One MD file = one suite. Base name is unique across `test-suites/**` and becomes the suite tag (`auth.md` → `TAG.SUITE.AUTH` = `@auth`).
-- `Tags: @smoke @JIRA-1` right under a `##`/`###` heading tags the suite / case (Playwright tags, strings next to `TAG.*` in tests).
-- A markdown table under a `###` heading (after `Tags:`) makes the case parametrized: `<column>` placeholders in title/steps; TS loops over inline string data (`for (const example of [{ column: '…' }])`) with `${example.column}` in titles; the title needs a unique-valued placeholder.
-- The extension picks the approach: `.md` tests are written by people and synced; a Gherkin `.feature` is automated by step definitions `src/steps/**/*.steps.ts` (`Given/When/Then` from `./bdd`, fixtures destructured in the first parameter).
-- `stage` fully generates the tests of a `.feature`: `tests/automated/bdd/**/*.auto.test.ts` and `tests/cyborg/bdd/**/*.cyborg.test.ts` (every step `manualStep`). The folders mark them - never edit them, change the spec or the steps.
-- A hand-written test of a `.feature` spec fails `dress` - move the spec to `.md` to keep it.
-- Hooks, step context, special tags: `docs/step-definitions.md`. New steps go to step files with fixtures; World style and Page Object decorators are for migrated suites only. Step functions (`Given(…)` returns one) are called directly from other tests; `runStep` is for generated tests only.
+- Markdown: `##` suite, `###` test case (`### Background` - steps before every case), `####` step. Bullet lines (`- …`) under any heading are notes for people, not part of the test. `npm run stage` formats the file and puts `---` before every `###`.
+- Gherkin `.feature`: anything the parser accepts - Background, Rule (own Background), Scenario Outline + Examples (tagged too), DataTable, DocString, `# language:`.
+- One spec file = one suite. Base name is unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) and becomes the suite tag `@auth`.
+- `Tags: @smoke @JIRA-1` right under a `##`/`###` heading (Gherkin: `@tag` lines) tags the suite / case.
+- A Markdown table under a `###` heading (after `Tags:`) makes the case parametrized: `<column>` placeholders in title/steps, one test per row; the title needs a unique-valued placeholder.
+- Optional bracket IDs `## [TS01] …`, `### [TC01-01] …` stay in test titles; case IDs are unique within a spec, `[]` is an empty ID.
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
-- IDs and titles are globally unique across all MD files.
 
-## IDs and implementation suffixes
+## Layers
 
-- Optional bracket IDs on suite/case: `## [TS01] …`, `### [TC01-01] …`; `[]` = empty ID for suffix-only matching.
-- MD is the source of truth: MD has an ID → every TS implementation carries it; MD has none → TS has none.
-- Non-empty ID + suffix uses a dash: `[TC01-01-API]`, `[TC01-01-CYBORG]`. Empty ID + suffix has no dash: `[AUTO]`, `[CYBORG]`, `[UI]`.
-- Other formats (`TC-001:`) are not IDs; the whole title is compared.
+- Every test has exactly one layer tag `@api`, `@ui` or `@e2e`: on the suite, overridden by a case (Rule, Examples) tag. No layer or two on one level stops the run.
+- `@auto` / `@cyborg` are set by the Director - specs never write them.
 
-## File naming & placement
+## Generated tests
 
-- Tests: `<md-base>.<type>.test.ts`, type ∈ `cyborg | auto | api | ui | e2e`; the base name before the first dot pairs the file with its MD.
-- `tests/cyborg/` — cyborg; `tests/automated/{api,ui,e2e}/` — implemented automation; `tests/automated/todo/` — generated AUTO skeletons (ignored by the runner); `tests/archived/` — orphans.
-- MD subfolders (`test-suites/e2e/x.md`) are mirrored by generated files (`tests/cyborg/e2e/x.cyborg.test.ts`). Suites in `CONFIG.noCyborg` (folder or MD path inside `test-suites/`, no `.md`) get no cyborg file from `stage`.
-- Tags per describe: execution `TAG.TEST.*` (`AUTO` / `CYBORG`), optional layer `TAG.TYPE.*`, suite `TAG.SUITE.*`.
+- Every run generates `.director/tests/<spec path>.test.ts` (gitignored) from the spec and the step definitions `src/steps/**/*.steps.ts`; never edit them, change the spec or the steps.
+- A step with a definition → `autoStep`; without one, or with one without code (empty body or comments only, `// TODO` or not) → `manualStep` walked by a person.
+- Any manual step → the test is `@cyborg` (UI/E2E only; an `@api` test stays `test.fixme`); all steps automated → `@auto`. A manual Background step makes every test under it cyborg.
+- Steps: `Given/When/Then/Step` from `./bdd`, fixtures destructured in the first parameter; Markdown steps have no keyword (`Step(…)`); `/` and `( )` in Cucumber Expressions need escaping for literal text. Different wordings share code by passing one step function to another definition.
+- Hooks, step context, special tags: `docs/step-definitions.md`. New steps go to step files with fixtures; World style and Page Object decorators are for migrated suites only. `autoStep` is for generated tests only.
 
-## Sync contract
+## Workflow
 
-- Suite title, test case count/titles, step count/titles and spec tags (any order) in each TS file match the MD (with ID/suffix rules above).
-- `npm run dress` checks it read-only; `npm run stage` fixes what it can (MD formatting, cyborg structure and spec tags, empty skeletons, `TAG.SUITE`) and archives orphans.
-- `stage` aligns cases/steps by title or ID, never by position: inserts missing ones as skeletons in place, only reports removed or reordered ones. Steps of cyborg files written with `test.step()` are not synced.
-- `stage` never rewrites implemented automated tests — fix their titles/steps by hand, keeping step bodies. Only exception: examples data arrays, synced everywhere (spec data, not code).
-- TS side: all outermost describes form the suite (title/tags from the first); nested describes only group; loop-declared tests count once; `test.use`, `describe.configure`, runtime `test.skip(cond)`/`test.slow()` are not cases.
-- Named `test.beforeAll('<case title>')` / `test.afterAll('<case title>')` are MD test cases (setup/teardown with MD steps); unnamed hooks are not.
-- A `Background` case (Gherkin `Background:` or MD `### Background`) is implemented by `test.beforeEach('Background', …)`; other `beforeEach`/`afterEach` hooks are not cases.
-- Changing what a test checks starts in MD; code follows. Never edit MD just to make code pass `dress`.
+- `npm run dress` (read-only): invalid specs, missing layers, ambiguous steps (errors); steps a person walks, unused definitions (warnings).
+- `npm run steps <suite>` appends skeletons for steps without definition to `src/steps/<suite>.steps.ts`; implement them with Page Objects / clients.
+- Changing what a test checks starts in the spec; step definitions follow. Never reword a spec just to match an existing definition when the meaning differs.

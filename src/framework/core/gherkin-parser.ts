@@ -68,15 +68,23 @@ export function parseGherkinFile(featurePath: string): ParsedMD {
 }
 
 export function parseGherkinDocument(featurePath: string) {
+  return parseGherkinSource(fs.readFileSync(featurePath, 'utf-8'), featurePath)
+}
+
+/**
+ * @param specPath - named in the error
+ * @throws Error listing every problem of the source
+ */
+export function parseGherkinSource(source: string, specPath: string) {
   const parser = new Parser(
     new AstBuilder(IdGenerator.incrementing()),
     new GherkinClassicTokenMatcher()
   )
   try {
-    return parser.parse(fs.readFileSync(featurePath, 'utf-8'))
+    return parser.parse(source)
   } catch (error: unknown) {
     // Parser message already lists every problem as "(line:column): ..."
-    throw new Error(`Invalid Gherkin in ${featurePath}\n${getErrorMessage(error)}`, {
+    throw new Error(`Invalid Gherkin in ${specPath}\n${getErrorMessage(error)}`, {
       cause: error
     })
   }

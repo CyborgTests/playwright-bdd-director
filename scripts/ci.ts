@@ -23,7 +23,7 @@ function main(): void {
     process.exit(1)
   }
 
-  // Out of sync specs make test results meaningless - stop right away
+  // Invalid specs or step definitions stop the run anyway - stop right away
   if (!run('Dress rehearsal', 'tsx scripts/dress-rehearsal.ts')) process.exit(1)
 
   const failed = [

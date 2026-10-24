@@ -17,7 +17,7 @@ description: Use when adding or changing guidance for AI agents in this repo —
    - glob-scoped standard → `.claude/rules/<topic>.md`;
    - procedure / checklist → `.agents/skills/<name>/SKILL.md`;
    - needs own tools or MCP → `.claude/agents/<name>.md` + `.devin/agents/<name>/AGENT.md`;
-   - mechanically checkable → `scripts/hooks/checks/<name>.js` + `checks/index.js` + a test in `tests/unit/ai-hooks.test.ts`.
+   - mechanically checkable → `scripts/hooks/checks/<name>.js` + `checks/index.js` + a test in `scripts/hooks/hooks.test.ts`.
 2. **Write it** in the target format; remove anything it duplicates elsewhere (one fact, one place).
 3. **Wire it**:
    - new/renamed rule → index in `AGENTS.md` + `.cursor/rules/00-rules.mdc`;
@@ -25,6 +25,6 @@ description: Use when adding or changing guidance for AI agents in this repo —
    - subagent → identical body in the Devin mirror;
    - hook config → only `scripts/hooks/dispatch.js` is registered (`.claude/settings.json`, `.devin/hooks.v1.json`); Codex runs it through `scripts/codex-preflight.js`.
 4. **Budgets**: `AGENTS.md` ≤ 100 lines; rules, skills, agents ≤ 70. Over budget → split or move detail to `references/`.
-5. **Verify**: `node scripts/spec-drift-audit.js` (0 failures) and `npx vitest run tests/unit/ai-hooks.test.ts` if hooks changed.
+5. **Verify**: `node scripts/spec-drift-audit.js` (0 failures) and `npx vitest run scripts/hooks` if hooks changed.
 
 Done when: the guidance lives in exactly one place, all pointers reference it, and `node scripts/spec-drift-audit.js` passes.

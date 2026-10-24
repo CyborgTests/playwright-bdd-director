@@ -14,13 +14,15 @@ import {
 } from './registry'
 
 /**
- * Third argument of runStep: Gherkin DataTable rows or DocString of the step (passed to the step
- * function last), and the spec language for a non-English title (`Дано …` → `uk`)
+ * Third argument of autoStep: Gherkin DataTable rows or DocString of the step (passed to the step
+ * function last), the spec language for a non-English title (`Дано …` → `uk`); `keyword: false`
+ * for a Markdown step whose text starts with a word like "Given"
  */
 export interface StepOptions {
   dataTable?: string[][]
   docString?: string
   language?: string // Gherkin dialect code (`# language: uk`), English by default
+  keyword?: false // title is the step text as is - Markdown steps have no keyword
 }
 
 /**
@@ -52,17 +54,25 @@ export class DataTable {
 }
 
 /**
- * Run step definition matching step title ("Given user opens the home page") as a test.step with
- * that title, inside BeforeStep / AfterStep hooks registered for the test (useStepHook).
- * Fixtures are those the definition destructures - the generator passes them.
- * @throws Error for no matching definition or several matching ones
+ * Automated step of a generated test: runs the step definition matching the title ("Given user
+ * opens the home page", Markdown "Open Home Page") as a test.step with that title, inside
+ * BeforeStep / AfterStep hooks registered for the test (useStepHook). A step without definition
+ * is a `manualStep` instead - a person walks it. Fixtures are those the definition destructures -
+ * the generator passes them.
+ * @throws Error for no matching definition, several matching ones or a definition without code
  */
-export async function runStep(
+export async function autoStep(
   title: string,
   fixtures: Record<string, unknown> = {},
   options: StepOptions = {}
 ): Promise<void> {
-  const { definition, params } = findStepDefinition(title, options.language)
+  const { definition, params } = findStepDefinition(
+    options.keyword === false ? title : stripStepKeyword(title, options.language)
+  )
+  if (definition.pending) {
+    throw new Error(`Step definition at ${definition.location} has no code
+  Fix: Implement it - until then generated tests walk the step by hand`)
+  }
   const args = [...params, ...toStepArgument(options)]
   const testInfo = test.info()
   const stepHooks = stepHooksByTest.get(testInfo) ?? []
@@ -129,7 +139,7 @@ export async function runHook(
 }
 
 /**
- * Register a BeforeStep / AfterStep hook for the current test - every runStep of the test (and its
+ * Register a BeforeStep / AfterStep hook for the current test - every autoStep of the test (and its
  * Backgrounds) runs it. Called from a beforeEach the generator emits before the Backgrounds.
  * @throws Error when the hook was renamed or removed since the test was generated
  */
@@ -153,7 +163,7 @@ function findHook(kind: HookKind, title: string): HookDefinition {
   const hook = getHookDefinitions().find((h) => h.kind === kind && h.title === title)
   if (!hook) {
     throw new Error(`Missing ${kind} hook "${title}"
-  Fix: Run npm run stage to regenerate tests`)
+  Fix: Run the tests again - they are generated on every run`)
   }
   return hook
 }
@@ -175,7 +185,7 @@ async function callStep(
     if (!target) {
       throw new Error(
         `No ${method.owner.name} object for step at ${definition.location}
-  Fix: Run npm run stage to regenerate tests`
+  Fix: Run the tests again - they are generated on every run`
       )
     }
     await (target as Record<string | symbol, (...a: unknown[]) => unknown>)[method.name](...args)
@@ -198,19 +208,16 @@ async function callHook(
 }
 
 /**
- * The only definition matching step title
+ * The only definition matching step text (without keyword)
  * @throws Error listing locations of ambiguous definitions, or a hint for a missing one
  */
-export function findStepDefinition(title: string, language?: string): StepMatch {
-  const text = stripStepKeyword(title, language)
+export function findStepDefinition(text: string): StepMatch {
   const matches = matchStepDefinitions(text)
   if (matches.length === 1) return matches[0]
   if (matches.length === 0) {
-    throw new Error(
-      `Missing step definition for "${title}"\n  Fix: Run npm run stage for a snippet`
-    )
+    throw new Error(`Missing step definition for "${text}"\n  Fix: npm run steps <suite>`)
   }
-  throw new Error(formatAmbiguous(title, matches))
+  throw new Error(formatAmbiguous(text, matches))
 }
 
 /**

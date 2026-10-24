@@ -2,14 +2,17 @@ import { defineConfig } from '@playwright/test'
 
 import { allProjects, getProjectsByName } from '@/config/projects'
 import { tagToProject } from '@/config/tagToProject'
+import { prepareTests } from '@/framework/bdd/prepare'
 import { CONFIG } from '@/framework/config'
 import { getProjectsFromGrep } from '@/test-helpers/playwright.helpers'
+
+// Tests are generated from the specs and step definitions on every run - nothing to keep in sync
+prepareTests()
 
 const selectedProjects = getProjectsFromGrep(tagToProject)
 
 export default defineConfig({
-  testDir: './tests',
-  testIgnore: ['tests/automated/todo/**'],
+  testDir: CONFIG.paths.generatedTests,
   outputDir: 'test-results/artifacts',
   fullyParallel: true,
   reporter: [

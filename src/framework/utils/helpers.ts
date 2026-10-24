@@ -8,7 +8,6 @@ import {
   SPEC_FILE_EXTENSION,
   SPEC_TAG_PATTERN
 } from '../constants/markdown'
-import { AUTOMATED_KINDS } from '../constants/test-files'
 import type { TestCase } from '../core/md-parser'
 import { buildExamplesError, buildInvalidTagError } from '../errors/error-builders'
 
@@ -134,72 +133,8 @@ export function assertUniqueTestCaseIds(testCases: TestCase[], specPath: string)
 }
 
 /**
- * Folder of MD inside test suites dir, mirrored by generated test files ("" for root)
- * Example: "test-suites/e2e/checkout.md" -> "e2e"
- */
-export function getSuiteSubDir(
-  mdFilePath: string,
-  testSuitesDir = CONFIG.paths.testSuites
-): string {
-  return path.posix.dirname(getSuiteKey(mdFilePath, testSuitesDir)).replace(/^\.$/, '')
-}
-
-/**
- * MD gets no cyborg twin from stage: it or one of its folders is listed in `noCyborg`
- * (entries are suite keys - "api" disables the folder, "e2e/checkout" a single MD)
- */
-export function isCyborgDisabledFor(
-  mdFilePath: string,
-  noCyborg: readonly string[] = CONFIG.noCyborg,
-  testSuitesDir = CONFIG.paths.testSuites
-): boolean {
-  const suiteKey = getSuiteKey(mdFilePath, testSuitesDir)
-  return noCyborg.some((entry) => suiteKey === entry || suiteKey.startsWith(`${entry}/`))
-}
-
-/**
- * Path of a Gherkin spec inside test suites, null for a Markdown spec - a `.feature` file is
- * automated by step definitions, its tests are generated: "test-suites/shop/cart.feature" -> "shop/cart"
- */
-export function getBddSpecKey(
-  specPath: string,
-  testSuitesDir = CONFIG.paths.testSuites
-): string | null {
-  return specPath.endsWith('.feature') ? getSuiteKey(specPath, testSuitesDir) : null
-}
-
-/**
- * Generated automated test of a Gherkin spec - an AUTO test whose folder marks it:
- * "shop/cart" -> "tests/automated/bdd/shop/cart.auto.test.ts"
- */
-export function getBddTestPath(bddSpecKey: string, testsDir = CONFIG.bdd.testsDir): string {
-  return path.join(testsDir, `${bddSpecKey}.auto.test.ts`)
-}
-
-/**
- * Generated cyborg test of a Gherkin spec: "shop/cart" -> "tests/cyborg/bdd/shop/cart.cyborg.test.ts"
- */
-export function getBddCyborgPath(bddSpecKey: string, cyborgDir = CONFIG.bdd.cyborgDir): string {
-  return path.join(cyborgDir, `${bddSpecKey}.cyborg.test.ts`)
-}
-
-/**
- * Test generated from a Gherkin spec: any file inside CONFIG.bdd.testsDir / cyborgDir.
- * stage owns it - never validated, auto-fixed or archived as a hand-written test.
- */
-export function isBddTestFile(
-  testFile: string,
-  dirs: readonly string[] = [CONFIG.bdd.testsDir, CONFIG.bdd.cyborgDir]
-): boolean {
-  return dirs.some((dir) => {
-    const relative = path.relative(path.resolve(dir), path.resolve(testFile))
-    return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
-  })
-}
-
-/**
  * Extract base name from test file name
- * Example: "todo.MANUAL.test.ts" -> "todo"
+ * Example: "todo.test.ts" -> "todo"
  * @throws Error if fileName is invalid (empty or no segments)
  */
 export function getTestFileBaseName(fileName: string): string {
@@ -232,38 +167,6 @@ export function parseIDAndTitle(text: string): ParsedID {
 }
 
 /**
- * Check if test ID matches markdown ID (with suffix support)
- * @param markdownID - ID from markdown (source of truth)
- * @param testID - ID from test file
- * @returns true if IDs match (considering suffix rules)
- *
- * Rules:
- * - Exact match: markdownID === testID
- * - Empty ID in MD []: testID can be suffix-only (MANUAL, AUTO, HYBRID) without dash
- * - Non-empty ID: testID can have suffix with dash (tc01-01-MANUAL)
- *
- * @example
- * matchIDWithSuffix('TC01-01', 'TC01-01') → true
- * matchIDWithSuffix('TC01-01', 'TC01-01-AUTO') → true
- * matchIDWithSuffix('', 'MANUAL') → true
- * matchIDWithSuffix('', 'AUTO') → true
- * matchIDWithSuffix('TC01-01', 'TC01-02') → false
- */
-export function matchIDWithSuffix(markdownID: string, testID: string): boolean {
-  if (markdownID === testID) return true
-
-  // Empty ID in MD [] - TS can use suffix without dash: [MANUAL], [AUTO], [HYBRID] (upper case only)
-  if (markdownID === '') {
-    return /^[A-Z][A-Z0-9]*$/.test(testID)
-  }
-
-  // Non-empty ID - TS can use suffix with dash: [tc01-01-MANUAL], [tc01-01-AUTO]
-  if (testID.startsWith(markdownID + '-')) return true
-
-  return false
-}
-
-/**
  * `<column>` placeholders filled with row values; unknown columns stay as written
  */
 export function fillPlaceholders(text: string, values: Readonly<Record<string, string>>): string {
@@ -288,49 +191,13 @@ export function findExampleRow(
 }
 
 /**
- * Test implements spec case: by ID (with suffix) when the case has one, else by title - as
- * declared (`<column>` kept) or filled with an examples row
+ * Test of a spec case: by ID when the case has one, else by title - as declared (`<column>`
+ * kept) or filled with an examples row
  */
 export function matchesSpecCase(
   specCase: Pick<TestCase, 'id' | 'ttl' | 'examples'>,
   test: { id: string | null; ttl: string }
 ): boolean {
-  if (specCase.id) return test.id !== null && matchIDWithSuffix(specCase.id, test.id)
+  if (specCase.id) return test.id === specCase.id
   return test.ttl === specCase.ttl || findExampleRow(specCase, test.ttl) !== null
-}
-
-/**
- * Check if test file matches base name and type
- * @example isMatchingTestFile('tests/automated/todo.auto.test.ts', 'todo', 'AUTO') → true
- */
-export function isMatchingTestFile(
-  testFilePath: string,
-  baseName: string,
-  kind: 'AUTO' | 'CYBORG'
-): boolean {
-  const fileName = path.basename(testFilePath)
-  const parts = fileName.split('.')
-
-  if (parts[0] !== baseName) return false
-  if (parts.at(-1) !== 'ts') return false
-  if (!parts.includes('test')) return false
-  return parts.map((p) => p.toLowerCase()).includes(kind.toLowerCase())
-}
-
-/**
- * Check if any automated test file exists for the given base name
- * Returns true if at least one of .AUTO., .API., .UI., .E2E. test files exists
- * @example hasAutomatedTestFile(['tests/auth.API.test.ts'], 'auth') → true
- */
-export function hasAutomatedTestFile(candidates: string[], baseName: string): boolean {
-  return candidates.some((f) => {
-    const fileName = path.basename(f)
-    const parts = fileName.split('.')
-    if (parts[0] !== baseName) return false
-    if (parts.at(-1) !== 'ts') return false
-    if (!parts.includes('test')) return false
-    // Case-insensitive check for automated kinds
-    const partsLower = parts.map((p) => p.toLowerCase())
-    return AUTOMATED_KINDS.some((kind) => partsLower.includes(kind.toLowerCase()))
-  })
 }

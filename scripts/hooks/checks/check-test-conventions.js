@@ -6,8 +6,7 @@
  * Checks only the text being introduced, with comments stripped, and only in test-layer
  * paths — framework code legitimately mentions these APIs. Warns, never blocks.
  */
-const TEST_LAYER =
-  /^(tests\/(automated|cyborg)\/.+|src\/(pages|fixtures|clients|test-helpers|test-utils)\/.+)\.ts$/
+const TEST_LAYER = /^src\/(steps|pages|fixtures|clients|test-helpers|test-utils)\/.+\.ts$/
 
 const CHECKS = [
   {

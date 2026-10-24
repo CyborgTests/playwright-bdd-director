@@ -36,9 +36,6 @@ Review the licenses of the dependencies listed below before distribution.
 - **`@types/node`** - MIT License  
   Source: `https://www.npmjs.com/package/@types/node`
 
-- **`ts-morph`** - MIT License  
-  Source: `https://www.npmjs.com/package/ts-morph`
-
 - **`tsx`** - MIT License  
   Source: `https://www.npmjs.com/package/tsx`
 

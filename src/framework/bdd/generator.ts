@@ -7,9 +7,16 @@ import prettier from 'prettier'
 import { pathToFileURL } from 'url'
 
 import { CONFIG } from '../config'
-import { getBackgroundTitle, parseGherkinDocument } from '../core/gherkin-parser'
-import { quoteString } from '../generation/examples-code'
-import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
+import {
+  CYBORG_LAYERS,
+  isKindTag,
+  isLayerTag,
+  KIND_TAGS,
+  LAYER_TAGS,
+  type LayerTag
+} from '../constants/tags'
+import { getBackgroundTitle } from '../core/gherkin-parser'
+import { parseSpecDocument } from '../core/spec-document'
 import { fillPlaceholders, getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
 import {
   BDD_CONTEXT,
@@ -21,35 +28,71 @@ import {
   matchStepDefinitions,
   type PomClass,
   type PomNode,
-  type StepDefinition
+  type StepDefinition,
+  type StepKeyword
 } from './registry'
-import { formatAmbiguous } from './runtime'
+import { formatAmbiguous, splitStepKeyword } from './runtime'
 
+/** Step without a step definition */
 export interface MissingStep {
-  title: string // "When user clicks \"Login\""
+  title: string // as the test shows it: "When user clicks \"Login\"", Markdown "Click Login"
+  keyword: StepKeyword // Markdown steps: Step
+  expression: string // Cucumber Expression suggested from the text
   snippet: string // step definition to start from
 }
 
-export interface BddGeneration {
+/** Step whose only definition has no code yet */
+export interface PendingStep {
+  title: string
+  location: string
+}
+
+export interface GeneratedTest {
+  title: string
+  layer: LayerTag
+  kind: 'auto' | 'cyborg' // auto: every step has a definition; cyborg: a person walks the rest
+  fixme: boolean // API case with a step left without definition - nobody walks API by hand
+  modifier?: 'skip' | 'fixme' | 'fail' // from spec tags
+  tags: string[] // spec tags of the suite, rule and case, layer tags excluded
+  steps: { automated: number; total: number } // Background steps included
+}
+
+export interface Generation {
   specPath: string
   testPath: string
-  content: string // formatted by Prettier, as stage writes it
-  missing: MissingStep[] // their scenarios are generated as test.fixme
-  ambiguous: string[] // steps matching several definitions - stage / dress fail
+  suiteTtl: string
+  content: string // formatted by Prettier
+  tests: GeneratedTest[]
+  missing: MissingStep[]
+  pending: PendingStep[]
+  errors: string[] // ambiguous steps, layer problems - the test file is not usable
+  used: Set<StepDefinition>
 }
 
 interface Emitted {
   lines: string[]
   fixtures: Set<string>
-  missing: MissingStep[]
+  manual: string[] // titles of steps a person walks
+  total: number
 }
 
 interface Context {
   modules: Set<string> // step files whose definitions are used
-  ambiguous: string[]
+  errors: string[]
   missing: MissingStep[]
+  pending: PendingStep[]
+  used: Set<StepDefinition>
+  tests: GeneratedTest[]
   testPath: string
-  language: string // Gherkin dialect of the spec (`# language: uk`), passed to runStep when not English
+  language: string // Gherkin dialect of the spec (`# language: uk`), passed to autoStep when not English
+  markdown: boolean
+}
+
+/** Background as beforeEach lines with what its tests inherit from it */
+interface EmittedBackground {
+  lines: string[]
+  manual: string[]
+  total: number
 }
 
 /** Test with the Before / After hooks matching its tags - tests are grouped by them */
@@ -62,6 +105,13 @@ interface TestUnit {
 type RuleNode = { rule: Rule; background: string[]; children: Child[] }
 type Child = { unit: TestUnit } | RuleNode
 
+/** Tags of the levels above a scenario and the Backgrounds its tests run */
+interface Scope {
+  suiteTag: string
+  levels: string[][] // Feature, then Rule tags
+  backgrounds: EmittedBackground[]
+}
+
 const SNIPPET_TYPES: Record<string, string> = {
   int: 'number',
   float: 'number',
@@ -73,7 +123,7 @@ const PLAYWRIGHT_HOOKS: Record<HookKind, string> = {
   After: 'afterEach',
   BeforeAll: 'beforeAll',
   AfterAll: 'afterAll',
-  // Registered for the test before its Backgrounds, run by every runStep
+  // Registered for the test before its Backgrounds, run by every autoStep
   BeforeStep: 'beforeEach',
   AfterStep: 'beforeEach'
 }
@@ -92,71 +142,96 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
 }
 
 /**
- * Automated test of a Gherkin spec (step definitions must be loaded):
- * Feature → describe, Background → beforeEach (Rule Background too), Rule → nested describe, Scenario → test,
- * Outline → test per Examples row; each step → `await runStep('Given …', { fixtures })`.
- * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the feature,
+ * Test file of a spec, Markdown or Gherkin (step definitions must be loaded):
+ * suite / Feature → describe, Background → beforeEach (Rule Background too), Rule → nested
+ * describe, test case / Scenario → test, examples / Outline → test per row. A step with a step
+ * definition is `autoStep`, a step without one (or with one without code) is `manualStep`.
+ * A test is @auto when all its steps are automated, else @cyborg - or fixme for an @api case.
+ * Its layer (@api / @ui / @e2e) comes from spec tags, the most specific level wins.
+ * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the suite,
  * Before / After → beforeEach / afterEach, tests with different hooks grouped in anonymous describes.
  * Special tags: @skip / @fixme / @fail / @slow → test modifiers, @retries:N / @timeout:N → configure.
  */
-export async function generateBddTest(specPath: string, testPath: string): Promise<BddGeneration> {
-  const feature = parseGherkinDocument(specPath).feature
-  if (!feature) throw new Error(`No "Feature:" in ${specPath}`)
-
+export async function generateTest(specPath: string, testPath: string): Promise<Generation> {
+  const { feature, markdown } = parseSpecDocument(specPath)
   const context: Context = {
     modules: new Set(),
-    ambiguous: [],
+    errors: [],
     missing: [],
+    pending: [],
+    used: new Set(),
+    tests: [],
     testPath,
-    language: feature.language
+    language: feature.language,
+    markdown
   }
-  const baseName = getMarkdownBaseName(specPath)
   const featureTags = tagNames(feature.tags)
-  const suiteTags = [
-    'TAG.TEST.AUTO',
-    'TAG.TYPE.BDD',
-    `TAG.SUITE.${getTagConstant(extractSuiteName(baseName))}`,
-    ...featureTags.map(quoteString)
-  ]
+  const reserved = [
+    ...featureTags,
+    ...feature.children.flatMap((child) => [
+      ...tagNames(child.rule?.tags ?? []),
+      ...[...(child.rule?.children ?? []), child].flatMap((c) => [
+        ...tagNames(c.scenario?.tags ?? []),
+        ...(c.scenario?.examples ?? []).flatMap((block) => tagNames(block.tags))
+      ])
+    ])
+  ].filter(isKindTag)
+  if (reserved.length > 0) {
+    context.errors.push(
+      `Tag ${reserved[0]} in ${specPath} is set by the Director\n  Fix: Remove it - a test is @auto when every step has a step definition, else @cyborg`
+    )
+  }
 
+  const scope: Scope = {
+    suiteTag: `@${getMarkdownBaseName(specPath)}`,
+    levels: [featureTags],
+    backgrounds: []
+  }
   const background = feature.children.find((child) => child.background)?.background
-  const backgroundLines = background ? emitBackground(background, featureTags, context) : []
+  if (background) scope.backgrounds.push(emitBackground(background, scope, context))
 
   const children = feature.children.flatMap((child): Child[] => {
-    if (child.scenario) return collectScenario(child.scenario, featureTags, context)
-    if (child.rule) return [collectRule(child.rule, featureTags, context)]
+    if (child.scenario) return collectScenario(child.scenario, scope, context)
+    if (child.rule) return [collectRule(child.rule, scope, context)]
     return []
   })
 
-  const featureHooks = (kind: HookKind) => matchingHooks(kind, featureTags)
+  const suiteTags = [scope.suiteTag, ...withoutLayers(featureTags)]
+  const featureHooks = (kind: HookKind) => matchingHooks(kind, [...featureTags, scope.suiteTag])
   const body = [
     ...configureLines(featureTags, `Feature "${feature.name.trim()}"`),
     ...featureHooks('BeforeAll').flatMap((hook) => emitHook(hook, context)),
     ...featureHooks('AfterAll')
       .reverse()
       .flatMap((hook) => emitHook(hook, context)),
-    ...emitChildren(children, context, false, backgroundLines)
+    ...emitChildren(children, context, false, scope.backgrounds[0]?.lines ?? [])
   ]
 
   const sideEffects = [...context.modules].sort().map((module) => `import '${module}'`)
-  const runtime = ['runHook', 'runStep', 'useStepHook']
-    .filter((name) => name === 'runStep' || body.some((line) => line.includes(`${name}(`)))
-    .join(', ')
+  const runtime = ['autoStep', 'runHook', 'useStepHook'].filter((name) =>
+    body.some((line) => line.includes(`${name}(`))
+  )
   const imports = [
     [CONFIG.bdd.fixtures, `import { test } from '${CONFIG.bdd.fixtures}'`],
-    ['@/framework/bdd/runtime', `import { ${runtime} } from '@/framework/bdd/runtime'`],
-    ['@/test-constants/tags', `import { TAG } from '@/test-constants/tags'`]
+    ...(runtime.length > 0
+      ? [
+          [
+            '@/framework/bdd/runtime',
+            `import { ${runtime.join(', ')} } from '@/framework/bdd/runtime'`
+          ]
+        ]
+      : [])
   ]
     .sort(([a], [b]) => a.toLowerCase().localeCompare(b.toLowerCase()))
     .map(([, line]) => line)
 
   const source = [
-    `// Generated by npm run stage from ${toPosix(specPath)} - change the spec or step definitions, not this file`,
+    `// Generated from ${toPosix(specPath)} on every run - change the spec or step definitions, not this file`,
     ...sideEffects,
     sideEffects.length > 0 ? '' : null,
     ...imports,
     '',
-    `test.describe(${quoteString(feature.name.trim())}, { tag: [${suiteTags.join(', ')}] }, () => {`,
+    `test.describe(${quoteString(feature.name.trim())}, ${tagDetails(suiteTags)}, () => {`,
     ...body,
     '})'
   ]
@@ -165,52 +240,68 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
 
   const options = await prettier.resolveConfig(testPath)
   const content = await prettier.format(source, { ...options, filepath: testPath })
-  return { specPath, testPath, content, missing: context.missing, ambiguous: context.ambiguous }
+  return {
+    specPath,
+    testPath,
+    suiteTtl: feature.name.trim(),
+    content,
+    tests: context.tests,
+    missing: context.missing,
+    pending: context.pending,
+    errors: context.errors,
+    used: context.used
+  }
 }
 
 function emitBackground(
   background: Background,
-  tags: string[],
+  scope: Scope,
   context: Context,
   ruleName?: string
-): string[] {
-  const { lines, fixtures, missing } = emitSteps(background.steps, {}, tags, context)
-  // Background cannot be skipped as a whole: mark every test of the suite fixme at runtime
-  const fixme = missing.length > 0 ? [`test.fixme(true, ${quoteString(missingNote(missing))})`] : []
+): EmittedBackground {
+  const tags = [scope.suiteTag, ...scope.levels.flat()]
+  const { lines, fixtures, manual, total } = emitSteps(background.steps, {}, tags, context)
   const title = quoteString(getBackgroundTitle(background, ruleName))
-  return [
-    `test.beforeEach(${title}, async (${fixtureParam(fixtures)}) => {`,
-    ...fixme,
-    ...lines,
-    '})',
-    '' // blank line between blocks - Prettier drops the one before a closing brace
-  ]
+  return {
+    lines: [
+      `test.beforeEach(${title}, async (${fixtureParam(fixtures)}) => {`,
+      ...lines,
+      '})',
+      '' // blank line between blocks - Prettier drops the one before a closing brace
+    ],
+    manual,
+    total
+  }
 }
 
-function collectRule(rule: Rule, inherited: string[], context: Context): Child {
-  const tags = [...inherited, ...tagNames(rule.tags)]
+function collectRule(rule: Rule, outer: Scope, context: Context): Child {
+  const scope: Scope = { ...outer, levels: [...outer.levels, tagNames(rule.tags)] }
   const background = rule.children.find((child) => child.background)?.background
+  const emitted = background
+    ? emitBackground(background, scope, context, rule.name.trim())
+    : undefined
+  if (emitted) scope.backgrounds = [...outer.backgrounds, emitted]
   return {
     rule,
-    background: background ? emitBackground(background, tags, context, rule.name.trim()) : [],
+    background: emitted?.lines ?? [],
     children: rule.children.flatMap((child) =>
-      child.scenario ? collectScenario(child.scenario, tags, context) : []
+      child.scenario ? collectScenario(child.scenario, scope, context) : []
     )
   }
 }
 
-function collectScenario(scenario: Scenario, inherited: string[], context: Context): Child[] {
+function collectScenario(scenario: Scenario, scope: Scope, context: Context): Child[] {
   const examples = scenario.examples.filter((block) => block.tableHeader)
   if (examples.length === 0) {
-    return [{ unit: emitTest(scenario, {}, tagNames(scenario.tags), inherited, context) }]
+    return [{ unit: emitTest(scenario, {}, [tagNames(scenario.tags)], scope, context) }]
   }
 
   return examples.flatMap((block) => {
     const columns = block.tableHeader!.cells.map((cell) => cell.value)
-    const own = [...tagNames(scenario.tags), ...tagNames(block.tags)]
+    const own = [tagNames(scenario.tags), tagNames(block.tags)]
     return block.tableBody.map((row) => {
       const values = Object.fromEntries(columns.map((column, i) => [column, row.cells[i].value]))
-      return { unit: emitTest(scenario, values, own, inherited, context) }
+      return { unit: emitTest(scenario, values, own, scope, context) }
     })
   })
 }
@@ -277,7 +368,8 @@ function emitRule(
   background: string[]
 ): string[] {
   const { rule } = node
-  const details = rule.tags.length > 0 ? `${tagDetails(tagNames(rule.tags))}, ` : ''
+  const tags = withoutLayers(tagNames(rule.tags))
+  const details = tags.length > 0 ? `${tagDetails(tags)}, ` : ''
   const body = hooksDone
     ? [...node.background, ...emitChildren(node.children, context, true, [])]
     : emitChildren(node.children, context, false, [...background, ...node.background])
@@ -326,41 +418,77 @@ function emitHook(hook: HookDefinition, context: Context): string[] {
 }
 
 /**
- * @param own - tags of the scenario and its Examples block (test tags, configure level)
- * @param inherited - tags of Feature and Rule (hooks and modifiers apply them too)
+ * @param own - tags of the scenario and of its Examples block (test tags, configure level)
  */
 function emitTest(
   scenario: Scenario,
   values: Record<string, string>,
-  own: string[],
-  inherited: string[],
+  own: string[][],
+  scope: Scope,
   context: Context
 ): TestUnit {
-  const tags = [...inherited, ...own]
-  const { lines, fixtures, missing } = emitSteps(scenario.steps, values, tags, context)
   const name = fillPlaceholders(scenario.name.trim(), values)
-  const details = own.length > 0 ? `${tagDetails(own)}, ` : ''
-  const modifier =
-    missing.length > 0 ? 'fixme' : MODIFIER_TAGS.find((tag) => tags.includes(tag))?.slice(1)
+  const levels = [...scope.levels, ...own]
+  const specTags = withoutLayers(levels.flat())
+  const layer = resolveLayer(levels, name, context) ?? LAYER_TAGS[0]
+  const tags = [scope.suiteTag, ...specTags, layer]
+
+  const { lines, fixtures, manual, total } = emitSteps(scenario.steps, values, tags, context)
+  const allManual = [...scope.backgrounds.flatMap((b) => b.manual), ...manual]
+  const fixme = allManual.length > 0 && !CYBORG_LAYERS.includes(layer)
+  const kind = allManual.length > 0 && !fixme ? 'cyborg' : 'auto'
+  const allTags = [...tags, KIND_TAGS[kind]]
+
+  const modifier = fixme ? 'fixme' : MODIFIER_TAGS.find((tag) => allTags.includes(tag))?.slice(1)
+  const ownTags = withoutLayers(own.flat())
   const declare = modifier ? `test.${modifier}` : 'test'
   const declaration = [
-    ...(missing.length > 0 ? [`// ${missingNote(missing)}`] : []),
-    `${declare}(${quoteString(name)}, ${details}async (${fixtureParam(fixtures)}) => {`,
-    ...(tags.includes('@slow') ? ['test.slow()'] : []),
+    ...(fixme
+      ? [`// ${layer} test without step definitions: ${[...new Set(allManual)].join('; ')}`]
+      : []),
+    `${declare}(${quoteString(name)}, ${tagDetails([KIND_TAGS[kind], layer, ...new Set(ownTags)])}, async (${fixtureParam(fixtures)}) => {`,
+    ...(allTags.includes('@slow') ? ['test.slow()'] : []),
     ...lines,
     '})',
     ''
   ]
-  const configure = configureLines(own, `Scenario "${name}"`)
+  const totalSteps = total + scope.backgrounds.reduce((sum, b) => sum + b.total, 0)
+  context.tests.push({
+    title: name,
+    layer,
+    kind,
+    fixme,
+    ...(modifier ? { modifier: modifier as GeneratedTest['modifier'] } : {}),
+    tags: [...new Set(specTags)],
+    steps: { automated: totalSteps - allManual.length, total: totalSteps }
+  })
+
+  const configure = configureLines(own.flat(), `Scenario "${name}"`)
   return {
     lines:
       configure.length > 0
         ? ['test.describe(() => {', ...configure, ...declaration, '})', '']
         : declaration,
     hooks: (['BeforeStep', 'AfterStep', 'Before', 'After'] as const).flatMap((kind) =>
-      matchingHooks(kind, tags)
+      matchingHooks(kind, allTags)
     )
   }
+}
+
+/**
+ * Layer of the most specific level with a layer tag (Examples, Scenario, Rule, Feature)
+ * @returns undefined after reporting a missing or double layer
+ */
+function resolveLayer(levels: string[][], name: string, context: Context): LayerTag | undefined {
+  const level = [...levels].reverse().find((tags) => tags.some(isLayerTag))
+  const layers = [...new Set(level?.filter(isLayerTag) ?? [])]
+  if (layers.length === 1) return layers[0]
+  context.errors.push(
+    layers.length === 0
+      ? `Test "${name}" has no layer\n  Fix: Tag the suite or the test case with one of ${LAYER_TAGS.join(', ')}`
+      : `Test "${name}" has several layers: ${layers.join(', ')}\n  Fix: Keep one layer tag per level - a test case tag overrides the suite tag`
+  )
+  return undefined
 }
 
 function emitSteps(
@@ -369,23 +497,32 @@ function emitSteps(
   tags: string[],
   context: Context
 ): Emitted {
-  const emitted: Emitted = { lines: [], fixtures: new Set(), missing: [] }
-  let lastKeyword = 'Given'
+  const emitted: Emitted = { lines: [], fixtures: new Set(), manual: [], total: steps.length }
+  let lastKeyword: StepKeyword = 'Given'
 
   const resolved = steps.map((step) => {
     const text = fillPlaceholders(step.text.trim(), values)
-    const title = `${step.keyword.trim()} ${text}`
-    lastKeyword = snippetKeyword(step, lastKeyword)
+    const title = context.markdown ? text : `${step.keyword.trim()} ${text}`
+    lastKeyword = context.markdown ? 'Step' : snippetKeyword(step, lastKeyword)
     const matches = matchStepDefinitions(text)
+    matches.forEach(({ definition }) => context.used.add(definition))
 
     if (matches.length === 0) {
-      const missing = { title, snippet: buildSnippet(lastKeyword, text, step) }
-      emitted.missing.push(missing)
-      context.missing.push(missing)
-    } else if (matches.length > 1) {
-      context.ambiguous.push(formatAmbiguous(title, matches))
+      addMissing(context, title, lastKeyword, text, step)
+      return { step, title, definition: undefined }
     }
-    return { step, title, definition: matches.length === 1 ? matches[0].definition : undefined }
+    if (matches.length > 1) {
+      context.errors.push(formatAmbiguous(title, matches))
+      return { step, title, definition: undefined }
+    }
+    const [{ definition }] = matches
+    if (definition.pending) {
+      if (!context.pending.some((p) => p.title === title)) {
+        context.pending.push({ title, location: definition.location })
+      }
+      return { step, title, definition: undefined }
+    }
+    return { step, title, definition }
   })
   const pomFixtures = choosePomFixtures(
     resolved.map(({ definition }) => definition),
@@ -393,20 +530,47 @@ function emitSteps(
   )
 
   resolved.forEach(({ step, title, definition }, i) => {
-    let fixtureNames: string[] = []
-    if (definition) {
-      fixtureNames = pomFixtures[i] ? [pomFixtures[i]] : withoutContext(definition.fixtureNames)
-      fixtureNames.forEach((name) => emitted.fixtures.add(name))
-      context.modules.add(toModuleSpecifier(definition.location, context.testPath))
+    if (!definition) {
+      emitted.manual.push(title)
+      emitted.fixtures.add('manualStep')
+      emitted.lines.push(`await manualStep(${quoteString(title)})`)
+      return
     }
+    const fixtureNames = pomFixtures[i] ? [pomFixtures[i]] : withoutContext(definition.fixtureNames)
+    fixtureNames.forEach((name) => emitted.fixtures.add(name))
+    context.modules.add(toModuleSpecifier(definition.location, context.testPath))
 
-    const argument = stepOptions(step, values, context.language)
+    const argument = stepOptions(step, values, title, context)
     const fixturesArg =
       fixtureNames.length > 0 ? `{ ${fixtureNames.join(', ')} }` : argument ? '{}' : ''
     const args = [quoteString(title), fixturesArg, argument].filter(Boolean).join(', ')
-    emitted.lines.push(`await runStep(${args})`)
+    emitted.lines.push(`await autoStep(${args})`)
   })
   return emitted
+}
+
+function addMissing(
+  context: Context,
+  title: string,
+  keyword: StepKeyword,
+  text: string,
+  step: Step
+): void {
+  if (context.missing.some((missing) => missing.title === title)) return
+  const generator = new CucumberExpressionGenerator(() => getParameterTypes().parameterTypes)
+  const [expression] = generator.generateExpressions(text)
+  const params = expression.parameterNames.map(
+    (name, i) => `_${name}: ${SNIPPET_TYPES[expression.parameterTypes[i].name ?? ''] ?? 'string'}`
+  )
+  if (step.dataTable) params.push('_dataTable: DataTable')
+  if (step.docString) params.push('_docString: string')
+  const args = ['{}', ...params].join(', ')
+  context.missing.push({
+    title,
+    keyword,
+    expression: expression.source,
+    snippet: `${keyword}(${quoteString(expression.source)}, async (${args}) => {\n  // TODO: implement step\n})`
+  })
 }
 
 /**
@@ -532,8 +696,21 @@ function withoutContext(fixtureNames: string[]): string[] {
   return fixtureNames.filter((name) => name !== BDD_CONTEXT)
 }
 
-/** runStep options: DataTable / DocString of the step, language of a non-English spec */
-function stepOptions(step: Step, values: Record<string, string>, language: string): string {
+/** Layer tags are resolved per test - the describes never carry them */
+function withoutLayers(tags: string[]): string[] {
+  return tags.filter((tag) => !isLayerTag(tag))
+}
+
+/**
+ * autoStep options: DataTable / DocString of the step, language of a non-English spec, no keyword
+ * for a Markdown step that starts with one
+ */
+function stepOptions(
+  step: Step,
+  values: Record<string, string>,
+  title: string,
+  context: Context
+): string {
   const options: string[] = []
   if (step.dataTable) {
     const rows = step.dataTable.rows.map(
@@ -545,36 +722,19 @@ function stepOptions(step: Step, values: Record<string, string>, language: strin
   if (step.docString) {
     options.push(`docString: ${quoteString(fillPlaceholders(step.docString.content, values))}`)
   }
-  if (language !== 'en') options.push(`language: ${quoteString(language)}`)
+  if (context.markdown && splitStepKeyword(title)) options.push('keyword: false')
+  if (!context.markdown && context.language !== 'en') {
+    options.push(`language: ${quoteString(context.language)}`)
+  }
   return options.length > 0 ? `{ ${options.join(', ')} }` : ''
 }
 
-/**
- * Definition to start from for a missing step: Cucumber Expression suggested from the text
- * (`"Login"` → `{string}`, `5` → `{int}`), parameters typed, DataTable / DocString last
- */
-function buildSnippet(keyword: string, text: string, step: Step): string {
-  const generator = new CucumberExpressionGenerator(() => getParameterTypes().parameterTypes)
-  const [expression] = generator.generateExpressions(text)
-  const params = expression.parameterNames.map(
-    (name, i) => `${name}: ${SNIPPET_TYPES[expression.parameterTypes[i].name ?? ''] ?? 'string'}`
-  )
-  if (step.dataTable) params.push('dataTable: DataTable')
-  if (step.docString) params.push('docString: string')
-  const args = ['{ page }', ...params].join(', ')
-  return `${keyword}(${quoteString(expression.source)}, async (${args}) => {\n  // TODO: implement step\n})`
-}
-
 /** Given / When / Then of a step; And / But / * take the previous one */
-function snippetKeyword(step: Step, previous: string): string {
+function snippetKeyword(step: Step, previous: StepKeyword): StepKeyword {
   if (step.keywordType === 'Context') return 'Given'
   if (step.keywordType === 'Action') return 'When'
   if (step.keywordType === 'Outcome') return 'Then'
   return previous
-}
-
-function missingNote(missing: MissingStep[]): string {
-  return `Missing step definitions: ${missing.map((step) => step.title).join('; ')}`
 }
 
 function fixtureParam(fixtures: Set<string>): string {
@@ -587,6 +747,10 @@ function tagDetails(tags: string[]): string {
 
 function tagNames(tags: readonly Tag[]): string[] {
   return tags.map((tag) => tag.name)
+}
+
+function quoteString(text: string): string {
+  return `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`
 }
 
 /**

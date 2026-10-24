@@ -13,9 +13,9 @@ Follow the canonical specification files:
    - [ai-spec-architecture.md](../../.claude/rules/ai-spec-architecture.md) — AI spec components, budgets, placement
    - [ai-spec-formats.md](../../.claude/rules/ai-spec-formats.md) — rule / skill / subagent / hook formats
    - [typescript.md](../../.claude/rules/typescript.md) — style, types, naming, comments, annotations
-   - [playwright-tests.md](../../.claude/rules/playwright-tests.md) — test layer: POM, fixtures, assertions, anti-patterns
+   - [playwright-tests.md](../../.claude/rules/playwright-tests.md) — test layer: POM, fixtures, step definitions, assertions, anti-patterns
    - [api-testing.md](../../.claude/rules/api-testing.md) — API clients, APIExpect, schemas
-   - [md-specs.md](../../.claude/rules/md-specs.md) — spec formats (`.md` / `.feature`), IDs, spec ↔ TS sync
+   - [md-specs.md](../../.claude/rules/md-specs.md) — specs (`.md` / `.feature`), layers, tags, generated auto / cyborg tests
    - [framework-code.md](../../.claude/rules/framework-code.md) — framework, unit tests, Director UI, Playwright forks
-3. **Procedures**: [.agents/skills/](../../.agents/skills/) — run [senior-aqa-reviewer](../../.agents/skills/senior-aqa-reviewer/SKILL.md) before handing off test code.
+3. **Procedures**: [.agents/skills/](../../.agents/skills/) — run [senior-aqa-reviewer](../../.agents/skills/senior-aqa-reviewer/SKILL.md) before handing off step definitions or test code.
 4. **Guards**: before editing a file or running a risky command, run `node scripts/codex-preflight.js edit <path>` / `bash "<command>"` (exit 2 = abort, 3 = ask the user).

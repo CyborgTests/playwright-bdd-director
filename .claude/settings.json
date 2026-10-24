@@ -3,7 +3,7 @@
     "allow": [
       "Bash(npm run stage)",
       "Bash(npm run dress)",
-      "Bash(npm run autogen:*)",
+      "Bash(npm run steps:*)",
       "Bash(npm run play:*)",
       "Bash(npm run test:run:*)",
       "Bash(npm run test:coverage)",

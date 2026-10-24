@@ -5,39 +5,23 @@
 export const CONFIG = {
   paths: {
     testSuites: process.env.TEST_SUITES_DIR ?? 'test-suites',
-    testsDir: process.env.TESTS_DIR ?? 'tests',
-    testsAutomated: process.env.TESTS_AUTO_DIR ?? 'tests/automated/todo',
-    testsCyborg: process.env.TESTS_CYBORG_DIR ?? 'tests/cyborg',
-    testsArchived: process.env.TESTS_ARCHIVED_DIR ?? 'tests/archived',
-    tagsFile: 'src/test-constants/tags.ts',
+    // Tests generated from the specs on every run (gitignored) - Playwright testDir
+    generatedTests: process.env.GENERATED_TESTS_DIR ?? '.director/tests',
     // Coverage matrix reports: <path>.json / .html / .md
     coverageMatrix: process.env.COVERAGE_MATRIX_FILE ?? 'test-results/coverage-matrix',
     // Written on every run for test management tools and CI
     cucumberReport: process.env.CUCUMBER_REPORT_FILE ?? 'test-results/cucumber-report.json',
     junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
     cucumberMessages: process.env.CUCUMBER_MESSAGES_FILE ?? 'test-results/cucumber-messages.ndjson',
-    cucumberHtml: process.env.CUCUMBER_HTML_FILE ?? 'test-results/cucumber-report.html',
-    packageJson: 'package.json'
+    cucumberHtml: process.env.CUCUMBER_HTML_FILE ?? 'test-results/cucumber-report.html'
   },
   /**
-   * Suites that get no cyborg twin from stage (nobody walks them by hand, e.g. API suites) and
-   * pair with automated tests only. Entries are paths inside testSuites without `.md`:
-   * a folder ("api") covers all its MDs, a file ("e2e/checkout") a single MD.
-   */
-  noCyborg: [] as readonly string[],
-  /**
-   * Gherkin specs (`.feature`) are automated by step definitions: stage generates their automated
-   * test into `testsDir` and their cyborg test into `cyborgDir` (mirroring the spec path), calling
-   * step definitions from `steps` with fixtures of `fixtures` module
+   * Step definitions: files of `steps` are loaded before generation; `npm run steps <suite>` writes
+   * skeletons to `<stepsDir>/<suite>.steps.ts`; generated tests take `test` from `fixtures`
    */
   bdd: {
     steps: process.env.BDD_STEPS ?? 'src/steps/**/*.steps.ts',
-    fixtures: '@/fixtures/base.fixture',
-    testsDir: process.env.TESTS_BDD_DIR ?? 'tests/automated/bdd',
-    cyborgDir: process.env.TESTS_BDD_CYBORG_DIR ?? 'tests/cyborg/bdd'
-  },
-  metrics: {
-    enabled: process.env.METRICS_ENABLED === 'true',
-    saveTo: process.env.METRICS_FILE ?? '.metrics.json'
+    stepsDir: process.env.BDD_STEPS_DIR ?? 'src/steps',
+    fixtures: '@/fixtures'
   }
 } as const

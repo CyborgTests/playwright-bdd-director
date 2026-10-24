@@ -39,5 +39,5 @@ paths:
 - `ctx` gives `event` (`PreToolUse` / `PostToolUse`), `kind`, `relPath` (repo-relative, forward slashes), `incoming` (new text of Write/Edit), `command` (Bash), `readFile()`.
 - `run` returns `null` or `{ decision?: 'allow' | 'ask' | 'deny', reason?, context? }`. The dispatcher merges results: `deny` > `ask` > `allow`, and joins contexts.
 - Warn by default (`context`); `ask` for risky but legitimate actions; `deny` only for hard boundaries (e.g. `node_modules`).
-- Checks are pure and fast: no network, no spawning, never throw (the dispatcher fails open). Cover each check in `tests/unit/ai-hooks.test.ts`.
+- Checks are pure and fast: no network, no spawning, never throw (the dispatcher fails open). Cover each check in `scripts/hooks/hooks.test.ts`.
 - Output: the dispatcher writes `hookSpecificOutput` JSON and lets the process exit on its own — an explicit `process.exit()` right after writing can truncate stdout on Windows.

@@ -1,7 +1,7 @@
 {
-  // Every Gherkin spec is automated by step definitions: the official Cucumber extension links
-  // steps to their definitions (go to definition, autocomplete, "Undefined step" warnings).
-  // Page Objects hold steps decorated with @Given / @When / @Then.
+  // Specs are automated by step definitions: for Gherkin specs the official Cucumber extension
+  // links steps to their definitions (go to definition, autocomplete); an "Undefined step" is
+  // a step a person walks. Page Objects of migrated suites hold decorated steps.
   "files.associations": {
     "**/test-suites/**/*.feature": "cucumber"
   },

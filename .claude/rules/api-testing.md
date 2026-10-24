@@ -1,7 +1,6 @@
 ---
 description: API test standards — client layer, APIExpect, SchemaValidator contracts, status matrix and data isolation.
 paths:
-  - 'tests/automated/api/**/*.ts'
   - 'src/clients/**/*.ts'
   - 'src/schemas/**/*.ts'
   - 'src/test-utils/**/*.ts'
@@ -11,7 +10,7 @@ paths:
 
 ## Client layer
 
-- Endpoints and HTTP methods live only in clients (`src/clients/*Client.ts`, extending `BaseClient`). Tests never call raw `request.post()` or build URLs.
+- Endpoints and HTTP methods live only in clients (`src/clients/*Client.ts`, extending `BaseClient`). Step definitions never call raw `request.post()` or build URLs.
 - Clients expose raw calls (`register()`, `verifyLogin()`) plus `expect*` methods that wrap `APIExpect` (`expectRegistered()`, `expectLoginFailed()`).
 - Clients are injected by fixtures bound to the test's `apiContext` (see `src/fixtures/auth.fixture.ts`).
 
@@ -31,7 +30,7 @@ paths:
 
 ## Data & secrets
 
-- Unique data per test from `faker` (`generateTestUser()`); create prerequisites through the API in fixtures, delete them in fixture teardown.
+- Unique data per test from `faker` (`generateTestUser()`); create prerequisites through the API in fixtures (`registeredUser`), delete them in fixture teardown.
 - Never hardcode tokens, passwords or API keys; credentials come from generated data or env.
 - Attach request/response details only through `sanitizeObject` (`src/test-helpers/test.helpers.ts`) + `logJson` so secrets are masked in reports.
 - Let HTTP failures surface with context; never swallow a rejected request.

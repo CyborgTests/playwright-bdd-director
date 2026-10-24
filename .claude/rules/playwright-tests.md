@@ -1,8 +1,7 @@
 ---
-description: Playwright test-layer standards — POM/fixtures architecture, assertion quality, determinism, test.step structure and forbidden anti-patterns.
+description: Playwright test-layer standards — POM/fixtures architecture, step definition bodies, assertion quality, determinism and forbidden anti-patterns.
 paths:
-  - 'tests/automated/**/*.ts'
-  - 'tests/cyborg/**/*.ts'
+  - 'src/steps/**/*.ts'
   - 'src/pages/**/*.ts'
   - 'src/fixtures/**/*.ts'
   - 'src/clients/**/*.ts'
@@ -14,9 +13,10 @@ paths:
 
 ## Architecture
 
-- Responsibilities: Page Objects (`src/pages/`, extend `BasePage`) own locators and UI interactions; clients (`src/clients/`, extend `BaseClient`) own HTTP calls; fixtures (`src/fixtures/`) build and inject them; test files only declare scenarios and assertions.
-- Tests receive Page Objects and clients through fixtures (`test.extend`), never `new XPage(page)` in a test.
-- Locators are `private readonly` inside Page Objects; tests never call `page.locator()` / `page.getBy*()` directly.
+- Responsibilities: Page Objects (`src/pages/`, extend `BasePage`) own locators and UI interactions; clients (`src/clients/`, extend `BaseClient`) own HTTP calls; fixtures (`src/fixtures/`, merged in `src/fixtures/index.ts`) build and inject them.
+- Step definitions (`src/steps/`) only call Page Objects and clients and assert.
+- Steps receive Page Objects and clients through destructured fixtures, never `new XPage(page)` in a step.
+- Locators are `private readonly` inside Page Objects; steps never call `page.locator()` / `page.getBy*()` directly.
 - Locator priority: `getByRole` / `getByLabel` / `getByTestId` / stable `data-*` attributes > text > scoped CSS. No generated class hashes, no unscoped `.first()` / `.nth()` (scoped indexing inside charts/SVG/3rd-party widgets is fine).
 - Page Object method order: private helpers → actions (`click*`, `fill*`, fail-fast `expect`) → `expect*` assertion methods (use `expect.soft`).
 
@@ -24,16 +24,16 @@ paths:
 
 - Arrange (fixtures, data) → Act (Page Object / client methods) → Assert (resulting state).
 - Assert business outcomes — persisted data, changed counts, response payloads — not just `toBeVisible()`. Visibility-only is acceptable when nothing deeper is observable (canvas, opaque widgets).
-- Every test runs independently and in parallel: unique data from `faker` per test, own entities only, cleanup in fixture teardown or `try/finally` (runs even when the test fails).
+- Every test runs independently and in parallel: unique data from `faker` per test, own entities only, cleanup in fixture teardown (runs even when the test fails). Steps share state through fixtures, not module variables.
 - After an action that triggers async backend work, synchronize on `page.waitForResponse(...)` or a web-first assertion before the next step.
 - A test that passes only on retry is not green — fix the root cause from the first attempt's trace.
 - Never make a test pass by weakening assertions, commenting out steps or dropping coverage. Real app bug → `test.fixme()` + `FIXME:` comment (see `typescript` rule).
 
-## Steps & MD sync
+## Step definitions
 
-- Every `test.step()` title equals the matching `####` step from `test-suites/*.md`; test titles and describe titles follow the `md-specs` rule. `npm run dress` verifies it.
-- Wrap each logical action/assertion block in `await test.step(...)`; separate consecutive steps with one blank line.
-- Cyborg tests use `manualStep('…')` for human checks; automate the parts that are cheap to automate inside the same step.
+- One step definition does what its spec step says - its action and its check - nothing of the next step; separate the act and assert blocks with a blank line.
+- A step is either automated completely or left without code (then a person walks it) - never half-automated with the rest silently skipped.
+- Generated tests and their `test.step` titles come from the specs (`md-specs` rule); `npm run dress` lists what is still manual.
 
 ## Forbidden (with the only accepted exceptions)
 

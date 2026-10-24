@@ -5,31 +5,30 @@ Path-scoped conventions live in `.claude/rules/`, procedures in `.agents/skills/
 
 ## What this repo is
 
-Spec-driven testing framework on top of the native Playwright runner. Specs in `test-suites/` are the source of truth, the extension picks the approach:
-
-- `*.md` — the Director keeps hand-written cyborg (human-in-the-loop, `@cyborgtests/test`) and automated tests in sync.
-- Gherkin `*.feature` — `stage` generates both tests from step definitions (`src/steps/`).
+Spec-driven testing framework on top of the native Playwright runner. Specs in `test-suites/` (`*.md` or Gherkin `*.feature`) are the source of truth; every run generates their tests from step definitions (`src/steps/`).
+A step with a definition is `autoStep`; a step without one (or with one without code) is `manualStep`, walked by a person (`@cyborgtests/test`).
+A test with any manual step is `@cyborg` (UI/E2E only; API stays fixme), else `@auto`.
 
 Three layers share the repo:
 
-- **Framework** — `src/framework/**` + `scripts/*.ts`: parse MD/TS (ts-morph), validate, generate, auto-fix, archive. Unit-tested with Vitest in `tests/unit/**`.
+- **Framework** — `src/framework/**` + `scripts/*.ts`: parse specs, generate tests, step registry and runtime, coverage matrix, reports. Unit-tested with Vitest next to the modules (`*.test.ts`).
 - **Director UI** — `packages/director/**` (React + Vite), embedded into Playwright UI through `scripts/patch-playwright.js` (postinstall) and forked Playwright packages in `packages/*`.
-- **Example test layer** — `auth` suite against automationexercise.com: `src/{pages,fixtures,clients,schemas,test-constants,test-helpers,test-utils}`, `tests/{automated,cyborg}`.
+- **Example test layer** — `auth`, `auth-api`, `navigation`, `header-navigation` specs against automationexercise.com: `src/{steps,pages,fixtures,clients,schemas,test-helpers,test-utils}`.
 
 ## Stack
 
 - TypeScript strict, alias `@/*` → `src/*`; Node ≥ 18, scripts run via `tsx`.
 - Playwright pinned to `1.60.0` — the patch and the forks depend on the exact version.
-- Vitest, ts-morph, Monocart reporter, ESLint + Prettier + `simple-import-sort`.
+- Vitest, Cucumber Expressions / Gherkin parser, Monocart reporter, ESLint + Prettier + `simple-import-sort`.
 
 ## Commands
 
 ```bash
-npm run stage                        # validate → generate → auto-fix → archive → format → lint (writes files)
-npm run dress                        # read-only MD ↔ TS sync check
-npm run play <types...> [suites...] [@tags...]  # dress + run; types: auto|cyborg|api|ui|e2e|bdd, e.g. `npm run play api auth @smoke`
-npm run autogen [-- --dry-run]       # AUTO skeletons into tests/automated/todo for MDs without automation
-npm run matrix [-- --html --json --md --min=80]  # spec ↔ tests coverage matrix (static, no run)
+npm run dress                        # read-only: invalid specs, layers, ambiguous/unused steps, steps a person walks
+npm run steps <suite...>             # step definition skeletons into src/steps/<suite>.steps.ts
+npm run stage                        # format Markdown specs (`---` before every ###)
+npm run play <types...> [suites...] [@tags...]  # run; types: auto|cyborg|api|ui|e2e, e.g. `npm run play api auth-api @smoke`
+npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps
 npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)
 npm run show | review                # Playwright UI mode with Director | Monocart report
 npm run test:run                     # Vitest unit tests (framework)
@@ -37,22 +36,20 @@ npm run build                        # Director UI + trace-viewer, then re-patch
 node scripts/spec-drift-audit.js     # AI specification integrity
 ```
 
-Selection works only through tags (`--grep`) — `play` builds the pattern and `playwright.config.ts` picks the `automated`/`cyborg` project from it.
+Tests are generated into `.director/tests/` (gitignored) whenever `playwright.config.ts` loads; projects select them by tag (`@auto` / `@cyborg`), `play` builds the `--grep`.
 
 ## Boundaries
 
-- `test-suites/*.{md,feature}` — source of truth. Change behavior/wording here, never only in tests.
-- `tests/automated/bdd/**`, `tests/cyborg/bdd/**` — generated from `.feature` specs by `stage`, never edit; change the spec or step definitions.
-- `tests/cyborg/**` titles and steps, and empty skeletons in `tests/automated/todo/**`, are rewritten by `stage`. Step bodies (fixture calls, `manualStep`) are hand-written.
-- `src/test-constants/tags.ts` → `TAG.SUITE` is filled by `stage` from MD file names.
-- `tests/archived/**` — orphans moved there by `stage`; never runs, don't edit.
+- `test-suites/**/*.{md,feature}` — source of truth. Every test case has one layer tag (`@api`/`@ui`/`@e2e`, case overrides suite); never write `@auto`/`@cyborg`.
+- `src/steps/**/*.steps.ts` — step definitions; a body without code keeps its step manual.
+- `.director/tests/**` — generated on every run, never edit (blocked by hook).
 - `node_modules/**` — never edit (blocked by hook); the Playwright patch lives in `scripts/patch-playwright.js`.
 - `packages/{playwright,playwright-core,trace-viewer,web,…}` — forked Playwright: change only for Director integration, keep diffs minimal, rebuild with `npm run build`.
 
 ## Definition of done
 
 - Framework code changed → `npm run test:run` green; new behavior covered by a unit test.
-- Specs/tests changed → `npm run dress` clean; affected tests green on the first attempt.
+- Specs/steps changed → `npm run dress` without errors; affected tests green on the first attempt.
 - Always → `npm run lint` and `npx tsc --noEmit` clean (both green on main; `packages/` has its own toolchain). Report failures as they are.
 
 ## Language
@@ -67,7 +64,7 @@ Code, comments, tests and `test-suites/*.md`: English only (non-English allowed 
 ## Specification index
 
 - Rules (`.claude/rules/`): `ai-spec-architecture`, `ai-spec-formats`, `typescript`, `playwright-tests`, `api-testing`, `md-specs`, `framework-code`.
-- Key skills: `md-driven-suites`, `md-to-automated`, `add-test`, `run-tests`, `framework-change`, `pw-triager`, `ui-explorer`, `senior-aqa-reviewer` (run before handing off test code).
+- Key skills: `md-driven-suites`, `md-to-automated`, `run-tests`, `framework-change`, `pw-triager`, `ui-explorer`, `senior-aqa-reviewer` (run before handing off step definitions or test code).
 
 ## Operational restrictions
 

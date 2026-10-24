@@ -18,7 +18,7 @@ Every claim about DOM, copy, behavior or a failure's cause must come from a brow
 1. **Reproduce the flow** with MCP browser tools (navigate, click, type) exactly as the test or bug report describes.
 2. **Snapshot each meaningful state** — resting, after the action, validation/error, modal. Use the accessibility snapshot (roles, names, labels): that is what locators are built from.
 3. **Compare** with the existing Page Object locators and test assertions; name every mismatch (renamed label, moved element, changed copy, new field, new timing) before editing.
-4. **Then change code** grounded in step 2, following `add-page-object` / `add-test`.
+4. **Then change code** grounded in step 2, following `add-page-object` / `md-to-automated`.
 5. **Failure investigation** (from `pw-triager`): state the confirmed root cause from what you reproduced.
 
 ## Do not

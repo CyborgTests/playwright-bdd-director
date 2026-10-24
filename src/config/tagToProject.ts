@@ -7,6 +7,5 @@ export const tagToProject: Record<string, string> = {
   '@api': 'automated',
   '@ui': 'automated',
   '@e2e': 'automated',
-  '@bdd': 'automated',
   '@cyborg': 'cyborg'
 }
