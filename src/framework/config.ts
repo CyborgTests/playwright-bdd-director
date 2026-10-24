@@ -15,6 +15,8 @@ export const CONFIG = {
     // Written on every run for test management tools and CI
     cucumberReport: process.env.CUCUMBER_REPORT_FILE ?? 'test-results/cucumber-report.json',
     junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
+    cucumberMessages: process.env.CUCUMBER_MESSAGES_FILE ?? 'test-results/cucumber-messages.ndjson',
+    cucumberHtml: process.env.CUCUMBER_HTML_FILE ?? 'test-results/cucumber-report.html',
     packageJson: 'package.json'
   },
   /**
@@ -32,7 +34,7 @@ export const CONFIG = {
     dirs: ['bdd'] as readonly string[],
     steps: process.env.BDD_STEPS ?? 'src/steps/**/*.steps.ts',
     fixtures: '@/fixtures/base.fixture',
-    testsDir: process.env.TESTS_BDD_DIR ?? 'tests/bdd'
+    testsDir: process.env.TESTS_BDD_DIR ?? 'tests/automated/bdd'
   },
   metrics: {
     enabled: process.env.METRICS_ENABLED === 'true',

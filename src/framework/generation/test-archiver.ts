@@ -5,7 +5,7 @@ import path from 'path'
 import { CONFIG } from '@/framework/config'
 import { AUTOMATED_KINDS } from '@/framework/constants/test-files'
 
-import { getTestFileBaseName } from '../utils/helpers'
+import { getTestFileBaseName, isBddTestFile } from '../utils/helpers'
 import { getIcon } from '../utils/icons'
 import { isEmptyAutoTest } from './auto-fixer'
 
@@ -32,6 +32,8 @@ export function archiveOrphanedTests(
     if (!testFile) continue
     // Already archived - skip, otherwise it is "moved" onto itself and counted on every stage run
     if (path.resolve(path.dirname(testFile)) === path.resolve(archivedDir)) continue
+    // Generated tests without spec are deleted by the bdd phase of stage
+    if (isBddTestFile(testFile)) continue
 
     const fileName = path.basename(testFile)
     const baseName = getTestFileBaseName(fileName)

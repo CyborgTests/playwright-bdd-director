@@ -45,7 +45,7 @@ export async function buildBddTests(specFiles: string[]): Promise<BddTestsResult
 
   const expected = new Set(result.generations.map((g) => path.resolve(g.testPath)))
   result.staleFiles = glob
-    .sync(`${CONFIG.bdd.testsDir}/**/*.bdd.test.ts`, { nodir: true })
+    .sync(`${CONFIG.bdd.testsDir}/**/*.test.ts`, { nodir: true })
     .filter((file) => !expected.has(path.resolve(file)))
   return result
 }

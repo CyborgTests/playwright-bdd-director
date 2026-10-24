@@ -117,10 +117,11 @@ describe('buildCucumberReport', () => {
     const [result] = buildCucumberReport(
       [
         run({
-          file: 'tests/bdd/shop.bdd.test.ts',
+          file: 'tests/automated/bdd/shop.auto.test.ts',
           title: 'Add Men Tshirt',
           steps: [
             hook('Before Hooks', [
+              hook('AfterStep: Screenshot'),
               hook('Before: Clear cart'),
               hook('Background: Cart', [step('Given cart is empty')])
             ]),
@@ -171,6 +172,35 @@ describe('buildCucumberReport', () => {
       error_message: 'Test timeout of 45000ms exceeded'
     })
     expect(pay.embeddings).toEqual([{ mime_type: 'image/png', data: 'c2NyZWVu' }])
+  })
+
+  it('should report a step skipped from inside and embed step attachments before screenshots', () => {
+    const shop = spec({
+      testCases: [
+        { id: null, ttl: 'Buy', stepTtls: ['Add', 'Check', 'Pay'], tags: [], examples: null }
+      ]
+    })
+    const after = { mimeType: 'image/png', base64: 'YWZ0ZXI=' }
+
+    const [feature] = buildCucumberReport(
+      [
+        run({
+          status: 'failed',
+          steps: [
+            step('Add', { attachments: [after] }),
+            step('Check', { skipped: true }),
+            step('Pay', { error: 'boom', attachments: [after] })
+          ],
+          screenshots: [{ mimeType: 'image/png', base64: 'c2NyZWVu' }]
+        })
+      ],
+      () => shop
+    )
+
+    const [add, check, pay] = feature.elements[0].steps
+    expect(statuses([add, check, pay])).toEqual(['Add: passed', 'Check: skipped', 'Pay: failed'])
+    expect(add.embeddings).toEqual([{ mime_type: 'image/png', data: 'YWZ0ZXI=' }])
+    expect(pay.embeddings?.map((e) => e.data)).toEqual(['YWZ0ZXI=', 'c2NyZWVu'])
   })
 
   it('should skip every step of a skipped test', () => {

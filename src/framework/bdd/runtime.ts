@@ -1,7 +1,17 @@
 import { dialects } from '@cucumber/gherkin'
-import { test } from '@playwright/test'
+import { test, type TestInfo } from '@playwright/test'
 
-import { getHookDefinitions, type HookKind, matchStepDefinitions, type StepMatch } from './registry'
+import {
+  BDD_CONTEXT,
+  type BddContext,
+  type BddStep,
+  getHookDefinitions,
+  type HookDefinition,
+  type HookKind,
+  matchStepDefinitions,
+  type StepDefinition,
+  type StepMatch
+} from './registry'
 
 /**
  * Third argument of runStep: Gherkin DataTable rows or DocString of the step (passed to the step
@@ -42,8 +52,9 @@ export class DataTable {
 }
 
 /**
- * Run step definition matching step title ("Given user opens home page") as a test.step with
- * that title. Fixtures are those the definition destructures - the generator passes them.
+ * Run step definition matching step title ("Given user opens the home page") as a test.step with
+ * that title, inside BeforeStep / AfterStep hooks registered for the test (useStepHook).
+ * Fixtures are those the definition destructures - the generator passes them.
  * @throws Error for no matching definition or several matching ones
  */
 export async function runStep(
@@ -52,9 +63,52 @@ export async function runStep(
   options: StepOptions = {}
 ): Promise<void> {
   const { definition, params } = findStepDefinition(title, options.language)
-  const extra = toStepArgument(options)
-  await test.step(title, async () => {
-    await definition.fn(fixtures, ...params, ...extra)
+  const args = [...params, ...toStepArgument(options)]
+  const testInfo = test.info()
+  const stepHooks = stepHooksByTest.get(testInfo) ?? []
+  const before = stepHooks.filter(({ hook }) => hook.kind === 'BeforeStep')
+  const after = stepHooks.filter(({ hook }) => hook.kind === 'AfterStep').reverse()
+
+  await test.step(title, async (stepInfo) => {
+    let skipped = false
+    const step: BddStep = {
+      title,
+      skip: (description) => {
+        skipped = true
+        stepInfo.skip(true, description)
+      },
+      attach: (name, attachment) => stepInfo.attach(name, attachment)
+    }
+    const context = toContext(testInfo, step)
+
+    let failure: { error: unknown } | undefined
+    let skip: { error: unknown } | undefined
+    try {
+      for (const { hook, fixtures: hookFixtures } of before) {
+        await callHook(hook, hookFixtures, context)
+      }
+      await callStep(definition, fixtures, args, context)
+    } catch (error: unknown) {
+      if (skipped) skip = { error }
+      else failure = { error }
+    }
+
+    // AfterStep runs for a failed or skipped step too and sees the error; it cannot skip the step
+    step.error = failure?.error
+    step.skip = () => {
+      throw new Error(`AfterStep hook cannot skip step "${title}"
+  Fix: Skip in BeforeStep or the step`)
+    }
+    for (const { hook, fixtures: hookFixtures } of after) {
+      try {
+        await callHook(hook, hookFixtures, context)
+      } catch (error: unknown) {
+        failure ??= { error }
+      }
+    }
+
+    if (failure) throw failure.error
+    if (skip) throw skip.error // Playwright marks the step skipped
   })
 }
 
@@ -68,11 +122,79 @@ export async function runHook(
   title: string,
   fixtures: Record<string, unknown> = {}
 ): Promise<void> {
+  const hook = findHook(kind, title)
+  // test.info() only when used: it throws outside a Playwright test
+  const context = hook.fixtureNames.includes(BDD_CONTEXT) ? toContext(test.info()) : undefined
+  await callHook(hook, fixtures, context)
+}
+
+/**
+ * Register a BeforeStep / AfterStep hook for the current test - every runStep of the test (and its
+ * Backgrounds) runs it. Called from a beforeEach the generator emits before the Backgrounds.
+ * @throws Error when the hook was renamed or removed since the test was generated
+ */
+export function useStepHook(
+  kind: Extract<HookKind, 'BeforeStep' | 'AfterStep'>,
+  title: string,
+  fixtures: Record<string, unknown> = {}
+): void {
+  const testInfo = test.info()
+  const registered = stepHooksByTest.get(testInfo) ?? []
+  registered.push({ hook: findHook(kind, title), fixtures })
+  stepHooksByTest.set(testInfo, registered)
+}
+
+const stepHooksByTest = new WeakMap<
+  TestInfo,
+  Array<{ hook: HookDefinition; fixtures: Record<string, unknown> }>
+>()
+
+function findHook(kind: HookKind, title: string): HookDefinition {
   const hook = getHookDefinitions().find((h) => h.kind === kind && h.title === title)
   if (!hook) {
-    throw new Error(`Missing ${kind} hook "${title}"\n  Fix: Run npm run stage to regenerate tests`)
+    throw new Error(`Missing ${kind} hook "${title}"
+  Fix: Run npm run stage to regenerate tests`)
   }
-  await hook.fn(fixtures)
+  return hook
+}
+
+function toContext(testInfo: TestInfo, step?: BddStep): BddContext {
+  return { tags: testInfo.tags, scenario: testInfo.title, testInfo, step }
+}
+
+/** Fixture style gets fixtures with `bdd`; world style the world as `this`; a method its object */
+async function callStep(
+  definition: StepDefinition,
+  fixtures: Record<string, unknown>,
+  args: unknown[],
+  context: BddContext
+): Promise<void> {
+  const { method, world } = definition
+  if (method) {
+    const target = Object.values(fixtures).find((value) => value instanceof method.owner)
+    if (!target) {
+      throw new Error(
+        `No ${method.owner.name} object for step at ${definition.location}
+  Fix: Run npm run stage to regenerate tests`
+      )
+    }
+    await (target as Record<string | symbol, (...a: unknown[]) => unknown>)[method.name](...args)
+    return
+  }
+  if (world) {
+    await definition.fn.call(fixtures[world], ...args)
+    return
+  }
+  await definition.fn({ ...fixtures, [BDD_CONTEXT]: context }, ...args)
+}
+
+async function callHook(
+  hook: HookDefinition,
+  fixtures: Record<string, unknown>,
+  context: BddContext | undefined
+): Promise<void> {
+  if (hook.world) await hook.fn.call(fixtures[hook.world])
+  else await hook.fn({ ...fixtures, [BDD_CONTEXT]: context })
 }
 
 /**
@@ -114,19 +236,6 @@ export function splitStepKeyword(
 ): { keyword: string; text: string } | null {
   const keyword = getStepKeywords(language).find((candidate) => startsWithKeyword(title, candidate))
   return keyword ? { keyword, text: title.slice(keyword.length).trimStart() } : null
-}
-
-/** Title starts with a step keyword of the language */
-export function hasStepKeyword(title: string, language = 'en'): boolean {
-  return getStepKeywords(language).some((keyword) => startsWithKeyword(title, keyword))
-}
-
-/** Title starts with a step keyword of some language, but not an English one */
-export function isNonEnglishStepTitle(title: string): boolean {
-  return (
-    !hasStepKeyword(title) &&
-    Object.keys(dialects).some((code) => code !== 'en' && hasStepKeyword(title, code))
-  )
 }
 
 const keywordsByLanguage = new Map<string, string[]>()

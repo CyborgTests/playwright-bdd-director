@@ -3,7 +3,7 @@ import '@/steps/hooks.steps'
 import '@/steps/navigation.steps'
 
 import { test } from '@/fixtures/base.fixture'
-import { runHook, runStep } from '@/framework/bdd'
+import { runHook, runStep } from '@/framework/bdd/runtime'
 import { TAG } from '@/test-constants/tags'
 
 test.describe(

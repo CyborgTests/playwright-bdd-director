@@ -770,26 +770,6 @@ describe('parseTestFile - coverage info', () => {
     expect(testCase.stepHasManual).toEqual([false, true, true])
   })
 
-  it('should read runStep as automated step, inside test.step as its content', () => {
-    const [testCase] = parse(`
-  test('Cyborg', async ({ homePage, manualStep }) => {
-    await runStep('Given user opens the home page', { homePage })
-    await test.step('Login', async () => {
-      await runStep('When user logs in', { homePage })
-    })
-    await manualStep('Then account is shown')
-  })`)
-
-    expect(testCase.stepTtls).toEqual([
-      'Given user opens the home page',
-      'Login',
-      'Then account is shown'
-    ])
-    expect(testCase.stepCallKinds).toEqual(['runStep', 'test.step', 'manualStep'])
-    expect(testCase.stepHasManual).toEqual([false, false, true])
-    expect(testCase.hasImplementation).toBe(true)
-  })
-
   it('should read test.fail as fail modifier', () => {
     const [testCase] = parse(`
   test.fail('Known bug', async ({ page }) => {

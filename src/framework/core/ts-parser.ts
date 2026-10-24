@@ -27,7 +27,7 @@ export interface ParsedTestCase {
   examples: ExamplesTable | null // inline data of loop around test (findExamplesLoop)
 }
 
-export type StepCallKind = 'manualStep' | 'runStep' | 'test.step'
+export type StepCallKind = 'manualStep' | 'test.step'
 export type TestModifier = 'skip' | 'fixme' | 'fail'
 
 export interface ParsedTest {
@@ -127,7 +127,6 @@ function inferStepCallKind(call: CallExpression): StepCallKind {
   const expression = call.getExpression().getText()
 
   if (expression === AST_IDENTIFIERS.MANUAL_STEP) return 'manualStep'
-  if (expression === AST_IDENTIFIERS.RUN_STEP) return 'runStep'
   return 'test.step'
 }
 

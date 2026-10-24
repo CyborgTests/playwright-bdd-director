@@ -682,35 +682,6 @@ test.describe('[CYBORG] Suite', () => {
     expect(parseTestFile(filePath).testCases[0].stepTtls).toEqual(['First', 'Second', 'Third'])
   })
 
-  it('should insert manualStep next to runStep in cyborg and test.step in automated test', () => {
-    const cyborg = createTSFile(
-      'run.cyborg.test.ts',
-      `import { test } from '@playwright/test'
-
-test.describe('[CYBORG] Suite', () => {
-  test('[CYBORG] Case', async ({ homePage }) => {
-    await runStep('First', { homePage })
-  })
-})`
-    )
-    const automated = createTSFile(
-      'run.ui.test.ts',
-      `import { test } from '@playwright/test'
-
-test.describe('Suite', () => {
-  test('Case', async ({ homePage }) => {
-    await runStep('First', { homePage })
-  })
-})`
-    )
-
-    autoFixTestFile(cyborg, mdOf([['Case', ['First', 'Second']]]))
-    autoFixTestFile(automated, mdOf([['Case', ['First', 'Second']]]))
-
-    expect(parseTestFile(cyborg).testCases[0].stepCallKinds).toEqual(['runStep', 'manualStep'])
-    expect(parseTestFile(automated).testCases[0].stepCallKinds).toEqual(['runStep', 'test.step'])
-  })
-
   it('should keep code of removed case and report it instead of renaming another case', () => {
     const filePath = createTSFile(
       'removed.cyborg.test.ts',

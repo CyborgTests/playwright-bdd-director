@@ -12,11 +12,16 @@ import { quoteString } from '../generation/examples-code'
 import { extractSuiteName, getTagConstant } from '../generation/tags-updater'
 import { fillPlaceholders, getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
 import {
+  BDD_CONTEXT,
   getHookDefinitions,
   getParameterTypes,
+  getPomNodes,
   type HookDefinition,
   type HookKind,
-  matchStepDefinitions
+  matchStepDefinitions,
+  type PomClass,
+  type PomNode,
+  type StepDefinition
 } from './registry'
 import { formatAmbiguous } from './runtime'
 
@@ -67,7 +72,10 @@ const PLAYWRIGHT_HOOKS: Record<HookKind, string> = {
   Before: 'beforeEach',
   After: 'afterEach',
   BeforeAll: 'beforeAll',
-  AfterAll: 'afterAll'
+  AfterAll: 'afterAll',
+  // Registered for the test before its Backgrounds, run by every runStep
+  BeforeStep: 'beforeEach',
+  AfterStep: 'beforeEach'
 }
 
 /** Special tags turned into Playwright modifiers; they stay test tags too (`play @slow`) */
@@ -112,7 +120,7 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   ]
 
   const background = feature.children.find((child) => child.background)?.background
-  const backgroundLines = background ? emitBackground(background, context) : []
+  const backgroundLines = background ? emitBackground(background, featureTags, context) : []
 
   const children = feature.children.flatMap((child): Child[] => {
     if (child.scenario) return collectScenario(child.scenario, featureTags, context)
@@ -131,10 +139,12 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   ]
 
   const sideEffects = [...context.modules].sort().map((module) => `import '${module}'`)
-  const runtime = hasHooks(body) ? 'runHook, runStep' : 'runStep'
+  const runtime = ['runHook', 'runStep', 'useStepHook']
+    .filter((name) => name === 'runStep' || body.some((line) => line.includes(`${name}(`)))
+    .join(', ')
   const imports = [
     [CONFIG.bdd.fixtures, `import { test } from '${CONFIG.bdd.fixtures}'`],
-    ['@/framework/bdd', `import { ${runtime} } from '@/framework/bdd'`],
+    ['@/framework/bdd/runtime', `import { ${runtime} } from '@/framework/bdd/runtime'`],
     ['@/test-constants/tags', `import { TAG } from '@/test-constants/tags'`]
   ]
     .sort(([a], [b]) => a.toLowerCase().localeCompare(b.toLowerCase()))
@@ -158,8 +168,13 @@ export async function generateBddTest(specPath: string, testPath: string): Promi
   return { specPath, testPath, content, missing: context.missing, ambiguous: context.ambiguous }
 }
 
-function emitBackground(background: Background, context: Context, ruleName?: string): string[] {
-  const { lines, fixtures, missing } = emitSteps(background.steps, {}, context)
+function emitBackground(
+  background: Background,
+  tags: string[],
+  context: Context,
+  ruleName?: string
+): string[] {
+  const { lines, fixtures, missing } = emitSteps(background.steps, {}, tags, context)
   // Background cannot be skipped as a whole: mark every test of the suite fixme at runtime
   const fixme = missing.length > 0 ? [`test.fixme(true, ${quoteString(missingNote(missing))})`] : []
   const title = quoteString(getBackgroundTitle(background, ruleName))
@@ -177,7 +192,7 @@ function collectRule(rule: Rule, inherited: string[], context: Context): Child {
   const background = rule.children.find((child) => child.background)?.background
   return {
     rule,
-    background: background ? emitBackground(background, context, rule.name.trim()) : [],
+    background: background ? emitBackground(background, tags, context, rule.name.trim()) : [],
     children: rule.children.flatMap((child) =>
       child.scenario ? collectScenario(child.scenario, tags, context) : []
     )
@@ -275,11 +290,16 @@ function emitRule(
   ]
 }
 
-/** Before hooks, Backgrounds, After hooks (reverse definition order, as Cucumber runs them) */
+/**
+ * Step hooks (registered first - Background steps run them too), Before hooks, Backgrounds,
+ * After hooks (reverse definition order, as Cucumber runs them)
+ */
 function emitSetup(hooks: HookDefinition[], background: string[], context: Context): string[] {
+  const stepHooks = hooks.filter((hook) => hook.kind.endsWith('Step'))
   const before = hooks.filter((hook) => hook.kind === 'Before')
   const after = hooks.filter((hook) => hook.kind === 'After').reverse()
   return [
+    ...stepHooks.flatMap((hook) => emitHook(hook, context)),
     ...before.flatMap((hook) => emitHook(hook, context)),
     ...background,
     ...after.flatMap((hook) => emitHook(hook, context))
@@ -288,7 +308,7 @@ function emitSetup(hooks: HookDefinition[], background: string[], context: Conte
 
 function emitHook(hook: HookDefinition, context: Context): string[] {
   context.modules.add(toModuleSpecifier(hook.location, context.testPath))
-  const fixtures = new Set(hook.fixtureNames)
+  const fixtures = new Set(withoutContext(hook.fixtureNames))
   const args = [
     quoteString(hook.kind),
     quoteString(hook.title),
@@ -296,9 +316,10 @@ function emitHook(hook: HookDefinition, context: Context): string[] {
   ]
     .filter(Boolean)
     .join(', ')
+  const call = hook.kind.endsWith('Step') ? `useStepHook(${args})` : `await runHook(${args})`
   return [
     `test.${PLAYWRIGHT_HOOKS[hook.kind]}(${quoteString(`${hook.kind}: ${hook.title}`)}, async (${fixtureParam(fixtures)}) => {`,
-    `await runHook(${args})`,
+    call,
     '})',
     ''
   ]
@@ -315,9 +336,9 @@ function emitTest(
   inherited: string[],
   context: Context
 ): TestUnit {
-  const { lines, fixtures, missing } = emitSteps(scenario.steps, values, context)
-  const name = fillPlaceholders(scenario.name.trim(), values)
   const tags = [...inherited, ...own]
+  const { lines, fixtures, missing } = emitSteps(scenario.steps, values, tags, context)
+  const name = fillPlaceholders(scenario.name.trim(), values)
   const details = own.length > 0 ? `${tagDetails(own)}, ` : ''
   const modifier =
     missing.length > 0 ? 'fixme' : MODIFIER_TAGS.find((tag) => tags.includes(tag))?.slice(1)
@@ -336,34 +357,45 @@ function emitTest(
       configure.length > 0
         ? ['test.describe(() => {', ...configure, ...declaration, '})', '']
         : declaration,
-    hooks: [...matchingHooks('Before', tags), ...matchingHooks('After', tags)]
+    hooks: (['BeforeStep', 'AfterStep', 'Before', 'After'] as const).flatMap((kind) =>
+      matchingHooks(kind, tags)
+    )
   }
 }
 
 function emitSteps(
   steps: readonly Step[],
   values: Record<string, string>,
+  tags: string[],
   context: Context
 ): Emitted {
   const emitted: Emitted = { lines: [], fixtures: new Set(), missing: [] }
   let lastKeyword = 'Given'
 
-  for (const step of steps) {
+  const resolved = steps.map((step) => {
     const text = fillPlaceholders(step.text.trim(), values)
     const title = `${step.keyword.trim()} ${text}`
     lastKeyword = snippetKeyword(step, lastKeyword)
     const matches = matchStepDefinitions(text)
 
-    let fixtureNames: string[] = []
     if (matches.length === 0) {
       const missing = { title, snippet: buildSnippet(lastKeyword, text, step) }
       emitted.missing.push(missing)
       context.missing.push(missing)
     } else if (matches.length > 1) {
       context.ambiguous.push(formatAmbiguous(title, matches))
-    } else {
-      const { definition } = matches[0]
-      fixtureNames = definition.fixtureNames
+    }
+    return { step, title, definition: matches.length === 1 ? matches[0].definition : undefined }
+  })
+  const pomFixtures = choosePomFixtures(
+    resolved.map(({ definition }) => definition),
+    tags
+  )
+
+  resolved.forEach(({ step, title, definition }, i) => {
+    let fixtureNames: string[] = []
+    if (definition) {
+      fixtureNames = pomFixtures[i] ? [pomFixtures[i]] : withoutContext(definition.fixtureNames)
       fixtureNames.forEach((name) => emitted.fixtures.add(name))
       context.modules.add(toModuleSpecifier(definition.location, context.testPath))
     }
@@ -373,8 +405,61 @@ function emitSteps(
       fixtureNames.length > 0 ? `{ ${fixtureNames.join(', ')} }` : argument ? '{}' : ''
     const args = [quoteString(title), fixturesArg, argument].filter(Boolean).join(', ')
     emitted.lines.push(`await runStep(${args})`)
-  }
+  })
   return emitted
+}
+
+/**
+ * Fixture of each Page Object method step (undefined for other steps): a subclass registered with
+ * tags matching the scenario (the most derived one), else the class of the method. Then within the
+ * steps a base class step runs on the most derived subclass object other steps use.
+ * @throws Error when several unrelated subclasses fit
+ */
+function choosePomFixtures(
+  definitions: Array<StepDefinition | undefined>,
+  tags: string[]
+): Array<string | undefined> {
+  const nodes = getPomNodes()
+  const candidatesOf = (owner: PomClass) =>
+    nodes.filter((node) => node.owner === owner || node.owner.prototype instanceof owner)
+
+  const chosen = definitions.map((definition): PomNode | undefined => {
+    const method = definition?.method
+    if (!method) return undefined
+    const candidates = candidatesOf(method.owner)
+    const tagged = candidates.filter(
+      (node) => node.tags && evaluateTags(node.tags, tags, `@StepsFor at ${node.location}`)
+    )
+    if (tagged.length > 0) return mostDerived(tagged, definition)
+    return candidates.find((node) => node.owner === method.owner)
+  })
+
+  const used = chosen.filter((node): node is PomNode => node !== undefined)
+  return chosen.map((node, i) => {
+    const definition = definitions[i]
+    if (!node || !definition?.method) return undefined
+    const candidates = candidatesOf(definition.method.owner)
+    const derived = used.filter(
+      (other) => other.owner.prototype instanceof node.owner && candidates.includes(other)
+    )
+    return (derived.length > 0 ? mostDerived(derived, definition) : node).fixture
+  })
+}
+
+/**
+ * The node whose class extends all the others
+ * @throws Error for unrelated classes
+ */
+function mostDerived(nodes: PomNode[], definition: StepDefinition): PomNode {
+  const node = nodes.find((candidate) =>
+    nodes.every((other) => other === candidate || candidate.owner.prototype instanceof other.owner)
+  )
+  if (!node) {
+    throw new Error(
+      `Step at ${definition.location} fits several Page Objects: ${nodes.map((n) => n.fixture).join(', ')}\n  Fix: Make @StepsFor tags of unrelated classes exclusive`
+    )
+  }
+  return node
 }
 
 /**
@@ -382,18 +467,27 @@ function emitSteps(
  * @throws Error for an invalid tag expression, with the hook location
  */
 function matchingHooks(kind: HookKind, tags: string[]): HookDefinition[] {
-  return getHookDefinitions().filter((hook) => {
-    if (hook.kind !== kind) return false
-    if (!hook.tags) return true
-    try {
-      return parseTagExpression(hook.tags).evaluate(tags)
-    } catch (error: unknown) {
-      throw new Error(
-        `Invalid tag expression "${hook.tags}" of ${kind} hook at ${hook.location}: ${getErrorMessage(error)}`,
-        { cause: error }
-      )
-    }
-  })
+  return getHookDefinitions().filter(
+    (hook) =>
+      hook.kind === kind &&
+      (!hook.tags || evaluateTags(hook.tags, tags, `${kind} hook at ${hook.location}`))
+  )
+}
+
+/**
+ * @throws Error for an invalid tag expression, naming its owner
+ */
+function evaluateTags(expression: string, tags: string[], owner: string): boolean {
+  try {
+    return parseTagExpression(expression).evaluate(tags)
+  } catch (error: unknown) {
+    throw new Error(
+      `Invalid tag expression "${expression}" of ${owner}: ${getErrorMessage(error)}`,
+      {
+        cause: error
+      }
+    )
+  }
 }
 
 /**
@@ -433,8 +527,9 @@ function hookKey(hooks: HookDefinition[]): string {
   return hooks.map((hook) => `${hook.kind}:${hook.title}`).join('\n')
 }
 
-function hasHooks(lines: string[]): boolean {
-  return lines.some((line) => line.startsWith('await runHook('))
+/** `bdd` in the first parameter is the runtime context, not a fixture */
+function withoutContext(fixtureNames: string[]): string[] {
+  return fixtureNames.filter((name) => name !== BDD_CONTEXT)
 }
 
 /** runStep options: DataTable / DocString of the step, language of a non-English spec */
@@ -497,7 +592,7 @@ function tagNames(tags: readonly Tag[]): string[] {
 /**
  * Import of step file at "src/steps/x.steps.ts:12": "@/steps/x.steps" (alias), else relative
  */
-export function toModuleSpecifier(location: string, testPath: string): string {
+function toModuleSpecifier(location: string, testPath: string): string {
   const file = location.replace(/:\d+$/, '').replace(/\.ts$/, '')
   if (file.startsWith('src/')) return `@/${file.slice('src/'.length)}`
   const relative = toPosix(path.relative(path.dirname(testPath), file))

@@ -1,14 +1,18 @@
 # Step Definitions Style
 
-Gherkin specs in `test-suites/bdd/` are automated by **step definitions**: each step is implemented once in TypeScript and reused by every scenario that uses it. `npm run stage` generates the Playwright test of each spec - nobody edits it. The same steps can be called from hand-written cyborg tests with `runStep`.
+Gherkin specs in `test-suites/bdd/` are automated by **step definitions**: each step is implemented once in TypeScript and reused by every scenario that uses it. `npm run stage` generates the Playwright test of each spec - nobody edits it. A step definition is also a plain function, callable from any test or another step.
 
 - [When to use it](#when-to-use-it)
 - [Quick start](#quick-start)
 - [Steps](#steps)
+- [Step context](#step-context)
+- [Page Object steps](#page-object-steps)
+- [World style](#world-style)
 - [Generated tests](#generated-tests)
 - [Hooks](#hooks)
 - [Special tags](#special-tags)
-- [runStep in cyborg tests](#runstep-in-cyborg-tests)
+- [Steps in other tests](#steps-in-other-tests)
+- [Reports](#reports)
 - [Coverage matrix](#coverage-matrix)
 - [Coming from Cucumber-style tools](#coming-from-cucumber-style-tools)
 - [Limitations](#limitations)
@@ -62,7 +66,18 @@ Both styles live in one repo, share tags, `npm run play`, the Director UI and th
 `src/steps/bdd.ts` binds the step functions to the project's Playwright `test`, so fixtures are typed:
 
 ```typescript
-export const { Given, When, Then, Step, Before, After, BeforeAll, AfterAll } = createBdd(test)
+export const {
+  Given,
+  When,
+  Then,
+  Step,
+  Before,
+  After,
+  BeforeAll,
+  AfterAll,
+  BeforeStep,
+  AfterStep
+} = createBdd(test)
 ```
 
 - **Patterns**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) (`{string}`, `{int}`, `{float}`, `{word}`, ...) or a RegExp. Own parameter types: `defineParameterType({ name: 'color', regexp: /red|green/, transformer: (s) => s.toUpperCase() })` from `@/framework/bdd`.
@@ -78,12 +93,94 @@ export const { Given, When, Then, Step, Before, After, BeforeAll, AfterAll } = c
 
   `DataTable`: `raw()` all rows, `rows()` without header, `hashes()` objects keyed by header, `rowsHash()` two columns as key-value. DocString is a `string`.
 
+- **Step function**: `Given/When/Then/Step` return the function, typed - call it from another step or any test with only the fixtures it uses:
+
+  ```typescript
+  const createTodo = When('user creates todo {string}', async ({ todoPage }, text: string) => {
+    await todoPage.add(text)
+  })
+
+  When('user creates 2 todos', async ({ todoPage }) => {
+    await createTodo({ todoPage }, 'first')
+    await createTodo({ todoPage }, 'second')
+  })
+  ```
+
 - **Missing step** → its scenario is generated as `test.fixme`; `stage` prints a snippet, `dress` warns.
 - **Ambiguous step** (several definitions match) → `stage` and `dress` fail, listing each definition with its `file:line`.
 
+## Step context
+
+`bdd` next to the fixtures gives a step or hook what Playwright fixtures do not know - it is supplied by the runtime, not requested as a fixture:
+
+```typescript
+Then('discount is shown', async ({ cartPage, bdd }) => {
+  if (!bdd.tags.includes('@promo')) bdd.step?.skip('no promo in this scenario')
+  await cartPage.expectDiscount()
+})
+```
+
+| Field                  | What                                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `bdd.tags`             | tags of the test: spec tags (Feature, Rule, Scenario, Examples) plus the generated `@auto @bdd @<suite>` |
+| `bdd.scenario`         | test title (an Outline row with its values)                                                              |
+| `bdd.testInfo`         | Playwright `TestInfo`                                                                                    |
+| `bdd.step.title`       | step with its keyword: `Then discount is shown` (steps and `BeforeStep` / `AfterStep`)                   |
+| `bdd.step.skip(note?)` | marks the step skipped and stops it; the scenario goes on (a step or `BeforeStep`)                       |
+| `bdd.step.attach(…)`   | attachment of the step - shown under it in Playwright and Cucumber reports                               |
+| `bdd.step.error`       | `AfterStep`: error of the step, `undefined` when it passed                                               |
+
+`bdd` is a reserved name - do not name a fixture `bdd`.
+
+## Page Object steps
+
+A Page Object method can be a step itself - the generated test requests the fixture that creates the object:
+
+```typescript
+import { Given, StepsFor, When } from '@/framework/bdd'
+
+@StepsFor('homePage')
+export class HomePage extends BasePage {
+  @Given('user opens the home page')
+  async navigateToHome(): Promise<void> { ... }
+
+  @When('user clicks {string} button in header')
+  async clickHeaderBtn(name: string): Promise<void> { ... }
+}
+```
+
+- Import the decorators from `@/framework/bdd`, not `./bdd` - Page Objects are imported by fixtures, the steps file imports fixtures, so `./bdd` would be an import cycle. The fixture name is not typed there: a wrong one fails `npx tsc` on the generated test and the run.
+- Parameters are those of the expression, then DataTable / DocString; no fixtures object.
+- **Subclasses**: steps of a base class run on any subclass registered for a fixture.
+  - `@StepsFor('mobileHomePage', { tags: '@mobile' })` - scenarios matching the tags use `mobileHomePage` for every step of `HomePage` (the most derived matching subclass wins; unrelated subclasses matching the same scenario fail `stage`).
+  - Without tags, a subclass is used when another step of the same scenario already needs it - one object for the scenario steps (a Background picks its own).
+  - An overridden method (`override async clickHeaderBtn`) runs the override; decorating it again with the same pattern is not a second step.
+- Standard TypeScript decorators (no `experimentalDecorators`). The decorated classes must be loaded with the step files - they are, when fixtures used by the steps import them.
+- Page Objects stay plain classes for other tests; the decorators only register steps.
+
+## World style
+
+For teams moving from Cucumber, steps and hooks can share a `this` object instead of destructuring fixtures. The world is an ordinary fixture:
+
+```typescript
+export const test = base.extend<{ world: ShopWorld }>({
+  world: async ({ page }, use) => use(new ShopWorld(page))
+})
+
+const { Given, Then, Before } = createBdd(test, { world: 'world' })
+
+Given('user logs in as {string}', async function (email: string) {
+  await this.loginPage.login(email)
+})
+```
+
+- Steps get expression parameters only; `Before`, `After`, `BeforeStep`, `AfterStep` get `this` too. `BeforeAll` / `AfterAll` keep worker fixtures - there is no world per worker.
+- Use `function`, not an arrow function - an arrow has no `this`.
+- Both styles can be mixed in one project (two `createBdd` calls).
+
 ## Generated tests
 
-`test-suites/bdd/<path>.feature` → `tests/bdd/<path>.bdd.test.ts` (`TESTS_BDD_DIR`):
+`test-suites/bdd/<path>.feature` → `tests/automated/bdd/<path>.auto.test.ts` (`TESTS_BDD_DIR`) - an automated test like any other; only its folder tells that `stage` owns it:
 
 | Gherkin          | Playwright                                                                                                                 |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -94,9 +191,10 @@ export const { Given, When, Then, Step, Before, After, BeforeAll, AfterAll } = c
 | Scenario Outline | one `test` per Examples row, title filled with the row values; Examples tags go to the row tests                           |
 | step             | `await runStep('Given …', { fixtures })` - a `test.step` titled as the spec step                                           |
 
-- The file imports the step files it uses and is formatted with the project Prettier config.
+- The file imports the step files (and decorated Page Objects) it uses and is formatted with the project Prettier config.
 - **Languages**: a spec may start with `# language: uk` (any [Gherkin dialect](https://cucumber.io/docs/gherkin/languages/)). Step titles keep the localized keyword and the generated `runStep` gets `{ language: 'uk' }`, so `Припустимо, що user opens …` finds `Given('user opens …')`. Step definitions stay the same for every language.
 - `dress` regenerates every test in memory and fails when a file is outdated; `stage` rewrites it and deletes generated tests whose spec is gone.
+- `runStep` / `runHook` / `useStepHook` come from `@/framework/bdd/runtime` and exist for generated tests only - the public `@/framework/bdd` does not export them; in your own code call step functions directly.
 - The spec also gets a cyborg test like any other (`CONFIG.noCyborg` turns it off). There a Rule Background has no hook of its own - its steps lead each scenario of the Rule - and Examples tags tag the whole Outline (one test loops over all rows); the coverage matrix counts them the same way.
 
 ## Hooks
@@ -107,13 +205,17 @@ Hooks come from the same `./bdd` import. `stage` decides which hooks apply to ea
 Before({ name: 'Clear cart', tags: '@cart and not @api' }, async ({ cartPage }) => { ... })
 After(async ({ page }) => { ... }) // no tags - every scenario
 BeforeAll({ tags: '@shop' }, async ({ browser }) => { ... }) // worker fixtures only
+AfterStep({ name: 'Screenshot', tags: '@ui' }, async ({ page, bdd }) => {
+  await bdd.step?.attach('screenshot', { body: await page.screenshot(), contentType: 'image/png' })
+})
 ```
 
-- `Before` / `After` → `test.beforeEach` / `test.afterEach`. A scenario's tags include its Feature, Rule and Examples tags. Scenarios with different hooks are grouped in anonymous `test.describe` blocks, so report titles do not change.
-- Order: Before hooks → Background → steps → After hooks (in reverse definition order).
+- `Before` / `After` → `test.beforeEach` / `test.afterEach`. A scenario's tags include its Feature, Rule and Examples tags (spec tags only - not the generated `@auto @bdd @<suite>`). Scenarios with different hooks are grouped in anonymous `test.describe` blocks, so report titles do not change.
+- `BeforeStep` / `AfterStep` run inside every step of the matching scenarios, Background steps included. The generated test registers them first: `test.beforeEach('AfterStep: Screenshot', … useStepHook(…))`. `AfterStep` runs after a failed or skipped step too (`bdd.step.error`); a failing `AfterStep` fails the step.
+- Order: Before hooks → Background → steps (each wrapped by BeforeStep / AfterStep) → After hooks; After and AfterStep hooks in reverse definition order.
 - `BeforeAll` / `AfterAll` → `test.beforeAll` / `test.afterAll` of the feature, matched against Feature tags. Like any Playwright `beforeAll`, they run once per worker.
 - Report title: `Before: <name>`; an unnamed hook is `<file>#<n>` (n-th hook of its kind in the file). Names are unique per kind.
-- Test details (status, attachments) come from `test.info()`. Example - `src/steps/hooks.steps.ts` attaches the page URL when a scenario fails.
+- Test details (status, attachments) come from `bdd.testInfo` or `test.info()`. Example - `src/steps/hooks.steps.ts` attaches the page URL when a scenario fails.
 - Hooks run only in generated tests, never in cyborg or other hand-written tests.
 
 ## Special tags
@@ -128,35 +230,29 @@ They stay Playwright tags too, so `npm run play bdd @slow` works.
 
 An invalid value (`@retries:abc`) or two different values on one level fail `stage`.
 
-## runStep in cyborg tests
+## Steps in other tests
 
-A cyborg test can run any step definition instead of asking a person - mixed walkthroughs where navigation is automated and checks stay manual:
+A step function is ordinary code, so a cyborg or automated test can reuse it like a Page Object method:
 
 ```typescript
-import '@/steps/navigation.steps'
+import { clickHeaderBtn } from '@/steps/navigation.steps'
 
-import { test } from '@/fixtures/base.fixture'
-import { runStep } from '@/framework/bdd'
-
-test('Go back home from "Signup / Login" page', async ({ homePage, manualStep }) => {
-  await runStep('Given user clicks "Signup / Login" button in header', { homePage })
-  await runStep('When user clicks "Home" button in header', { homePage })
-  await manualStep('Then home page is shown')
+await test.step('Open "Signup / Login" page', async () => {
+  await clickHeaderBtn({ homePage }, 'Signup / Login')
+  await manualStep('Verify "Signup / Login" Page is visible')
 })
 ```
 
-- Works in cyborg tests of any spec (Markdown too) and in automated tests: a definition matches the step text, the keyword is ignored.
-- `runStep` counts as a step with that title for `dress` / `stage` sync, and as an automated step in the matrix (`✔ 2/3`).
-- **`stage` never edits it** - new spec steps go into cyborg tests as `manualStep`, and you decide what to automate. `dress` (and `stage`) fail with the exact fix when a call would not work:
-  - no definition or several definitions match;
-  - the fixtures object misses one the definition destructures (`Fix: await runStep('…', { homePage })`), or is not an object literal;
-  - a passed fixture is not declared in the test (`Fix: Add to the test parameters: async ({ homePage, ... }) =>`);
-  - the step file is not imported (`Fix: import '@/steps/navigation.steps'`) or `runStep` is not imported;
-  - the title is not checkable statically - use a string or `${example.<column>}` of the examples loop;
-  - a non-English title has no `{ language: '<code>' }` third argument (the hint gives the `# language:` code of the spec);
-  - `test.step` wraps a `runStep` with the same title (the step would be reported twice).
-- Fixtures need the project `test` (`@/fixtures/base.fixture`), not the plain `@cyborgtests/test` of a fresh cyborg file.
-- In `beforeAll` / `afterAll`, only worker fixtures are available (`browser`, not `page` or Page Objects) - Playwright reports it when a step needs more.
+- Export the step function from its file (`export const clickHeaderBtn = When(…)`).
+- Hand-written tests keep their own rules: `test.step` titles follow the spec as usual, and steps of cyborg files written with `test.step()` are not synced by `stage` (see `.claude/rules/md-specs.md`). Hooks and the `bdd` context are not there - pass what the step needs.
+
+## Reports
+
+Every run writes Cucumber reports of all tests (Markdown specs included), see README "Reports":
+
+- `test-results/cucumber-report.json` - Cucumber JSON for test management tools; skipped steps and step attachments (`AfterStep` screenshots) included.
+- `test-results/cucumber-messages.ndjson` - Cucumber messages, the newer format; a Gherkin spec keeps its source (Rules, tables, language), Markdown specs get Gherkin written from the report.
+- `test-results/cucumber-report.html` - the standard Cucumber HTML report rendered from the messages: a single file, opens offline.
 
 ## Coverage matrix
 
@@ -166,21 +262,23 @@ The matrix reads files as they are - run `npm run dress` first (`npm run play` d
 
 ## Coming from Cucumber-style tools
 
-| You know                                 | Here                                                                                            |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| features folder / glob in a config       | `test-suites/bdd/` (`CONFIG.bdd.dirs`)                                                          |
-| step definitions glob                    | `src/steps/**/*.steps.ts` (`CONFIG.bdd.steps`, `BDD_STEPS`)                                     |
-| separate generate command                | `npm run stage` (also formats and validates everything else)                                    |
-| generated tests in a hidden folder       | `tests/bdd/` - committed, reviewed in pull requests, checked by `dress`                         |
-| `Given/When/Then` with fixtures          | the same, from `createBdd(test)` in `src/steps/bdd.ts`                                          |
-| `Before/After/BeforeAll/AfterAll` + tags | the same API: `Before({ tags, name }, fn)`                                                      |
-| World / `this` shared between steps      | Playwright fixtures: share state through a fixture or a Page Object                             |
-| step context fixtures (test info, tags)  | `test.info()` inside a step or hook                                                             |
-| `BeforeStep` / `AfterStep`               | not available - put the logic into the step, a Page Object or a fixture                         |
-| `@only`                                  | `npm run play bdd @tag` (`.only` is forbidden by lint)                                          |
-| Cucumber reports                         | Cucumber JSON on every run (`test-results/cucumber-report.json`), Monocart, the coverage matrix |
+| You know                                 | Here                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- |
+| features folder / glob in a config       | `test-suites/bdd/` (`CONFIG.bdd.dirs`)                                                |
+| step definitions glob                    | `src/steps/**/*.steps.ts` (`CONFIG.bdd.steps`, `BDD_STEPS`)                           |
+| separate generate command                | `npm run stage` (also formats and validates everything else)                          |
+| generated tests in a hidden folder       | `tests/automated/bdd/` - committed, reviewed in pull requests, checked by `dress`     |
+| `Given/When/Then` with fixtures          | the same, from `createBdd(test)` in `src/steps/bdd.ts`; they return the step function |
+| `Before/After/BeforeAll/AfterAll` + tags | the same API: `Before({ tags, name }, fn)`                                            |
+| `BeforeStep` / `AfterStep`               | the same API, with `bdd.step` (title, error, skip, attach)                            |
+| World / `this` shared between steps      | `createBdd(test, { world: 'world' })` - or share state through a fixture              |
+| step context fixtures (tags, step, info) | one `bdd` object next to the fixtures                                                 |
+| decorators on Page Object methods        | `@StepsFor('fixture', { tags })` + `@Given(…)`, subclasses chosen by tags             |
+| `@only`                                  | `npm run play bdd @tag` (`.only` is forbidden by lint)                                |
+| Cucumber reports                         | JSON, messages (NDJSON) and HTML on every run, plus Monocart and the coverage matrix  |
 
 ## Limitations
 
 - Step and hook functions declare fixtures by destructuring the first parameter (read from the function source) - a step wrapped in another function loses them.
 - Hooks run only in generated tests.
+- Vitest does not compile decorator syntax - unit tests of decorated Page Objects need another runner; Playwright and `tsx` (`stage`) compile them.

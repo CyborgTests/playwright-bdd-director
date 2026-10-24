@@ -12,7 +12,12 @@ import {
   buildDuplicateTitleError,
   buildDuplicateTitleInFileError
 } from '../errors/error-builders'
-import { getErrorMessage, getMarkdownBaseName, getTestFileBaseName } from '../utils/helpers'
+import {
+  getErrorMessage,
+  getMarkdownBaseName,
+  getTestFileBaseName,
+  isBddTestFile
+} from '../utils/helpers'
 import { getIcon } from '../utils/icons'
 import { validateMDStructure } from './md-validator'
 
@@ -224,7 +229,7 @@ function validateMDTSSync(
     const baseName = getTestFileBaseName(fileName)
 
     // Generated tests of step definitions style specs are checked by regeneration (bdd/sync)
-    if (fileName.toLowerCase().endsWith('.bdd.test.ts')) continue
+    if (isBddTestFile(testFile)) continue
 
     const markdownFile = markdownByBaseName.get(baseName)
     if (!markdownFile) continue

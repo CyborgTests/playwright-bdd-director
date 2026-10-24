@@ -10,6 +10,7 @@ import {
   getMarkdownBaseName,
   getTestFileBaseName,
   isBackgroundTitle,
+  isBddTestFile,
   isCyborgDisabledFor,
   matchesSpecCase
 } from '../utils/helpers'
@@ -93,6 +94,7 @@ export function collectCoverageMatrix(): CoverageMatrix {
 export interface CoverageOptions {
   noCyborg?: readonly string[]
   testSuitesDir?: string
+  bddTestsDir?: string
 }
 
 /**
@@ -102,10 +104,14 @@ export interface CoverageOptions {
 export function buildCoverageMatrix(
   specFiles: string[],
   testFiles: string[],
-  { noCyborg = CONFIG.noCyborg, testSuitesDir = CONFIG.paths.testSuites }: CoverageOptions = {}
+  {
+    noCyborg = CONFIG.noCyborg,
+    testSuitesDir = CONFIG.paths.testSuites,
+    bddTestsDir = CONFIG.bdd.testsDir
+  }: CoverageOptions = {}
 ): CoverageMatrix {
   const errors: string[] = []
-  const testsByBaseName = groupTestFiles(testFiles, errors)
+  const testsByBaseName = groupTestFiles(testFiles, bddTestsDir, errors)
   const suites: SuiteCoverage[] = []
 
   for (const specFile of specFiles) {
@@ -196,6 +202,7 @@ export function isCaseAutomated(testCase: CaseCoverage): boolean {
  */
 function groupTestFiles(
   testFiles: string[],
+  bddTestsDir: string,
   errors: string[]
 ): Map<string, Map<CoverageLayer, ParsedTestCase[]>> {
   const result = new Map<string, Map<CoverageLayer, ParsedTestCase[]>>()
@@ -203,7 +210,10 @@ function groupTestFiles(
   for (const testFile of testFiles) {
     const fileName = path.basename(testFile)
     const segments = fileName.toLowerCase().split('.')
-    const layer = COVERAGE_LAYERS.find((candidate) => segments.slice(1).includes(candidate))
+    // Generated tests are AUTO files - their folder makes them the bdd layer
+    const layer = isBddTestFile(testFile, bddTestsDir)
+      ? 'bdd'
+      : COVERAGE_LAYERS.find((candidate) => segments.slice(1).includes(candidate))
     if (!layer) continue
 
     let testCases: ParsedTestCase[]

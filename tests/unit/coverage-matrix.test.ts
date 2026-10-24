@@ -66,7 +66,11 @@ const CYBORG = testFile(
 )
 
 function build(specs: string[], tests: string[], noCyborg: readonly string[] = []): CoverageMatrix {
-  return buildCoverageMatrix(specs, tests, { noCyborg, testSuitesDir: suitesDir })
+  return buildCoverageMatrix(specs, tests, {
+    noCyborg,
+    testSuitesDir: suitesDir,
+    bddTestsDir: path.join(testDir, 'tests/automated/bdd')
+  })
 }
 
 describe('buildCoverageMatrix', () => {
@@ -211,7 +215,7 @@ describe('buildCoverageMatrix', () => {
 `
     )
     const bdd = writeFile(
-      'tests/bdd/nav.bdd.test.ts',
+      'tests/automated/bdd/nav.auto.test.ts',
       testFile(
         'test.describe',
         `  test.beforeAll('BeforeAll: Seed', async () => {

@@ -16,7 +16,14 @@ export interface RunStep {
   category: string // 'test.step' | 'hook' | 'fixture' | 'pw:api' | 'expect' | ...
   durationMs: number
   error?: string
+  skipped?: boolean // skipped from inside (step skip annotation)
+  attachments?: Attachment[] // attached to the step (AfterStep screenshot, ...)
   steps: RunStep[]
+}
+
+export interface Attachment {
+  mimeType: string
+  base64: string
 }
 
 /** Last result of a test, independent of the Playwright reporter API */
@@ -26,10 +33,11 @@ export interface TestRun {
   line: number
   tags: string[]
   status: 'passed' | 'failed' | 'timedOut' | 'skipped' | 'interrupted'
+  startTime?: string // ISO
   durationMs: number
   error?: string
   steps: RunStep[]
-  screenshots: Array<{ mimeType: string; base64: string }> // evidence of a failed test
+  screenshots: Attachment[] // evidence of a failed test
 }
 
 /** Spec a test file belongs to (same base name) */
@@ -67,6 +75,7 @@ export interface CucumberElement {
   description: string
   line: number
   type: 'background' | 'scenario'
+  start_timestamp?: string // scenario start (ISO), as Cucumber-JVM writes it
   tags?: Array<{ name: string; line: number }>
   before?: CucumberHook[]
   after?: CucumberHook[]
@@ -158,7 +167,10 @@ function buildElements(run: TestRun, spec: RunSpec | null, featureId: string): C
     spec,
     run.status
   )
-  const before = beforeHooks.filter((hook) => !isBackgroundTitle(hook.title)).map(toHook)
+  // beforeEach "BeforeStep: …" / "AfterStep: …" only registers a step hook - it runs inside steps
+  const before = beforeHooks
+    .filter((hook) => !isBackgroundTitle(hook.title) && !/^(Before|After)Step: /.test(hook.title))
+    .map(toHook)
   const after = childrenOf(run.steps, 'After Hooks').map(toHook)
   attributeFailure(run, [...backgroundSteps, ...steps], after)
 
@@ -181,6 +193,7 @@ function buildElements(run: TestRun, spec: RunSpec | null, featureId: string): C
     description: '',
     line: run.line,
     type: 'scenario',
+    ...(run.startTime ? { start_timestamp: run.startTime } : {}),
     tags: [...new Set(run.tags)].map((tag) => ({ name: tag, line: run.line })),
     ...(before.length > 0 ? { before } : {}),
     ...(after.length > 0 ? { after } : {}),
@@ -207,7 +220,11 @@ function matchSteps(
     const step = index >= 0 ? executed[index] : undefined
     if (step) next = index + 1
     const status: Status =
-      step && testStatus !== 'skipped' ? (step.error ? 'failed' : 'passed') : 'skipped'
+      step && testStatus !== 'skipped' && !step.skipped
+        ? step.error
+          ? 'failed'
+          : 'passed'
+        : 'skipped'
     return {
       ...splitKeyword(title, spec),
       line: i + 1,
@@ -215,7 +232,8 @@ function matchSteps(
         status,
         duration: toNanoseconds(step?.durationMs ?? 0),
         ...(step?.error ? { error_message: step.error } : {})
-      }
+      },
+      ...(step?.attachments?.length ? { embeddings: step.attachments.map(toEmbedding) } : {})
     }
   })
 }
@@ -238,11 +256,12 @@ function attributeFailure(run: TestRun, steps: CucumberStep[], after: CucumberHo
     else after.push({ match: { location: 'Test' }, result })
   }
   if (failed && run.screenshots.length > 0) {
-    failed.embeddings = run.screenshots.map(({ mimeType, base64 }) => ({
-      mime_type: mimeType,
-      data: base64
-    }))
+    failed.embeddings = [...(failed.embeddings ?? []), ...run.screenshots.map(toEmbedding)]
   }
+}
+
+function toEmbedding({ mimeType, base64 }: Attachment): { mime_type: string; data: string } {
+  return { mime_type: mimeType, data: base64 }
 }
 
 function splitKeyword(title: string, spec: RunSpec | null): { keyword: string; name: string } {

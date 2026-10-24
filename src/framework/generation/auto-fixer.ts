@@ -1,7 +1,6 @@
 import path from 'path'
 import { Block, CallExpression, Node, Statement, SyntaxKind } from 'ts-morph'
 
-import { AST_IDENTIFIERS } from '../constants/test-files'
 import { isSameExamples, splitTags } from '../core/file-matcher'
 import { ExamplesTable, ParsedMD, TestCase } from '../core/md-parser'
 import {
@@ -360,11 +359,7 @@ function fixTestSteps(
     getCallbackBlock(testCall),
     stepCalls.map((call) => getStatementIn(call))
   )
-  // runStep() calls a step definition in any file type - the style comes from other steps
-  const neighborIsTestStep = stepCalls
-    .map((call) => call.getExpression().getText())
-    .find((expression) => expression !== AST_IDENTIFIERS.RUN_STEP)
-    ?.endsWith('.step')
+  const neighborIsTestStep = stepCalls[0]?.getExpression().getText().endsWith('.step')
   const useTestStep = neighborIsTestStep ?? fileType === 'AUTO'
 
   for (const op of alignByTitle(currentSteps, expectedSteps, (a, b) => a === b)) {
@@ -620,8 +615,6 @@ export function isEmptyAutoTest(testFilePath: string): boolean {
     }
 
     for (const stepCall of stepCalls) {
-      // runStep() runs a step definition - implemented code, not a skeleton
-      if (stepCall.getExpression().getText() === AST_IDENTIFIERS.RUN_STEP) return false
       if (hasRealCode(stepCall.getArguments()[1])) return false
     }
   }

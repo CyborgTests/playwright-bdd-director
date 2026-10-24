@@ -4,7 +4,6 @@ import fs from 'fs'
 import { glob } from 'glob'
 import path from 'path'
 
-import { checkRunSteps } from '@/framework/bdd/run-step-check'
 import { buildBddTests, isBddTestOutdated } from '@/framework/bdd/sync'
 import { CONFIG } from '@/framework/config'
 import { matchFiles } from '@/framework/core/file-matcher'
@@ -31,6 +30,7 @@ import {
   getSuiteSubDir,
   getTestFileBaseName,
   hasAutomatedTestFile,
+  isBddTestFile,
   isCyborgDisabledFor,
   isMatchingTestFile
 } from '@/framework/utils/helpers'
@@ -115,17 +115,6 @@ async function main() {
       phaseBdd.errors.map(({ file, errors }) => ({ title: `Spec: ${file}`, errors })),
       { fixMessageAfter: 'Fix: the spec or step definitions, then npm run stage' }
     )
-    process.exit(1)
-  }
-
-  // runStep() in hand-written tests is never edited by stage - report what would fail at runtime
-  const runStepErrors = await checkRunSteps(
-    finalValidation.validationResults.map((r) => r.file),
-    { specs: finalValidation.markdownByBaseName }
-  )
-  if (runStepErrors.length > 0) {
-    console.log(`\n${getIcon('error')}  runStep failed: ${runStepErrors.length} file(s)\n`)
-    printErrorGroups(runStepErrors.map(({ file, errors }) => ({ title: `File: ${file}`, errors })))
     process.exit(1)
   }
 
@@ -389,6 +378,9 @@ function processTestFiles(
 
     const markdownData = validation.parsedMDMap.get(markdownFile)
     if (!markdownData) continue
+
+    // Generated tests of step definitions style specs are rewritten by the bdd phase
+    if (isBddTestFile(testFile)) continue
 
     // Filter by file type (case-insensitive for file names): cyborg, or any automated kind
     const isCyborgFile = fileName.toLowerCase().includes('.cyborg.')

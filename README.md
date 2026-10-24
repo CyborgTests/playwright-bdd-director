@@ -131,6 +131,7 @@ npm run review
 Every run also writes reports for test management tools and CI:
 
 - `test-results/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) of every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps of cyborg tests too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`): `Tags: @TEST_PROJ-123` in MD, `@TEST_PROJ-123` in Gherkin
+- `test-results/cucumber-messages.ndjson` - **Cucumber messages**, the newer Cucumber format, and `test-results/cucumber-report.html` - the **Cucumber HTML report** rendered from them (one offline file)
 - `test-results/junit.xml` - **JUnit XML** (TestRail, Zephyr, any CI)
 
 ### 11. Check coverage
@@ -161,7 +162,7 @@ npm run matrix -- @smoke                 # only test cases tagged @smoke
 ```
 
 - **Cells**: ✔ implemented · ○ empty skeleton (AUTO from `autogen`) · ⊘ `skip`/`fixme`/`fail` · — missing · `n/a` for `noCyborg` suites; colors in a terminal (off for pipes and `NO_COLOR`)
-- **Cyborg cell** `✔ x/y` shows automated/total steps: a step counts as automated when it has no `manualStep()` inside (`runStep` is automated)
+- **Cyborg cell** `✔ x/y` shows automated/total steps: a step counts as automated when it has no `manualStep()` inside
 - **BDD column** appears with step definitions style specs: generated tests, Outline matched row by row, missing steps shown as ⊘
 - **Automated case** = implemented in at least one of api/ui/e2e/bdd/auto; Background is shown but not counted
 - Static: files are read as they are - run `npm run dress` first (`play` does) so generated tests are up to date
@@ -181,7 +182,7 @@ npm run ci                            # dress -> automated tests -> coverage mat
 - Runs every automated test (`play auto`); cyborg tests need a person and are skipped
 - Failed tests do not stop the coverage matrix and reports; the exit code is 1 when any stage failed
 - `CI_MIN_COVERAGE=80 npm run ci` also fails when automated coverage is below 80%
-- Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results), `cucumber-report.json`, `monocart-report/`, `coverage-matrix.{html,json,md}`
+- Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results), `cucumber-report.{json,html}`, `cucumber-messages.ndjson`, `monocart-report/`, `coverage-matrix.{html,json,md}`
 
 ## ⚡ Markdown-Driven Testing Platform
 
@@ -506,7 +507,7 @@ Given('user opens the home page', async ({ homePage }) => {
 When('user clicks {string} button in header', async ({ homePage }, button: string) => { ... })
 ```
 
-`test-suites/bdd/header-navigation.feature` → `tests/bdd/header-navigation.bdd.test.ts`:
+`test-suites/bdd/header-navigation.feature` → `tests/automated/bdd/header-navigation.auto.test.ts` (an automated test; the `bdd` folder marks it as generated):
 
 ```typescript
 test.beforeEach('Background', async ({ homePage }) => {
@@ -521,8 +522,10 @@ test('Go back home from "Signup / Login" page', async ({ homePage }) => {
 
 - **Steps**: [Cucumber Expressions](https://github.com/cucumber/cucumber-expressions) or RegExp; the keyword does not affect matching; the first parameter destructures the fixtures the step needs
 - **Missing step** → scenario generated as `test.fixme` + a snippet from `stage`; **ambiguous step** → `stage` and `dress` fail with locations
-- **Hooks** `Before/After/BeforeAll/AfterAll` with tag expressions, **special tags** `@skip`, `@fixme`, `@fail`, `@slow`, `@retries:N`, `@timeout:N`
-- **`runStep` in cyborg tests**: the same step definitions in a mixed walkthrough - `stage` never edits these calls, `dress` reports what would fail with the exact fix
+- **Step functions**: `Given/When/Then` return the step, typed - call it from another step or any test
+- **Hooks** `Before/After/BeforeAll/AfterAll/BeforeStep/AfterStep` with tag expressions, **special tags** `@skip`, `@fixme`, `@fail`, `@slow`, `@retries:N`, `@timeout:N`
+- **Step context** `bdd` next to the fixtures: tags, scenario, step title, `skip()`, `attach()`, the step error in `AfterStep`
+- **Page Object steps**: `@StepsFor('homePage')` + `@Given(…)` on methods, subclasses chosen by tags; **World style** `createBdd(test, { world: 'world' })` for `this`-based steps
 - Run: `npm run play bdd`. Any Gherkin language (`# language: uk`), Background inside Rule, tags on Examples
 
 Full guide: [docs/step-definitions.md](docs/step-definitions.md).
@@ -754,21 +757,23 @@ npm run show              # Open Playwright UI mode (visual runner)
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable               | Default                             | Description                                              |
-| ---------------------- | ----------------------------------- | -------------------------------------------------------- |
-| `TEST_SUITES_DIR`      | `test-suites`                       | Markdown test suites directory                           |
-| `TESTS_DIR`            | `tests`                             | Root tests directory                                     |
-| `TESTS_AUTO_DIR`       | `tests/automated/todo`              | Generated AUTO test skeletons                            |
-| `TESTS_CYBORG_DIR`     | `tests/cyborg`                      | Generated cyborg test skeletons                          |
-| `TESTS_ARCHIVED_DIR`   | `tests/archived`                    | Archived orphaned tests                                  |
-| `TESTS_BDD_DIR`        | `tests/bdd`                         | Generated tests of step definitions style specs          |
-| `BDD_STEPS`            | `src/steps/**/*.steps.ts`           | Step definition files                                    |
-| `METRICS_ENABLED`      | `false`                             | Enable metrics JSON output                               |
-| `METRICS_FILE`         | `.metrics.json`                     | Metrics output file path                                 |
-| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`      | Coverage matrix reports path (without extension)         |
-| `CUCUMBER_REPORT_FILE` | `test-results/cucumber-report.json` | Cucumber JSON of every run                               |
-| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`            | JUnit XML of every run                                   |
-| `CI_MIN_COVERAGE`      | -                                   | `npm run ci` fails below this automated coverage percent |
+| Variable                 | Default                                 | Description                                              |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------- |
+| `TEST_SUITES_DIR`        | `test-suites`                           | Markdown test suites directory                           |
+| `TESTS_DIR`              | `tests`                                 | Root tests directory                                     |
+| `TESTS_AUTO_DIR`         | `tests/automated/todo`                  | Generated AUTO test skeletons                            |
+| `TESTS_CYBORG_DIR`       | `tests/cyborg`                          | Generated cyborg test skeletons                          |
+| `TESTS_ARCHIVED_DIR`     | `tests/archived`                        | Archived orphaned tests                                  |
+| `TESTS_BDD_DIR`          | `tests/automated/bdd`                   | Generated tests of step definitions style specs          |
+| `BDD_STEPS`              | `src/steps/**/*.steps.ts`               | Step definition files                                    |
+| `METRICS_ENABLED`        | `false`                                 | Enable metrics JSON output                               |
+| `METRICS_FILE`           | `.metrics.json`                         | Metrics output file path                                 |
+| `COVERAGE_MATRIX_FILE`   | `test-results/coverage-matrix`          | Coverage matrix reports path (without extension)         |
+| `CUCUMBER_REPORT_FILE`   | `test-results/cucumber-report.json`     | Cucumber JSON of every run                               |
+| `CUCUMBER_MESSAGES_FILE` | `test-results/cucumber-messages.ndjson` | Cucumber messages of every run                           |
+| `CUCUMBER_HTML_FILE`     | `test-results/cucumber-report.html`     | Cucumber HTML report of every run                        |
+| `JUNIT_REPORT_FILE`      | `test-results/junit.xml`                | JUnit XML of every run                                   |
+| `CI_MIN_COVERAGE`        | -                                       | `npm run ci` fails below this automated coverage percent |
 
 **Suites without cyborg tests:** list them in `CONFIG.noCyborg` (paths inside `test-suites/` without `.md`): a folder (`'api'`) covers all its MDs, a file (`'e2e/checkout'`) a single MD. `stage` neither generates nor auto-fixes cyborg files for them - they pair with automated tests only. An existing cyborg file is still checked by `dress`, so delete it.
 

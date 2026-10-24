@@ -211,8 +211,8 @@ function hasTestBody(callExpression: CallExpression): boolean {
 
 /**
  * Find all step calls within test block
- * Supports: manualStep(), runStep() (step definition), test.step(), authTest.step(), any fixture with .step
- * Excludes: manualStep() / runStep() calls inside test.step() - they are part of the step, not separate steps
+ * Supports: manualStep(), test.step(), authTest.step(), customTest.step(), and any fixture with .step
+ * Excludes: manualStep() calls that are inside test.step() - they are part of the step, not separate steps
  */
 export function findStepCalls(testCall: CallExpression): CallExpression[] {
   const args = testCall.getArguments()
@@ -230,8 +230,8 @@ export function findStepCalls(testCall: CallExpression): CallExpression[] {
       // Always include test.step calls
       if (expression.endsWith('.step')) return true
 
-      // For manualStep / runStep, check if it's inside a test.step - if so, exclude it
-      if (expression === AST_IDENTIFIERS.MANUAL_STEP || expression === AST_IDENTIFIERS.RUN_STEP) {
+      // For manualStep, check if it's inside a test.step - if so, exclude it
+      if (expression === AST_IDENTIFIERS.MANUAL_STEP) {
         return !isInsideTestStep(call)
       }
 
@@ -370,7 +370,7 @@ export function readExamplesArray(array: ArrayLiteralExpression): ExamplesTable 
 /**
  * Column of `example.column` / `example['column']`
  */
-export function getExampleColumn(expression: Node, loopVar: string): string | undefined {
+function getExampleColumn(expression: Node, loopVar: string): string | undefined {
   const property = expression.asKind(SyntaxKind.PropertyAccessExpression)
   if (property && property.getExpression().getText() === loopVar) return property.getName()
 

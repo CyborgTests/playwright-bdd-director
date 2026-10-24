@@ -173,10 +173,20 @@ export function getBddSpecKey(
 }
 
 /**
- * Generated test of a step definitions style spec: "shop/cart" -> "tests/bdd/shop/cart.bdd.test.ts"
+ * Generated test of a step definitions style spec - an AUTO test whose folder marks it:
+ * "shop/cart" -> "tests/automated/bdd/shop/cart.auto.test.ts"
  */
 export function getBddTestPath(bddSpecKey: string, testsDir = CONFIG.bdd.testsDir): string {
-  return path.join(testsDir, `${bddSpecKey}.bdd.test.ts`)
+  return path.join(testsDir, `${bddSpecKey}.auto.test.ts`)
+}
+
+/**
+ * Test generated from a step definitions style spec: any file inside CONFIG.bdd.testsDir.
+ * stage owns it - never validated, auto-fixed or archived as a hand-written test.
+ */
+export function isBddTestFile(testFile: string, testsDir = CONFIG.bdd.testsDir): boolean {
+  const relative = path.relative(path.resolve(testsDir), path.resolve(testFile))
+  return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
 }
 
 /**

@@ -14,7 +14,7 @@ import {
   parseFixtureNames
 } from '@/framework/bdd/registry'
 import { DataTable, findStepDefinition, runHook, stripStepKeyword } from '@/framework/bdd/runtime'
-import { getBddSpecKey, getBddTestPath } from '@/framework/utils/helpers'
+import { getBddSpecKey, getBddTestPath, isBddTestFile } from '@/framework/utils/helpers'
 
 const { Given, When, Then, Before, After, BeforeAll, AfterAll } = createBdd(test)
 let testDir: string
@@ -146,9 +146,19 @@ describe('bdd spec paths', () => {
     )
     expect(getBddSpecKey('test-suites/bdd/cart.md', ['bdd'], 'test-suites')).toBeNull()
     expect(getBddSpecKey('test-suites/cart.feature', ['bdd'], 'test-suites')).toBeNull()
-    expect(getBddTestPath('shop/cart', 'tests/bdd')).toBe(
-      path.join('tests', 'bdd', 'shop', 'cart.bdd.test.ts')
+    expect(getBddTestPath('shop/cart', 'tests/automated/bdd')).toBe(
+      path.join('tests', 'automated', 'bdd', 'shop', 'cart.auto.test.ts')
     )
+  })
+
+  it('should tell generated tests by their folder, not by the file name', () => {
+    const dir = 'tests/automated/bdd'
+
+    expect(isBddTestFile('tests/automated/bdd/shop/cart.auto.test.ts', dir)).toBe(true)
+    expect(isBddTestFile(path.resolve('tests/automated/bdd/cart.auto.test.ts'), dir)).toBe(true)
+    expect(isBddTestFile('tests/automated/todo/cart.auto.test.ts', dir)).toBe(false)
+    expect(isBddTestFile('tests/automated/bdd-old/cart.auto.test.ts', dir)).toBe(false)
+    expect(isBddTestFile(dir, dir)).toBe(false)
   })
 })
 
@@ -156,7 +166,7 @@ describe('generateBddTest', () => {
   const generate = (feature: string) => {
     const specPath = path.join(testDir, 'shop.feature')
     fs.writeFileSync(specPath, feature, 'utf-8')
-    return generateBddTest(specPath, path.join(testDir, 'shop.bdd.test.ts'))
+    return generateBddTest(specPath, path.join(testDir, 'shop.auto.test.ts'))
   }
 
   it('should generate describe, Background, Rule, Outline rows and step calls with fixtures', async () => {
@@ -243,7 +253,7 @@ Feature: Shop
     Given user is logged in
 `)
 
-    expect(content).toContain("import { runHook, runStep } from '@/framework/bdd'")
+    expect(content).toContain("import { runHook, runStep } from '@/framework/bdd/runtime'")
     expect(content).toContain(
       "test.beforeAll('BeforeAll: Seed', async ({ browser }) => {\n    await runHook('BeforeAll', 'Seed', { browser })"
     )
@@ -332,7 +342,7 @@ describe('generateBddTest - Rule Background and languages', () => {
   const generate = (feature: string) => {
     const specPath = path.join(testDir, 'shop.feature')
     fs.writeFileSync(specPath, feature, 'utf-8')
-    return generateBddTest(specPath, path.join(testDir, 'shop.bdd.test.ts'))
+    return generateBddTest(specPath, path.join(testDir, 'shop.auto.test.ts'))
   }
   const feature = `Feature: Shop
   Background:

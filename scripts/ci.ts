@@ -38,6 +38,8 @@ function main(): void {
   for (const file of [
     CONFIG.paths.junitReport,
     CONFIG.paths.cucumberReport,
+    CONFIG.paths.cucumberMessages,
+    CONFIG.paths.cucumberHtml,
     'test-results/monocart-report/',
     `${CONFIG.paths.coverageMatrix}.{html,json,md}`
   ]) {
