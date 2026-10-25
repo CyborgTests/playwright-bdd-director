@@ -3,18 +3,16 @@ import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { parseGherkinFile } from '@/framework/core/gherkin-parser'
-import { clearMDCache, parseMDFile } from '@/framework/core/md-parser'
+import { parseMDFile } from '@/framework/core/md-parser'
 
 const TEST_DIR = path.join(process.cwd(), '.test-tmp-gherkin')
 
 beforeEach(() => {
   fs.mkdirSync(TEST_DIR, { recursive: true })
-  clearMDCache()
 })
 
 afterEach(() => {
   fs.rmSync(TEST_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }) // Windows: files briefly locked
-  clearMDCache()
 })
 
 function createFeature(fileName: string, content: string): string {

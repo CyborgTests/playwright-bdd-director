@@ -4,7 +4,6 @@ import {
   buildCannotReadError,
   buildFileNotFoundError,
   buildH2NotFirstError,
-  buildInvalidCharsError,
   buildInvalidFormatError,
   buildInvalidHeadingOrderError,
   buildInvalidLineFormatError,
@@ -12,16 +11,14 @@ import {
   buildMissingH2Error,
   buildMissingH3Error,
   buildMissingH4Error,
-  buildMultipleH2Error,
-  buildPathTraversalError
+  buildMultipleH2Error
 } from '@/framework/errors/error-builders'
 
 describe('error-builders', () => {
   describe('buildFileNotFoundError', () => {
     it('should build file not found error', () => {
-      const error = buildFileNotFoundError('auth', '/test-suites')
-      expect(error).toContain('Spec file not found: auth.md or auth.feature')
-      expect(error).toContain('/test-suites')
+      const error = buildFileNotFoundError('test-suites/auth.md')
+      expect(error).toContain('Spec file not found: test-suites/auth.md')
     })
   })
 
@@ -40,24 +37,6 @@ describe('error-builders', () => {
       expect(error).toContain('No test cases found')
       expect(error).toContain('suite.md')
       expect(error).toContain('Add at least one test case')
-    })
-  })
-
-  describe('buildPathTraversalError', () => {
-    it('should build path traversal error', () => {
-      const error = buildPathTraversalError('../../../etc/passwd')
-      expect(error).toContain('Path traversal detected')
-      expect(error).toContain('../../../etc/passwd')
-      expect(error).toContain('..')
-    })
-  })
-
-  describe('buildInvalidCharsError', () => {
-    it('should build invalid chars error', () => {
-      const error = buildInvalidCharsError('test<>file', 'a-z, 0-9, -, _')
-      expect(error).toContain('Invalid file name:')
-      expect(error).toContain('test<>file')
-      expect(error).toContain('Allowed characters')
     })
   })
 

@@ -11,7 +11,12 @@ import { CONFIG } from '../config'
 import { SPEC_FILE_GLOB } from '../constants/markdown'
 import { parseGherkinDocument } from '../core/gherkin-parser'
 import { parseMDFile } from '../core/md-parser'
-import { getErrorMessage, getMarkdownBaseName, getTestFileBaseName } from '../utils/helpers'
+import {
+  getErrorMessage,
+  getMarkdownBaseName,
+  getTestFileBaseName,
+  toProjectPath
+} from '../utils/helpers'
 import { buildCucumberMessages } from './cucumber-messages'
 import { buildCucumberReport, type RunSpec, type RunStep, type TestRun } from './cucumber-report'
 
@@ -177,8 +182,4 @@ function createSpecFinder(): (testFile: string) => RunSpec | null {
     }
     return cache.get(specPath) ?? null
   }
-}
-
-function toProjectPath(file: string): string {
-  return path.relative(process.cwd(), file).split(path.sep).join('/')
 }

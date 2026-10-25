@@ -5,7 +5,7 @@ import path from 'path'
 import { allProjects } from '@/config/projects'
 import { buildTests } from '@/framework/bdd/build'
 import { CONFIG } from '@/framework/config'
-import { printErrorGroups } from '@/framework/reporting/console-formatter'
+import { printSpecErrors } from '@/framework/reporting/console-formatter'
 import {
   buildDressReport,
   renderDressConsole,
@@ -33,9 +33,9 @@ async function main() {
   console.log(renderDressConsole(report))
 
   if (report.errors.length > 0) {
-    printErrorGroups(
-      report.errors.map(({ file, errors }) => ({ title: `Spec: ${file}`, errors })),
-      { fixMessageAfter: 'Tests are generated on every run - fix the specs or step definitions' }
+    printSpecErrors(
+      report.errors,
+      'Tests are generated on every run - fix the specs or step definitions'
     )
     console.log('')
   }

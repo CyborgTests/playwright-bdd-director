@@ -36,6 +36,7 @@ function main(): void {
 
   console.log(`\n${getIcon('info')}  Artifacts to keep (CI "artifacts" / "test results"):`)
   for (const file of [
+    CONFIG.paths.dressReport,
     CONFIG.paths.junitReport,
     `${CONFIG.paths.cucumberReports}/ (per device: <project>/cucumber-report.json)`,
     'test-results/monocart-report/',

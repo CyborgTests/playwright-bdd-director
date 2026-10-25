@@ -22,7 +22,7 @@ paths:
 - Errors carry an actionable fix hint (`errors/error-builders.ts`); console output goes through `reporting/console-formatter.ts` and `utils/icons.ts`.
 - Generation is deterministic and idempotent: the same specs and step definitions give byte-identical test files; `stage` run twice changes nothing. Generated tests are never committed and never hand-edited.
 - Generated code must pass Prettier + ESLint as emitted (the pipeline formats, but don't rely on it to fix broken syntax).
-- Path handling is cross-platform: `path.join`/`path.resolve`, normalize separators before comparing; keep path-traversal protection in readers.
+- Path handling is cross-platform: `path.join`/`path.resolve`; paths in reports, messages and generated code go through `toPosix` / `toProjectPath` (`utils/helpers.ts`).
 
 ## Unit tests (Vitest, `<module>.test.ts` next to the module)
 

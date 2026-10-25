@@ -1,5 +1,6 @@
 import eslint from '@eslint/js'
 import prettier from 'eslint-config-prettier'
+import playwright from 'eslint-plugin-playwright'
 import prettierPlugin from 'eslint-plugin-prettier'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import unusedImports from 'eslint-plugin-unused-imports'
@@ -35,10 +36,21 @@ export default tseslint.config(
       ]
     }
   },
+  // Test layer: Playwright best practices (rule playwright-tests); what must never be committed fails
+  {
+    ...playwright.configs['flat/recommended'],
+    files: ['src/{pages,steps,fixtures,clients,test-utils,test-helpers}/**/*.ts'],
+    rules: {
+      ...playwright.configs['flat/recommended'].rules,
+      'playwright/no-focused-test': 'error',
+      'playwright/no-page-pause': 'error'
+    }
+  },
   {
     ignores: [
       'node_modules/**',
       'test-results/**',
+      'coverage/**',
       'blob-report/**',
       'playwright-report/**',
       '.claude/**',

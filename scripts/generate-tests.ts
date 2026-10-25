@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { buildTests, writeTests } from '@/framework/bdd/build'
-import { printErrorGroups } from '@/framework/reporting/console-formatter'
+import { printSpecErrors } from '@/framework/reporting/console-formatter'
 import { getErrorMessage } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
@@ -17,10 +17,7 @@ main().catch((error: unknown) => {
 async function main() {
   const { generations, errors } = await buildTests()
   if (errors.length > 0) {
-    printErrorGroups(
-      errors.map(({ file, errors: messages }) => ({ title: `Spec: ${file}`, errors: messages })),
-      { fixMessageAfter: 'Fix the specs or step definitions - npm run dress shows everything' }
-    )
+    printSpecErrors(errors, 'Fix the specs or step definitions - npm run dress shows everything')
     process.exit(1)
   }
   writeTests(generations)

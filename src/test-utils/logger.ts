@@ -1,16 +1,15 @@
 import * as fs from 'node:fs/promises'
 
-import { test } from '@playwright/test'
+import { test, type TestInfo } from '@playwright/test'
 
-export async function log(name: string, message: string) {
-  if (process.env.NO_LOGS === 'true') {
-    return
-  }
+/**
+ * Report attachments of the running test; NO_LOGS=true turns them off. Outside a test (hooks of
+ * other tools, scripts) they are skipped instead of failing.
+ */
+async function attach(name: string, options: Parameters<TestInfo['attach']>[1]): Promise<void> {
+  if (process.env.NO_LOGS === 'true') return
   try {
-    await test.info().attach(name, {
-      body: message,
-      contentType: 'text/plain'
-    })
+    await test.info().attach(name, options)
   } catch (error) {
     if (
       error instanceof Error &&
@@ -22,51 +21,27 @@ export async function log(name: string, message: string) {
   }
 }
 
-export async function logJson(name: string, data: unknown) {
-  if (process.env.NO_LOGS === 'true') {
-    return
-  }
-  const pretty = JSON.stringify(data, null, 2)
-  try {
-    await test.info().attach(name, {
-      body: pretty,
-      contentType: 'application/json'
-    })
-  } catch (error) {
-    // Ignore errors when test.info() is not available (e.g., in Artillery context)
-    if (
-      error instanceof Error &&
-      error.message.includes('can only be called while test is running')
-    ) {
-      return
-    }
-    throw error
-  }
+export async function log(name: string, message: string): Promise<void> {
+  await attach(name, { body: message, contentType: 'text/plain' })
 }
 
+export async function logJson(name: string, data: unknown): Promise<void> {
+  await attach(name, { body: JSON.stringify(data, null, 2), contentType: 'application/json' })
+}
+
+/** A file in the test output folder, attached - for content too big or binary for the body */
 export async function logFile(
   name: string,
   content: string | Buffer,
   contentType = 'application/json'
-) {
-  if (process.env.NO_LOGS === 'true') {
-    return
-  }
+): Promise<void> {
+  if (process.env.NO_LOGS === 'true') return
+  let filePath: string
   try {
-    const filePath = test.info().outputPath(`${Date.now()}-${name.replace(/[^\w.-]+/g, '_')}`)
-    await fs.writeFile(filePath, content)
-    await test.info().attach(name, {
-      path: filePath,
-      contentType
-    })
-  } catch (error) {
-    // Ignore errors when test.info() is not available (e.g., in Artillery context)
-    if (
-      error instanceof Error &&
-      error.message.includes('can only be called while test is running')
-    ) {
-      return
-    }
-    throw error
+    filePath = test.info().outputPath(`${Date.now()}-${name.replace(/[^\w.-]+/g, '_')}`)
+  } catch {
+    return // not inside a test
   }
+  await fs.writeFile(filePath, content)
+  await attach(name, { path: filePath, contentType })
 }

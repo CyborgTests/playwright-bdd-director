@@ -5,17 +5,9 @@ import { desktopDevices, handheldDevices } from '@/config/devices'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
- * CLI wrapper for running playwright tests with different tags. Nothing to validate first: the
- * tests are generated from the specs on every run (playwright.config.ts).
- * Usage: npx tsx scripts/play.ts <testType> [suiteName]
- *
- * Examples:
- *   npx tsx scripts/play.ts auto           # All automated tests
- *   npx tsx scripts/play.ts cyborg         # All cyborg tests
- *   npx tsx scripts/play.ts cyborg auth    # Cyborg tests for auth suite
- *   npx tsx scripts/play.ts api ui auth    # API + UI tests for auth suite
- *   npx tsx scripts/play.ts ui @smoke      # UI tests tagged @smoke in spec
- *   npx tsx scripts/play.ts e2e mobile     # E2E tests on the mobile device only
+ * Play - run the tests by type, suite, spec tag and device: `npm run play [types] [suites] [@tags]
+ * [devices]` (see showUsage). Nothing to validate first: the tests are generated from the specs on
+ * every run (playwright.config.ts).
  */
 
 const TEST_TYPES = ['auto', 'cyborg', 'api', 'ui', 'e2e'] as const
@@ -29,7 +21,6 @@ interface PlayConfig {
   suiteNames?: string[]
   tags?: string[] // spec tags as written: '@smoke'
   devices?: string[] // device ids: 'chrome', 'mobile'
-  workers?: number
 }
 
 /**
@@ -68,10 +59,6 @@ function buildPlaywrightCommand(config: PlayConfig): string {
     cmd += ` --project=${device}`
   }
 
-  if (config.workers) {
-    cmd += ` --workers=${config.workers}`
-  }
-
   return cmd
 }
 
@@ -98,13 +85,11 @@ function showUsage(): void {
 ${getIcon('info')}  Play CLI - Run Playwright tests with tag-based filtering
 
 Usage:
-  npm run play <types> <suites> <@tags>
+  npm run play [types] [suites] [@tags] [devices]
 
-  Arguments must be in order: test types first, then suite names
+  Test types come before suite names
   Spec tags (@tag lines above MD / Gherkin headings) start with @ and may go anywhere
   Devices (${DEVICE_IDS.join(', ')}) may go anywhere - without one every device runs
-  Example: npm run play api ui auth todo
-  Example: npm run play cyborg auth
 
 Test Types:
   auto      Run all automated tests (@auto)
@@ -119,11 +104,11 @@ Examples:
   npm run play cyborg auth          # Cyborg tests for auth suite
   npm run play api auth             # API auth tests
   npm run play ui auth              # UI auth tests
-  npm run play api ui auth todo     # API + UI tests for auth + todo suites
+  npm run play api ui auth cart     # API + UI tests for auth + cart suites
   npm run play cyborg auto          # Cyborg + auto tests
   npm run play cyborg auto auth     # Cyborg + auto auth tests
   npm run play auth                 # All auth tests (any type)
-  npm run play auth todo            # All auth + todo tests
+  npm run play auth cart            # All auth + cart tests
   npm run play @smoke               # All tests tagged @smoke in spec
   npm run play ui auth @smoke       # UI auth tests tagged @smoke
   npm run play e2e mobile           # E2E tests on the mobile device only
@@ -195,7 +180,7 @@ function parseTypesAndSuites(args: string[]): PlayConfig {
       )
       console.error('')
       console.error('  Correct usage: npm run play <types> <suites>')
-      console.error('  Example: npm run play api ui auth todo')
+      console.error('  Example: npm run play api ui auth cart')
       console.error('  Example: npm run play cyborg auth')
       process.exit(1)
     }

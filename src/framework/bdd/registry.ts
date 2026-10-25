@@ -8,6 +8,8 @@ import {
 import type { TestInfo, TestType } from '@playwright/test'
 import path from 'path'
 
+import { toProjectPath } from '../utils/helpers'
+
 export type StepKeyword = 'Given' | 'When' | 'Then' | 'Step'
 
 /**
@@ -461,7 +463,7 @@ function getCallerLocation(): string {
     if (file.includes(`${path.sep}bdd${path.sep}registry`) || file.includes('/bdd/registry')) {
       continue
     }
-    return `${path.relative(process.cwd(), file).split(path.sep).join('/')}:${match[2]}`
+    return `${toProjectPath(file)}:${match[2]}`
   }
   return 'unknown location'
 }

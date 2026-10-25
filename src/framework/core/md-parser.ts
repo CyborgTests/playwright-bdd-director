@@ -1,22 +1,13 @@
 import fs from 'fs'
-import path from 'path'
 
-import { CONFIG } from '@/framework/config'
-import {
-  MD_EXAMPLES,
-  MD_HEADINGS,
-  MD_TABLE_PREFIX,
-  SPEC_FILE_EXTENSION
-} from '@/framework/constants/markdown'
+import { MD_EXAMPLES, MD_HEADINGS, MD_TABLE_PREFIX } from '@/framework/constants/markdown'
 
 import {
   buildBackgroundTagsError,
   buildExamplesError,
   buildFileNotFoundError,
-  buildInvalidCharsError,
   buildInvalidFormatError,
   buildMissingElementError,
-  buildPathTraversalError,
   buildTablePlacementError,
   buildTagsPlacementError
 } from '../errors/error-builders'
@@ -28,9 +19,6 @@ import {
   parseTagsLine
 } from '../utils/helpers'
 import { parseGherkinFile } from './gherkin-parser'
-
-// Regex constants (compiled once, reused many times)
-const VALID_FILENAME_PATTERN = /^[\w.-]+$/
 
 export interface TestCase {
   id: string | null // TC-001, "" for empty brackets [], or null for no brackets
@@ -54,17 +42,6 @@ export interface ParsedMD {
   suiteTtl: string // Authentication
   suiteTags: string[] // "@ui" line above ## heading (Gherkin: Feature tags)
   testCases: TestCase[]
-}
-
-// Cache for MD file lookups (performance optimization)
-const mdFileCache = new Map<string, string | null>()
-
-/**
- * Clear MD file cache
- * Call this to invalidate cached file paths (e.g., after file operations)
- */
-export function clearMDCache(): void {
-  mdFileCache.clear()
 }
 
 /**
@@ -92,11 +69,9 @@ export function clearMDCache(): void {
  *
  * Gherkin specs (`.feature`) are parsed into the same structure (see gherkin-parser)
  */
-export function parseMDFile(fileName: string): ParsedMD {
-  const mdPath = resolveMDPath(fileName)
-
-  if (!mdPath) {
-    throw new Error(buildFileNotFoundError(fileName, CONFIG.paths.testSuites))
+export function parseMDFile(mdPath: string): ParsedMD {
+  if (!fs.existsSync(mdPath)) {
+    throw new Error(buildFileNotFoundError(mdPath))
   }
 
   if (mdPath.endsWith('.feature')) {
@@ -315,66 +290,4 @@ function splitTableRow(line: string): string[] {
     .replace(/(?<!\\)\|$/, '')
     .split(/(?<!\\)\|/)
     .map((cell) => cell.trim().replace(/\\\|/g, '|'))
-}
-
-function resolveMDPath(fileName: string): string | null {
-  if (SPEC_FILE_EXTENSION.test(fileName) && fs.existsSync(fileName)) {
-    return fileName
-  }
-  return findMdFile(fileName)
-}
-
-/**
- * Find spec file (`<name>.md` or `<name>.feature`) by name (without extension)
- * Uses cache for performance optimization
- * @throws Error if fileName contains path traversal characters
- */
-function findMdFile(fileName: string): string | null {
-  // Sanitize input: prevent path traversal attacks
-  if (
-    fileName.includes('..') ||
-    fileName.includes('/') ||
-    fileName.includes('\\') ||
-    fileName.includes('\0')
-  ) {
-    throw new Error(buildPathTraversalError(fileName))
-  }
-
-  // Validate allowed characters: alphanumeric, dash, underscore, dot
-  if (!VALID_FILENAME_PATTERN.test(fileName)) {
-    throw new Error(
-      buildInvalidCharsError(fileName, 'letters, numbers, dash (-), underscore (_), dot (.)')
-    )
-  }
-
-  // Check cache first
-  if (mdFileCache.has(fileName)) {
-    return mdFileCache.get(fileName)!
-  }
-
-  const search = (dir: string): string | null => {
-    if (!fs.existsSync(dir)) return null
-
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-
-      if (entry.isDirectory()) {
-        const result = search(fullPath)
-        if (result) return result
-      } else if (entry.name === `${fileName}.md` || entry.name === `${fileName}.feature`) {
-        return fullPath
-      }
-    }
-
-    return null
-  }
-
-  const result = search(CONFIG.paths.testSuites)
-
-  // Cache the result (even if null)
-  mdFileCache.set(fileName, result)
-
-  return result
 }

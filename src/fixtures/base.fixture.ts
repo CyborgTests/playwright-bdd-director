@@ -22,16 +22,9 @@ export interface BaseFixture {
   productDetailsPage: ProductDetailsPage
   cartPage: CartPage
   checkoutPage: CheckoutPage
-  manualStep: (description: string) => Promise<void>
-  request: {
-    newContext: () => Promise<APIRequestContext>
-  }
 }
 
-/**
- * Base test fixture with common page objects and API context
- * Extend this fixture for suite-specific fixtures
- */
+// Ads slow the shop pages down and cover their buttons
 const adDomains = [
   '**/googlesyndication.com/**',
   '**/doubleclick.net/**',
@@ -42,6 +35,10 @@ const adDomains = [
   '**/pagead2.googlesyndication.com/**'
 ]
 
+/**
+ * Base test fixture with common page objects and API context
+ * Extend this fixture for suite-specific fixtures
+ */
 export const test = cyborgTest.extend<BaseFixture>({
   page: async ({ page }, use) => {
     for (const pattern of adDomains) {
@@ -91,5 +88,3 @@ export const test = cyborgTest.extend<BaseFixture>({
     await use(new CheckoutPage(page))
   }
 })
-
-export { expect } from '@playwright/test'

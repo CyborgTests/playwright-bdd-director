@@ -453,7 +453,7 @@ playwright-bdd-director/
 │   ├── pages/             # Page objects (home, login, signup, products, cart, checkout)
 │   ├── clients/           # API clients (BaseClient, AuthClient, ProductsClient)
 │   ├── schemas/           # API response schemas and types
-│   ├── test-helpers/      # Test-specific helpers (sanitize, object helpers)
+│   ├── test-helpers/      # Test-specific helpers (masking secrets in reports)
 │   ├── test-utils/        # General test utilities (APIExpect, logger, schema-validator)
 │   ├── config/            # Playwright projects, devices
 │   └── framework/         # The Director, unit tests (*.test.ts) next to the modules
@@ -613,24 +613,23 @@ npm run test:coverage # Generate coverage report
 
 **Parsers (`src/framework/core/`):**
 
-- `md-parser.ts` - Markdown structure (headings, IDs, tags, examples); file cache and path traversal protection
+- `md-parser.ts` - Markdown structure (headings, IDs, tags, examples)
 - `gherkin-parser.ts` - Gherkin documents
 - `spec-document.ts` - a spec of either format as one Gherkin document for the generator
 
 **Validation (`src/framework/validation/`):** `md-validator.ts` - Markdown structure check and formatting (`stage`).
 
-**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, Cucumber JSON / messages / HTML reporter, console formatter.
+**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, `dress` report, Cucumber JSON / messages / HTML reporter, console formatter.
 
 **Test Utilities (`src/test-utils/`):**
 
-- `APIExpect` - Playwright `APIResponse` wrapper with status, schema, and field assertions; lazy response parsing with caching
+- `APIExpect` - Playwright `APIResponse` wrapper: status, content type and schema assertions; the body is parsed once and attached to the report with secrets masked
 - `logger.ts` - attaches logs and files to Playwright test reports
-- `schema-validator.ts` - lightweight Joi-like schema validator for API response validation; validates only required fields, zero runtime dependencies
+- `schema-validator.ts` - small schema validator for API responses (required fields and their types), no dependencies
 
 **Test Helpers (`src/test-helpers/`):**
 
 - `test.helpers.ts` - `sanitizeObject` for masking sensitive data (emails, passwords, tokens) in logs and reports; partial email masking preserves debuggability
-- `object.helpers.ts` - `getNestedField` for safe deep property access
 
 ## 🎓 Philosophy
 

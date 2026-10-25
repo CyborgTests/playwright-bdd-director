@@ -1,8 +1,7 @@
-import path from 'path'
-
 import { type BuildResult, buildTests } from '../bdd/build'
 import type { GeneratedTest } from '../bdd/generator'
 import type { Devices } from '../constants/tags'
+import { toPosix } from '../utils/helpers'
 
 /**
  * - automated: every step has a step definition
@@ -131,8 +130,4 @@ function summarize(tests: TestCoverage[]): CoverageSummary {
       { automated: 0, total: 0 }
     )
   }
-}
-
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join('/')
 }

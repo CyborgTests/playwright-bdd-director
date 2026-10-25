@@ -21,13 +21,6 @@ export abstract class BasePage {
   }
 
   /**
-   * Navigate to specific path
-   */
-  async navigateTo(path: string): Promise<void> {
-    await this.page.goto(path)
-  }
-
-  /**
    * Close the "Added!" dialog that adding a product to cart opens on product pages
    */
   protected async continueShopping(): Promise<void> {

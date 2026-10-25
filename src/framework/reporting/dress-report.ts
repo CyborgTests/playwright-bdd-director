@@ -4,7 +4,7 @@ import type { BuildResult } from '../bdd/build'
 import type { GeneratedTest } from '../bdd/generator'
 import { CONFIG } from '../config'
 import { KIND_TAGS } from '../constants/tags'
-import { getMarkdownBaseName } from '../utils/helpers'
+import { getMarkdownBaseName, toPosix } from '../utils/helpers'
 
 /** Playwright project as far as picking tests goes */
 export interface RunProject {
@@ -287,8 +287,4 @@ export function renderDressMarkdown(report: DressReport): string {
   }
 
   return `${lines.join('\n').trimEnd()}\n`
-}
-
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join('/')
 }

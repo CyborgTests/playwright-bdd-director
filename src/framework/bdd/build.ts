@@ -4,7 +4,7 @@ import path from 'path'
 
 import { CONFIG } from '../config'
 import { SPEC_FILE_GLOB } from '../constants/markdown'
-import { getErrorMessage, getMarkdownBaseName, getSuiteKey } from '../utils/helpers'
+import { getErrorMessage, getMarkdownBaseName, getSuiteKey, toPosix } from '../utils/helpers'
 import { validateMDStructure } from '../validation/md-validator'
 import { generateTest, type Generation, loadStepDefinitions } from './generator'
 import { getStepDefinitions, type StepDefinition } from './registry'
@@ -104,8 +104,4 @@ export function getGeneratedTestPath(
   testSuitesDir = CONFIG.paths.testSuites
 ): string {
   return path.join(dir, `${getSuiteKey(specPath, testSuitesDir)}.test.ts`)
-}
-
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join('/')
 }

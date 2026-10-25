@@ -74,6 +74,3 @@ export const test = base.extend<AuthFixture>({
     await use(new AuthClient(apiContext))
   }
 })
-
-export { expect } from '@playwright/test'
-export type { TestUser }

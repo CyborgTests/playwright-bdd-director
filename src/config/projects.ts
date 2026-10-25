@@ -29,7 +29,7 @@ const automated: Project = {
 /**
  * Cyborg tests: generated tests with at least one step a person walks
  */
-export const cyborgProject: Project = {
+const cyborgProject: Project = {
   name: 'cyborg',
   grep: withTags(KIND_TAGS.cyborg),
   timeout: 0,
@@ -46,7 +46,7 @@ export const cyborgProject: Project = {
 /**
  * Automated API tests: no browser, so once - not per device
  */
-export const apiProject: Project = {
+const apiProject: Project = {
   ...automated,
   name: 'api',
   grep: withTags(KIND_TAGS.auto, API)
@@ -66,7 +66,7 @@ function deviceProject(device: TestDevice, tags: string[]): Project {
  * Automated UI and E2E tests: every one on each desktop browser, @all-devices ones on tablets and
  * mobiles too. npm run play selects a device with its id (`npm run play e2e mobile`).
  */
-export const deviceProjects: Project[] = [
+const deviceProjects: Project[] = [
   ...desktopDevices.map((device) => deviceProject(device, [])),
   ...handheldDevices.map((device) => deviceProject(device, [ALL_DEVICES_TAG]))
 ]

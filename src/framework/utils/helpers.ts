@@ -16,6 +16,16 @@ export interface ParsedID {
   ttl: string
 }
 
+/** `/`-separated path on every OS: reports, generated imports and messages stay the same */
+export function toPosix(filePath: string): string {
+  return filePath.split(path.sep).join('/')
+}
+
+/** Path relative to the project root (the working directory), `/`-separated */
+export function toProjectPath(filePath: string): string {
+  return toPosix(path.relative(process.cwd(), filePath))
+}
+
 /**
  * Extract error message from unknown error type
  */
@@ -71,7 +81,7 @@ export function assertValidTags(tags: string[], specPath: string): void {
 /**
  * Column names used as `<column>` placeholders in text, in order of appearance
  */
-export function getPlaceholders(text: string): string[] {
+function getPlaceholders(text: string): string[] {
   return [...text.matchAll(PLACEHOLDER_PATTERN)].map((match) => match[1])
 }
 
@@ -137,7 +147,7 @@ export function assertUniqueTestCaseIds(testCases: TestCase[], specPath: string)
 export function getTestFileBaseName(fileName: string): string {
   const parts = fileName.split('.')
   if (parts.length === 0 || !parts[0]) {
-    throw new Error(`Invalid file name: ${fileName} (expected format: <base>.<type>.test.ts)`)
+    throw new Error(`Invalid file name: ${fileName} (expected format: <base>.test.ts)`)
   }
   return parts[0]
 }
@@ -167,7 +177,7 @@ export function parseIDAndTitle(text: string): ParsedID {
  * `<column>` placeholders filled with row values; unknown columns stay as written
  */
 export function fillPlaceholders(text: string, values: Readonly<Record<string, string>>): string {
-  return text.replace(/<([^<>\n]+)>/g, (match, column: string) => values[column] ?? match)
+  return text.replace(PLACEHOLDER_PATTERN, (match, column: string) => values[column] ?? match)
 }
 
 /**

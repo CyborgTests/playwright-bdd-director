@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { clearMDCache, parseMDFile } from '@/framework/core/md-parser'
+import { parseMDFile } from '@/framework/core/md-parser'
 
 // Temporary test directory
 const TEST_DIR = path.join(process.cwd(), '.test-tmp')
@@ -12,7 +12,6 @@ beforeEach(() => {
   if (!fs.existsSync(TEST_DIR)) {
     fs.mkdirSync(TEST_DIR, { recursive: true })
   }
-  clearMDCache()
 })
 
 afterEach(() => {
@@ -20,7 +19,6 @@ afterEach(() => {
   if (fs.existsSync(TEST_DIR)) {
     fs.rmSync(TEST_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }) // Windows: files briefly locked
   }
-  clearMDCache()
 })
 
 function createMDFile(fileName: string, content: string): string {
@@ -299,18 +297,6 @@ Some text but no test cases
     it('should throw error when file does not exist', () => {
       expect(() => parseMDFile('nonexistent.md')).toThrow('Spec file not found')
     })
-
-    it('should throw error for path traversal attack', () => {
-      expect(() => parseMDFile('../etc/passwd')).toThrow('Path traversal')
-    })
-
-    it('should throw error for invalid characters in filename', () => {
-      expect(() => parseMDFile('file@name.md')).toThrow('Invalid file name')
-    })
-
-    it('should throw error for null byte in filename', () => {
-      expect(() => parseMDFile('file\0name')).toThrow('Path traversal')
-    })
   })
 
   describe('edge cases', () => {
@@ -419,41 +405,6 @@ Some text but no test cases
       expect(result.suiteTtl).toBe('Тестовий набір')
       expect(result.testCases[0].ttl).toBe('Тест кейс 日本語')
       expect(result.testCases[0].stepTtls[0]).toBe('Крок №1 🎯')
-    })
-  })
-
-  describe('caching', () => {
-    it('should cache MD file lookups', () => {
-      const content = `## Suite
-### Test
-#### Step
-`
-      const filePath = createMDFile('cached.md', content)
-
-      // First call - should search filesystem
-      const result1 = parseMDFile(filePath)
-      expect(result1.suiteTtl).toBe('Suite')
-
-      // Second call - should use cache (same file path)
-      const result2 = parseMDFile(filePath)
-      expect(result2.suiteTtl).toBe('Suite')
-
-      expect(result1).toEqual(result2)
-    })
-
-    it('should clear cache', () => {
-      const content = `## Suite
-### Test
-#### Step
-`
-      const filePath = createMDFile('clear-test.md', content)
-
-      parseMDFile(filePath)
-      clearMDCache()
-
-      // Should still work after cache clear
-      const result = parseMDFile(filePath)
-      expect(result.suiteTtl).toBe('Suite')
     })
   })
 })

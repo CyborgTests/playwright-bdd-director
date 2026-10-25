@@ -71,25 +71,17 @@ describe('isBackgroundTitle', () => {
 })
 
 describe('getTestFileBaseName', () => {
-  it('should extract base name from manual test file', () => {
-    expect(getTestFileBaseName('todo.manual.test.ts')).toBe('todo')
-  })
-
-  it('should extract base name from AUTO test file', () => {
-    expect(getTestFileBaseName('todo.AUTO.test.ts')).toBe('todo')
-  })
-
-  it('should extract base name from HYBRID test file', () => {
-    expect(getTestFileBaseName('todo.HYBRID.test.ts')).toBe('todo')
+  it('should extract base name from generated test file', () => {
+    expect(getTestFileBaseName('cart.test.ts')).toBe('cart')
   })
 
   it('should handle complex base names', () => {
-    expect(getTestFileBaseName('user-auth-flow.MANUAL.test.ts')).toBe('user-auth-flow')
+    expect(getTestFileBaseName('user-auth-flow.test.ts')).toBe('user-auth-flow')
   })
 
   it('should throw error for empty file name', () => {
     expect(() => getTestFileBaseName('')).toThrow(
-      'Invalid file name:  (expected format: <base>.<type>.test.ts)'
+      'Invalid file name:  (expected format: <base>.test.ts)'
     )
   })
 

@@ -6,7 +6,7 @@ import prettier from 'prettier'
 import { buildTests } from '@/framework/bdd/build'
 import { addStepSkeletons } from '@/framework/bdd/skeletons'
 import { CONFIG } from '@/framework/config'
-import { printErrorGroups } from '@/framework/reporting/console-formatter'
+import { printSpecErrors } from '@/framework/reporting/console-formatter'
 import { getErrorMessage, getMarkdownBaseName, getSuiteKey } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
@@ -30,9 +30,7 @@ async function main() {
   const { generations, errors } = await buildTests()
   if (errors.length > 0) {
     console.log(`${getIcon('warning')}  Problems to fix as well (npm run dress):\n`)
-    printErrorGroups(
-      errors.map(({ file, errors: messages }) => ({ title: `Spec: ${file}`, errors: messages }))
-    )
+    printSpecErrors(errors)
     console.log('')
   }
 

@@ -6,12 +6,8 @@
 /**
  * Build file not found error
  */
-export function buildFileNotFoundError(fileName: string, searchPath: string): string {
-  return (
-    `Spec file not found: ${fileName}.md or ${fileName}.feature\n` +
-    `  Searched in: ${searchPath}\n` +
-    `  Fix: Create the spec file or check the file name`
-  )
+export function buildFileNotFoundError(specPath: string): string {
+  return `Spec file not found: ${specPath}\n  Fix: Create the spec file or check its path`
 }
 
 /**
@@ -36,28 +32,6 @@ export function buildInvalidFormatError(
  */
 export function buildMissingElementError(element: string, file: string, fix: string): string {
   return `No ${element} found\n  File: ${file}\n  Expected: ${fix}`
-}
-
-/**
- * Build path traversal security error
- */
-export function buildPathTraversalError(fileName: string): string {
-  return (
-    `Security: Path traversal detected\n` +
-    `  File name: ${fileName}\n` +
-    `  Reason: File names cannot contain "..", "/", "\\", or null bytes`
-  )
-}
-
-/**
- * Build invalid characters error
- */
-export function buildInvalidCharsError(fileName: string, allowedChars: string): string {
-  return (
-    `Invalid file name: ${fileName}\n` +
-    `  Allowed characters: ${allowedChars}\n` +
-    `  Example: "my-test-suite.md"`
-  )
 }
 
 /**

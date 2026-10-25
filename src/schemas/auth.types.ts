@@ -28,14 +28,6 @@ export interface TestUser {
 }
 
 /**
- * Base API Response interface
- */
-export interface BaseAPIResponse {
-  message: string
-  data?: unknown
-}
-
-/**
  * User Registration Response Schema
  * Used for: POST /api/createAccount endpoint
  */
@@ -51,31 +43,4 @@ export interface UserRegistrationResponse {
 export interface UserLoginResponse {
   message: string // "User exists!" or "User not found!"
   responseCode: number // 200 or 404
-}
-
-/**
- * User Update Response Schema
- * Used for: PUT /api/updateAccount endpoint
- */
-export interface UserUpdateResponse {
-  message: string // "User updated!"
-  responseCode: number // 200
-}
-
-/**
- * User Delete Response Schema
- * Used for: DELETE /api/deleteAccount endpoint
- */
-export interface UserDeleteResponse {
-  message: string // "Account deleted!"
-  responseCode: number // 200
-}
-
-/**
- * User Detail Response Schema
- * Used for: GET /api/getUserDetailByEmail endpoint
- */
-export interface UserDetailResponse {
-  responseCode: number // 200
-  // User detail JSON structure (varies based on user data)
 }

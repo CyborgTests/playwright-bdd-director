@@ -19,7 +19,6 @@ export const ALL_DEVICES_TAG = '@all-devices'
 /** Where a test runs: no browser (API), desktop browsers, or desktops plus tablets and mobiles */
 export type Devices = 'none' | 'desktop' | 'all'
 
-export type KindTag = (typeof KIND_TAGS)[keyof typeof KIND_TAGS]
 export type LayerTag = (typeof LAYER_TAGS)[number]
 
 export function isLayerTag(tag: string): tag is LayerTag {

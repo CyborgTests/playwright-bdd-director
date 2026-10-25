@@ -5,7 +5,6 @@ import { BasePage } from './BasePage'
 export class HomePage extends BasePage {
   private readonly homeBtn: Locator
   private readonly signupLoginBtn: Locator
-  private readonly logoutBtn: Locator
   private readonly deleteAccountBtn: Locator
   private readonly continueBtn: Locator
   private readonly loggedInHeader: Locator
@@ -19,7 +18,6 @@ export class HomePage extends BasePage {
     this.homeBtn = this.page.getByRole('banner').getByRole('link', { name: 'Home' })
     this.signupLoginBtn = this.page.locator('a[href="/login"]')
     this.loggedInHeader = this.page.locator('li a', { hasText: 'Logged in as' })
-    this.logoutBtn = this.page.locator('a[href="/logout"]')
     this.deleteAccountBtn = this.page.locator('a[href="/delete_account"]')
     this.continueBtn = this.page.locator('[data-qa="continue-button"]')
     this.accountCreatedMsg = this.page.locator('[data-qa="account-created"]')
@@ -62,10 +60,6 @@ export class HomePage extends BasePage {
 
   async expectOnHomePage(): Promise<void> {
     await this.expectToHaveUrl(/^https?:\/\/[^/]+\/?$/)
-  }
-
-  async expectOnLoginPage(): Promise<void> {
-    await this.expectToHaveUrl(/\/login$/)
   }
 
   async expectAccountCreated(): Promise<void> {

@@ -34,37 +34,11 @@ export const AuthSchemas = {
   }),
 
   /**
-   * User Update Response Schema
-   * Used for: PUT /api/updateAccount endpoint
-   */
-  userUpdate: createAPISchema({
-    message: SchemaValidator.nonEmptyString(),
-    responseCode: SchemaValidator.number()
-  }),
-
-  /**
    * User Delete Response Schema
    * Used for: DELETE /api/deleteAccount endpoint
    */
   userDelete: createAPISchema({
     message: SchemaValidator.nonEmptyString(),
-    responseCode: SchemaValidator.number()
-  }),
-
-  /**
-   * User Logout Response Schema
-   * Used for: POST /api/logout endpoint
-   */
-  userLogout: createAPISchema({
-    message: SchemaValidator.nonEmptyString(),
-    responseCode: SchemaValidator.number()
-  }),
-
-  /**
-   * User Detail Response Schema
-   * Used for: GET /api/getUserDetailByEmail endpoint
-   */
-  userDetail: createAPISchema({
     responseCode: SchemaValidator.number()
   })
 }

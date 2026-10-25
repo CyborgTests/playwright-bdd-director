@@ -21,7 +21,7 @@ import {
 } from '../constants/tags'
 import { getBackgroundTitle } from '../core/gherkin-parser'
 import { parseSpecDocument } from '../core/spec-document'
-import { fillPlaceholders, getErrorMessage, getMarkdownBaseName } from '../utils/helpers'
+import { fillPlaceholders, getErrorMessage, getMarkdownBaseName, toPosix } from '../utils/helpers'
 import {
   BDD_CONTEXT,
   getHookDefinitions,
@@ -843,8 +843,4 @@ function toModuleSpecifier(location: string, testPath: string): string {
   if (file.startsWith('src/')) return `@/${file.slice('src/'.length)}`
   const relative = toPosix(path.relative(path.dirname(testPath), file))
   return relative.startsWith('.') ? relative : `./${relative}`
-}
-
-function toPosix(filePath: string): string {
-  return filePath.split(path.sep).join('/')
 }

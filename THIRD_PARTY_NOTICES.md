@@ -50,9 +50,6 @@ Review the licenses of the dependencies listed below before distribution.
 - **`@typescript-eslint/eslint-plugin`** - MIT License  
   Source: `https://www.npmjs.com/package/@typescript-eslint/eslint-plugin`
 
-- **`@typescript-eslint/parser`** - BSD-2-Clause License  
-  Source: `https://www.npmjs.com/package/@typescript-eslint/parser`
-
 - **`typescript-eslint`** - MIT License  
   Source: `https://www.npmjs.com/package/typescript-eslint`
 
