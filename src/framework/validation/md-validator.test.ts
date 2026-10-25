@@ -186,14 +186,12 @@ Invalid line without proper format
     expect(validateMDStructure(filePath)).toEqual([])
   })
 
-  it('should accept Tags lines', () => {
-    const content = `## Suite
+  it('should accept tags lines', () => {
+    const content = `@smoke
+## Suite
 
-Tags: @smoke
-
+@critical
 ### First
-
-Tags: @critical
 
 #### Step
 `
@@ -244,15 +242,12 @@ describe('autoFixMDFormatting', () => {
 ---
 
 ### First
-
 #### Step
-
 - detail
 
 ---
 
 ### Second
-
 #### Step
 `
 
@@ -313,29 +308,47 @@ describe('autoFixMDFormatting', () => {
     expect(modified).toBe(true)
   })
 
-  it('should add blank line after header', () => {
+  it('should drop blank lines inside the suite header and test cases, as dense as Gherkin', () => {
     const content = `## Test Suite
+
+- note
+
+---
+
+### Test case
+
+#### Step 1
+
+- detail
+
+#### Step 2
+`
+    const filePath = createMDFile('blank-lines.md', content)
+
+    expect(autoFixMDFormatting(filePath)).toBe(true)
+    expect(fs.readFileSync(filePath, 'utf-8')).toBe(`## Test Suite
+- note
+
+---
+
 ### Test case
 #### Step 1
-`
-    const filePath = createMDFile('no-blank-after-header.md', content)
-
-    const modified = autoFixMDFormatting(filePath)
-
-    expect(modified).toBe(true)
+- detail
+#### Step 2
+`)
   })
 })
 
 describe('examples table formatting', () => {
-  it('should accept table lines and keep them apart from bullets and Tags', () => {
+  it('should accept table lines and keep them right under the test case heading', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-table-test-'))
     const filePath = path.join(tempDir, 'table.md')
     fs.writeFileSync(
       filePath,
       `## Suite
 
+@smoke
 ### Login as <role>
-Tags: @smoke
 | role  |
 | ----- |
 | admin |
@@ -352,16 +365,12 @@ Tags: @smoke
 
 ---
 
+@smoke
 ### Login as <role>
-
-Tags: @smoke
-
 | role  |
 | ----- |
 | admin |
-
 - detail
-
 #### Step
 `)
     } finally {
@@ -370,16 +379,19 @@ Tags: @smoke
   })
 })
 
-describe('Tags line formatting', () => {
-  it('should keep blank line between Tags line and details as Prettier does', () => {
+describe('tags line formatting', () => {
+  it('should keep tags lines right above their headings and put --- above the tags', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-tags-test-'))
     const filePath = path.join(tempDir, 'tags.md')
     fs.writeFileSync(
       filePath,
-      `## Suite\n\n---\n\n### Case\n\nTags: @smoke\n\n- detail\n\n#### Step\n`
+      `@ui\n\n## Suite\n- note\n@smoke\n@JIRA-1\n\n### Case\n#### Step\n- detail\n@slow\n### Next\n#### Step\n`
     )
 
     try {
+      expect(autoFixMDFormatting(filePath)).toBe(true)
+      const formatted = `@ui\n## Suite\n- note\n\n---\n\n@smoke\n@JIRA-1\n### Case\n#### Step\n- detail\n\n---\n\n@slow\n### Next\n#### Step\n`
+      expect(fs.readFileSync(filePath, 'utf-8')).toBe(formatted)
       expect(autoFixMDFormatting(filePath)).toBe(false)
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })

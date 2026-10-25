@@ -12,3 +12,6 @@ packages/*/dist/
 
 # Tests generated from the specs on every run
 .director/
+
+# Specs are formatted by npm run stage - dense, as Gherkin
+test-suites/

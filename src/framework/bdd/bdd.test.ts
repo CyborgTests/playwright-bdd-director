@@ -222,15 +222,13 @@ describe('markdownToGherkin', () => {
     const specPath = path.join(testDir, 'shop.md')
     fs.writeFileSync(
       specPath,
-      `## Shop
-
-Tags: @ui @shop
+      `@ui @shop
+## Shop
 
 ---
 
+@smoke
 ### [TC-01] Add <product>
-
-Tags: @smoke
 
 | product | price \\| tax |
 | --- | --- |
@@ -369,6 +367,45 @@ Feature: Shop
     expect(content).toContain("test('Flow 1', { tag: ['@auto', '@ui'] }")
   })
 
+  it('should run UI and E2E tests on desktops, on all devices with @all-devices of any level', async () => {
+    Given('user opens the home page', done)
+
+    const { tests, errors } = await generate(`@ui
+Feature: Shop
+  Scenario: Desktop
+    Given user opens the home page
+
+  @api
+  Scenario: Status
+    Given user opens the home page
+
+  @e2e @all-devices
+  Rule: Checkout
+    Scenario: Everywhere
+      Given user opens the home page
+
+    Scenario: Walked on desktop
+      Given user checks the invoice
+`)
+
+    expect(errors).toEqual([])
+    expect(tests.map((t) => [t.title, t.devices])).toEqual([
+      ['Desktop', 'desktop'],
+      ['Status', 'none'],
+      ['Everywhere', 'all'],
+      ['Walked on desktop', 'desktop']
+    ])
+  })
+
+  it('should report @all-devices on an API test', async () => {
+    const { errors } = await generate(`@api @all-devices
+Feature: Shop
+  Scenario: Status
+`)
+
+    expect(errors[0]).toContain('Test "Status" is @api but tagged @all-devices')
+  })
+
   it('should report a test without layer, with two layers or with a Director tag', async () => {
     const noLayer = await generate(`Feature: Shop
   Scenario: Open
@@ -393,9 +430,8 @@ Feature: Shop
     Step('Given flags are set', done)
 
     const { content, tests, missing } = await generate(
-      `## Shop
-
-Tags: @ui
+      `@ui
+## Shop
 
 ### Background
 
@@ -587,6 +623,59 @@ Feature: Shop
     expect(content).toContain(
       "test.fail('Failing', { tag: ['@auto', '@ui', '@fail'] }, async () => {"
     )
+  })
+
+  it('should turn device special tags of any level into conditional modifiers', async () => {
+    Given('user is logged in', done)
+
+    const { content, errors } = await generate(`@ui @all-devices
+Feature: Shop
+  Rule: Checkout
+    @skip:mobile
+    Scenario: Pay
+      Given user is logged in
+
+  @fail:tablet @fail:mobile
+  Scenario: Order
+    Given user is logged in
+`)
+
+    expect(errors).toEqual([])
+    expect(content).toMatch(
+      /test\.describe\(\(\) => \{\s+test\.skip\(\(\) => \['mobile'\]\.includes\(test\.info\(\)\.project\.name\), '@skip:mobile'\)\s+test\('Pay'/
+    )
+    expect(content).toMatch(
+      /test\.fail\(\s*\(\) => \['tablet', 'mobile'\]\.includes\(test\.info\(\)\.project\.name\),\s*'@fail:tablet @fail:mobile'\s*\)\s+test\('Order'/
+    )
+  })
+
+  it('should report device special tags for unknown devices and devices the test never runs on', async () => {
+    Given('user is logged in', done)
+
+    const { errors } = await generate(`@ui
+Feature: Shop
+  @fail:tabet
+  Scenario: Typo
+    Given user is logged in
+
+  @fixme:tablet
+  Scenario: Desktop only
+    Given user is logged in
+
+  @api @skip:chrome
+  Scenario: Status
+    Given user is logged in
+`)
+
+    expect(errors).toEqual([
+      expect.stringContaining('Tag @fail:tabet on test "Typo" names an unknown device'),
+      expect.stringContaining(
+        'Test "Desktop only" never runs on tablet but is tagged @fixme:tablet\n  Fix: Drop it or add @all-devices'
+      ),
+      expect.stringContaining(
+        'Test "Status" never runs on chrome but is tagged @skip:chrome\n  Fix: Drop it - API tests'
+      )
+    ])
   })
 
   it('should keep cyborg tests without a time limit under @timeout of any level', async () => {

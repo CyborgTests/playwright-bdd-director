@@ -83,22 +83,19 @@ In the Director UI:
 3. **File Editor** - paste the following (saves automatically as you type):
 
 ```markdown
+@ui
 ## Login Tests
 
-Tags: @ui
+---
 
 ### User can login
-
 #### Navigate to login page
-
 #### Enter credentials
-
 #### Click login button
-
 #### Verify dashboard visible
 ```
 
-`Tags: @ui` is the layer of the suite - every test is `@api`, `@ui` or `@e2e`.
+`@ui` above the suite heading is its layer - every test is `@api`, `@ui` or `@e2e`.
 
 ### 8. Run it
 
@@ -137,7 +134,7 @@ npm run review
 
 Every run also writes reports for test management tools and CI:
 
-- `test-results/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) of every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`): `Tags: @TEST_PROJ-123` in MD, `@TEST_PROJ-123` in Gherkin
+- `test-results/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) of every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`) - a tags line above the heading in both formats
 - `test-results/cucumber-messages.ndjson` - **Cucumber messages**, the newer Cucumber format, and `test-results/cucumber-report.html` - the **Cucumber HTML report** rendered from them (one offline file)
 - `test-results/junit.xml` - **JUnit XML** (TestRail, Zephyr, any CI)
 
@@ -324,22 +321,16 @@ npm run show
 ### 1. Markdown
 
 ```markdown
+@ui
 ## Test Suite Title
-
-Tags: @ui
-
 - Optional details
 
 ---
 
+@smoke
 ### Test Case title
-
-Tags: @smoke
-
 #### Step Title
-
 - Optional details, test data, expected results
-
 #### Another Step
 ```
 
@@ -347,9 +338,9 @@ Tags: @smoke
 ## → Test Suite
 ### → Test Case (### Background - steps before every test case)
 #### → Test Step
-Tags: → tags of the suite / test case, right under its heading
+@tags → tags of the suite / test case, in a line above its heading (as in Gherkin)
 Lists (-) → notes for people, not part of the test
---- → separator before every test case, placed by npm run stage
+--- → separator before every test case, the only blank lines - npm run stage keeps the rest dense, as in Gherkin
 ```
 
 ### 2. Gherkin
@@ -358,14 +349,15 @@ Any `.feature` file the Gherkin parser accepts: Background, Rule (with its own B
 
 ```gherkin
 @ui
-Feature: Header Navigation
+Feature: Cart
   Background:
-    Given user opens the home page
+    Given user opens the products page
 
-  Scenario: Go back home from "Signup / Login" page
-    Given user clicks "Signup / Login" button in header
-    When user clicks "Home" button in header
-    Then home page is shown
+  @all-devices @smoke
+  Scenario: Add "Blue Top" to cart
+    When user adds "Blue Top" to cart
+    And user opens the cart
+    Then cart has "Blue Top"
 ```
 
 Both formats work the same way and can live side by side; pick per suite what reads best for its authors. Base names are unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) - the name is the suite tag (`npm run play auth`).
@@ -376,36 +368,46 @@ Every test is exactly one of `@api`, `@ui`, `@e2e`: a suite tag for all its test
 
 ### 4. Tags
 
-Tag a suite or a test case with a `Tags:` line right under its heading (Gherkin: `@tag` lines above `Feature` / `Rule` / `Scenario` / `Examples`):
+Both formats tag the same way: a line of `@tags` right above the heading - `##` suite and `###` test case in Markdown, `Feature` / `Rule` / `Scenario` / `Examples` in Gherkin:
 
 ```markdown
+@ui @all-devices
 ## Authentication Tests
 
-Tags: @ui @auth-flow
+---
 
+@smoke @JIRA-123
 ### User Login
-
-Tags: @smoke @JIRA-123
 ```
 
+- **The suite** carries what holds for all its tests: the layer, and `@all-devices`, `@slow`... only when every test needs it. **A test** carries its exceptions and additions.
+- **Order in a line**: layer → `@all-devices` → special tags → own tags (`@smoke`, `@logged-in`, ticket keys) - `@e2e @all-devices @retries:1 @smoke`
 - Tags become Playwright tags of the generated tests, next to `@auto` / `@cyborg`, the layer and the suite tag `@<file name>`
-- A tag starts with `@` followed by letters, digits, `_ . : / -`; several tags are separated by spaces or commas
+- A tag starts with `@` followed by letters, digits, `_ . : / -`; several tags are separated by spaces
 - Background cannot be tagged (as in Gherkin)
-- Special tags `@skip`, `@fixme`, `@fail`, `@slow`, `@retries:N`, `@timeout:N` become Playwright modifiers
+- Special tags `@skip`, `@fixme`, `@fail` (also for one device: `@fail:tablet`), `@slow`, `@retries:N`, `@timeout:N` become Playwright modifiers
 - Run and measure by tag: `npm run play @smoke`, `npm run play ui auth @smoke`, `npm run matrix -- @smoke`
+
+Where the example uses each kind of tag:
+
+| Tag                           | Example                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Layer `@ui` / `@api` / `@e2e` | every suite; `@e2e` overrides the suite on a Rule (`cart.feature`) and a scenario (`products.feature`)                           |
+| `@all-devices`                | suite `navigation.md`; test cases `auth.md` (User Login), `cart.feature` (adding, placing an order), `products.feature` (search) |
+| `@retries:N`, `@timeout:N`    | `cart.feature`: placing an order, Rule Checkout                                                                                  |
+| `@fail`, `@fail:<device>`     | `cart.feature`: quantity 0 and -2, placing an order on a tablet (real bugs)                                                      |
+| Own tags                      | `@smoke` in every suite, tagged Examples in `cart.feature`; `@logged-in` picks a `Before` hook (`cart.feature`)                  |
 
 ### 5. Parametrized test cases
 
-A Markdown test case that runs once per data row gets an examples table right under its heading (after `Tags:`); its title and steps use `<column>` placeholders. In Gherkin it is a `Scenario Outline` with `Examples`.
+A Markdown test case that runs once per data row gets an examples table right under its heading; its title and steps use `<column>` placeholders. In Gherkin it is a `Scenario Outline` with `Examples`.
 
 ```markdown
 ### Login as <role>
-
 | role  | password |
 | ----- | -------- |
 | admin | secret   |
 | guest | guest    |
-
 #### Log in as "<role>" with "<password>"
 ```
 
@@ -448,7 +450,7 @@ playwright-bdd-director/
 │   ├── pages/             # Page objects (home, login, signup, products, cart, checkout)
 │   ├── clients/           # API clients (BaseClient, AuthClient, ProductsClient)
 │   ├── schemas/           # API response schemas and types
-│   ├── test-helpers/      # Test-specific helpers (sanitize, playwright helpers)
+│   ├── test-helpers/      # Test-specific helpers (sanitize, object helpers)
 │   ├── test-utils/        # General test utilities (APIExpect, logger, schema-validator)
 │   ├── config/            # Playwright projects, devices
 │   └── framework/         # The Director, unit tests (*.test.ts) next to the modules
@@ -467,14 +469,15 @@ playwright-bdd-director/
 
 The repository automates [automationexercise.com](https://www.automationexercise.com):
 
-| Spec                                   | Shows                                                                                                                                                                                                                                                                                                                | Steps and code                  |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `test-suites/auth.md` `@ui`            | Markdown suite, Background, fixtures with cleanup (`testUser`, `registeredUser`)                                                                                                                                                                                                                                     | `src/steps/auth.steps.ts`       |
-| `test-suites/auth-api.md` `@api`       | API layer through clients; "Update User City" has a step without code, so the API test stays `fixme`                                                                                                                                                                                                                 | `src/steps/auth-api.steps.ts`   |
-| `test-suites/navigation.md` `@ui`      | Markdown examples table (brands); the newsletter case is a cyborg test: one automated step, the rest skeletons without code                                                                                                                                                                                          | `src/steps/navigation.steps.ts` |
-| `test-suites/cart.feature` `@ui`       | Gherkin: Background, Scenario Outline with tagged Examples, DataTable, DocString, Rule with its own Background, `@e2e` and `@timeout:90000` on a Rule, `@retries:1`, `@fail` on a real bug (quantity 0 and -2 get into the cart), own parameter type `{price}`, one step calling others, a cyborg scenario (invoice) | `src/steps/cart.steps.ts`       |
-| `test-suites/products.feature` `@ui`   | `# language: uk` - Ukrainian keywords, the same step definitions; steps on Page Object methods (`@StepsFor`, a migration path); `@slow`                                                                                                                                                                              | `src/pages/ProductsPage.ts`     |
-| `test-suites/contact-us.feature` `@ui` | A suite migrated from Cucumber: World style steps on `this`; `BeforeAll` / `AfterAll` create and remove the file it uploads                                                                                                                                                                                          | `src/steps/contact-us.steps.ts` |
+| Spec                                   | Shows                                                                                                                                                                                                                                                                                                                                                                                                                          | Steps and code                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `test-suites/auth.md` `@ui`            | Markdown suite, Background, fixtures with cleanup (`testUser`, `registeredUser`)                                                                                                                                                                                                                                                                                                                                               | `src/steps/auth.steps.ts`                                          |
+| `test-suites/auth-api.md` `@api`       | API layer through clients; "Update User City" has a step without code, so the API test stays `fixme`                                                                                                                                                                                                                                                                                                                           | `src/steps/auth-api.steps.ts`                                      |
+| `test-suites/products-api.md` `@api`   | Catalog API: lists, unsupported methods (405), search and its missing parameter (400); a step function reused by an e2e scenario                                                                                                                                                                                                                                                                                               | `src/steps/products-api.steps.ts`, `src/clients/ProductsClient.ts` |
+| `test-suites/navigation.md` `@ui`      | Markdown examples table (brands); the newsletter case is a cyborg test: one automated step, the rest skeletons without code                                                                                                                                                                                                                                                                                                    | `src/steps/navigation.steps.ts`                                    |
+| `test-suites/cart.feature` `@ui`       | Gherkin: Background, Scenario Outline with tagged Examples, DataTable, DocString, Rule with its own Background, `@e2e` and `@timeout:90000` on a Rule, `@retries:1`, `@fail` on a real bug (quantity 0 and -2 get into the cart), `@fail:tablet` on a tablet-only one, own parameter type `{price}`, one step calling others, a cyborg scenario (invoice); adding to cart and placing an order on all devices (`@all-devices`) | `src/steps/cart.steps.ts`                                          |
+| `test-suites/products.feature` `@ui`   | Steps on Page Object methods (`@StepsFor`, a migration path); search on all devices, a desktop-only `@e2e` scenario (catalog price = API price)                                                                                                                                                                                                                                                                                | `src/pages/ProductsPage.ts`, `src/steps/products.steps.ts`         |
+| `test-suites/contact-us.feature` `@ui` | A suite migrated from Cucumber: World style steps on `this`; `BeforeAll` / `AfterAll` create and remove the file it uploads                                                                                                                                                                                                                                                                                                    | `src/steps/contact-us.steps.ts`                                    |
 
 Hooks (`src/steps/hooks.steps.ts`): `BeforeAll` checks the catalog API once per worker for `@cart`, `Before` logs in a fresh user for `@logged-in`, `AfterStep` attaches the page URL under a failed step (`bdd.step`).
 
@@ -508,12 +511,16 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 
 ### 2. Playwright Config
 
-`playwright.config.ts` generates the tests when Playwright loads it (`prepareTests()`), then runs them in two projects selected by tag:
+`playwright.config.ts` generates the tests when Playwright loads it (`prepareTests()`), then runs them in projects that pick their tests by tag (`src/config/projects.ts`, devices in `src/config/devices.ts`):
 
-- `automated` - tests tagged `@auto`: headless, parallel, trace + video on failure
-- `cyborg` - tests tagged `@cyborg`: headed, one worker, no time limit
+| Project             | Device                              | Tests                                                      |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------- |
+| `api`               | no browser                          | `@auto` + `@api` - once, not per device                    |
+| `chrome`, `firefox` | Desktop Chrome, Desktop Firefox     | every `@auto` UI and E2E test                              |
+| `tablet`, `mobile`  | Galaxy Tab S9 landscape, Galaxy S24 | `@auto` UI and E2E tests tagged `@all-devices` in the spec |
+| `cyborg`            | Desktop Chrome, headed              | `@cyborg`: one worker, no time limit                       |
 
-`npm run play` builds the `--grep` and the project is chosen from it (`api` / `ui` / `e2e` alone run automated tests).
+Automated projects run headless and in parallel, with trace and video on failure. A new device is one entry in `devices.ts`. `npm run play` builds the `--grep`; a device name selects its project (`npm run play e2e mobile`).
 
 ### 3. Path Aliases
 
@@ -527,10 +534,10 @@ import { AuthClient } from '@/clients/AuthClient'
 
 ### Play CLI
 
-Types, suites and spec tags are freely combinable - test types first, then suite names (spec file names), spec tags (`@smoke`) anywhere:
+Types, suites, spec tags and devices are freely combinable - test types first, then suite names (spec file names), spec tags (`@smoke`) and devices (`chrome`, `firefox`, `tablet`, `mobile`) anywhere:
 
 ```bash
-npm run play <types...> [suites...] [@tags...]
+npm run play <types...> [suites...] [@tags...] [devices...]
 
 npm run play auto                   # All automated tests
 npm run play cyborg                 # All cyborg tests
@@ -541,6 +548,8 @@ npm run play api ui auth auth-api   # API + UI tests of two suites
 npm run play auth                   # All tests of auth.md (any type)
 npm run play @smoke                 # All tests tagged @smoke
 npm run play ui auth @smoke         # UI auth tests tagged @smoke
+npm run play e2e mobile             # E2E tests on the mobile device
+npm run play auto chrome firefox    # Automated tests on desktop browsers only
 ```
 
 **Supported test types:** `auto`, `cyborg`, `api`, `ui`, `e2e`. Help: `npm run play -- --help`.
@@ -563,7 +572,7 @@ npm run format       # Prettier format
     • And user downloads the invoice (no code: src/steps/cart.steps.ts:74)
     • Then invoice shows total amount Rs. 500 (no code: src/steps/cart.steps.ts:78)
 
-✅  6 spec(s) ready for the show: 27 tests - 24 auto, 2 cyborg, 1 fixme
+✅  7 spec(s) ready for the show: 35 tests - 32 auto, 2 cyborg, 1 fixme
 ```
 
 ### Unit Tests
@@ -605,7 +614,6 @@ npm run test:coverage # Generate coverage report
 **Test Helpers (`src/test-helpers/`):**
 
 - `test.helpers.ts` - `sanitizeObject` for masking sensitive data (emails, passwords, tokens) in logs and reports; partial email masking preserves debuggability
-- `playwright.helpers.ts` - `getProjectsFromGrep` for project selection based on `--grep` tags
 - `object.helpers.ts` - `getNestedField` for safe deep property access
 
 ## 🎓 Philosophy

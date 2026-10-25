@@ -11,6 +11,7 @@ function generatedTest(overrides: Partial<GeneratedTest>): GeneratedTest {
     fixme: false,
     tags: [],
     steps: { automated: 2, total: 2 },
+    devices: 'desktop',
     ...overrides
   }
 }
@@ -30,27 +31,28 @@ function generation(specPath: string, tests: GeneratedTest[]): Generation {
 }
 
 const SHOP = generation('test-suites/shop.md', [
-  generatedTest({ title: 'Add to cart', tags: ['@smoke'] }),
+  generatedTest({ title: 'Add to cart', tags: ['@smoke'], devices: 'all' }),
   generatedTest({ title: 'Check colors', kind: 'cyborg', steps: { automated: 1, total: 3 } }),
   generatedTest({
     title: 'Price API',
     layer: '@api',
     fixme: true,
     modifier: 'fixme',
-    steps: { automated: 0, total: 1 }
+    steps: { automated: 0, total: 1 },
+    devices: 'none'
   }),
   generatedTest({ title: 'Old flow', modifier: 'skip', tags: ['@smoke'] })
 ])
 
 describe('buildCoverageMatrix', () => {
-  it('should give every generated test its layer, status and automated steps', () => {
+  it('should give every generated test its layer, devices, status and automated steps', () => {
     const matrix = buildCoverageMatrix({ generations: [SHOP], errors: [] })
 
-    expect(matrix.suites[0].tests.map((t) => [t.title, t.layer, t.status])).toEqual([
-      ['Add to cart', 'ui', 'automated'],
-      ['Check colors', 'ui', 'cyborg'],
-      ['Price API', 'api', 'fixme'],
-      ['Old flow', 'ui', 'disabled']
+    expect(matrix.suites[0].tests.map((t) => [t.title, t.layer, t.devices, t.status])).toEqual([
+      ['Add to cart', 'ui', 'all', 'automated'],
+      ['Check colors', 'ui', 'desktop', 'cyborg'],
+      ['Price API', 'api', 'none', 'fixme'],
+      ['Old flow', 'ui', 'desktop', 'disabled']
     ])
     expect(matrix.summary).toEqual({
       totalTests: 4,

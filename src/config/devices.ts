@@ -1,41 +1,23 @@
-import { devices as playwrightDevices } from '@playwright/test'
+import { devices, type Project } from '@playwright/test'
 
-/**
- * Desktop Chrome device configuration
- */
-export const desktopChrome = {
-  ...playwrightDevices['Desktop Chrome']
+export interface TestDevice {
+  id: string // Playwright project name: npm run play e2e mobile
+  name: string
+  use: Project['use']
 }
 
 /**
- * Desktop Firefox device configuration
+ * Desktop browsers: every automated UI and E2E test runs on each
  */
-export const desktopFirefox = {
-  ...playwrightDevices['Desktop Firefox']
-}
+export const desktopDevices: TestDevice[] = [
+  { id: 'chrome', name: 'Desktop Chrome', use: devices['Desktop Chrome'] },
+  { id: 'firefox', name: 'Desktop Firefox', use: devices['Desktop Firefox'] }
+]
 
 /**
- * Desktop Safari device configuration
+ * Tablets and mobiles: only tests tagged @all-devices in the spec run on them as well
  */
-export const desktopSafari = {
-  ...playwrightDevices['Desktop Safari']
-}
-
-/**
- * Mobile Chrome device configuration
- */
-export const mobileChrome = {
-  ...playwrightDevices['Pixel 5']
-}
-
-/**
- * Mobile Safari device configuration
- */
-export const mobileSafari = {
-  ...playwrightDevices['iPhone 13']
-}
-
-/**
- * Default device for automated tests
- */
-export const defaultDevice = desktopChrome
+export const handheldDevices: TestDevice[] = [
+  { id: 'tablet', name: 'Tablet Chrome', use: devices['Galaxy Tab S9 landscape'] },
+  { id: 'mobile', name: 'Mobile Chrome', use: devices['Galaxy S24'] }
+]

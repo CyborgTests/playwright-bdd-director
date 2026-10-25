@@ -13,7 +13,7 @@ Three layers share the repo:
 
 - **Framework** — `src/framework/**` + `scripts/*.ts`: parse specs, generate tests, step registry and runtime, coverage matrix, reports. Unit-tested with Vitest next to the modules (`*.test.ts`).
 - **Director UI** — `packages/director/**` (React + Vite), embedded into Playwright UI through `scripts/patch-playwright.js` (postinstall) and forked Playwright packages in `packages/*`.
-- **Example test layer** — `auth`, `auth-api`, `navigation`, `cart`, `products`, `contact-us` specs against automationexercise.com (README "Working Example" maps them to features): `src/{steps,pages,fixtures,clients,schemas,test-helpers,test-utils}`.
+- **Example test layer** — `auth`, `auth-api`, `products-api`, `navigation`, `cart`, `products`, `contact-us` specs against automationexercise.com (README "Working Example" maps them to features): `src/{steps,pages,fixtures,clients,schemas,test-helpers,test-utils}`.
 
 ## Stack
 
@@ -27,7 +27,7 @@ Three layers share the repo:
 npm run dress                        # read-only: invalid specs, layers, ambiguous/unused steps, steps a person walks
 npm run steps <suite...>             # step definition skeletons into src/steps/<suite>.steps.ts
 npm run stage                        # format Markdown specs (`---` before every ###)
-npm run play <types...> [suites...] [@tags...]  # run; types: auto|cyborg|api|ui|e2e, e.g. `npm run play api auth-api @smoke`
+npm run play <types...> [suites...] [@tags...] [devices...]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile
 npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps
 npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)
 npm run show | review                # Playwright UI mode with Director | Monocart report
@@ -36,7 +36,7 @@ npm run build                        # Director UI + trace-viewer, then re-patch
 node scripts/spec-drift-audit.js     # AI specification integrity
 ```
 
-Tests are generated into `.director/tests/` (gitignored) whenever `playwright.config.ts` loads; projects select them by tag (`@auto` / `@cyborg`), `play` builds the `--grep`.
+Tests are generated into `.director/tests/` (gitignored) whenever `playwright.config.ts` loads; projects select them by tag: `api`, one per device (`chrome`, `firefox`; `tablet`, `mobile` for `@all-devices`), `cyborg`; `play` builds the `--grep`.
 
 ## Boundaries
 

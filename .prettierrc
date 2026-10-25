@@ -9,5 +9,11 @@
   "endOfLine": "lf",
   "quoteProps": "as-needed",
   "embeddedLanguageFormatting": "auto",
-  "proseWrap": "preserve"
+  "proseWrap": "preserve",
+  "overrides": [
+    {
+      "files": "*.md",
+      "options": { "embeddedLanguageFormatting": "off" }
+    }
+  ]
 }

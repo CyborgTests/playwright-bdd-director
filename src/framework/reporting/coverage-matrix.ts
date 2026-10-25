@@ -2,6 +2,7 @@ import path from 'path'
 
 import { type BuildResult, buildTests } from '../bdd/build'
 import type { GeneratedTest } from '../bdd/generator'
+import type { Devices } from '../constants/tags'
 
 /**
  * - automated: every step has a step definition
@@ -19,6 +20,7 @@ export interface StepCount {
 export interface TestCoverage {
   title: string
   layer: string // api | ui | e2e
+  devices: Devices // none (API) | desktop | all - desktops, tablets and mobiles
   status: TestStatus
   tags: string[] // spec tags of suite, rule and test case (layer excluded)
   steps: StepCount // Background steps included
@@ -104,6 +106,7 @@ function toTestCoverage(test: GeneratedTest): TestCoverage {
   return {
     title: test.title,
     layer: test.layer.slice(1),
+    devices: test.devices,
     status,
     tags: test.tags,
     steps: test.steps

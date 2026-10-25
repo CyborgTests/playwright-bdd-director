@@ -51,10 +51,10 @@ describe('buildTests', () => {
   it('should generate every valid spec and report invalid ones, duplicate names and unused steps', async () => {
     Step('Open Cart', async ({ page }) => page)
     Step('Never used', async ({ page }) => page)
-    const cart = write('shop/cart.md', '## Cart\n\nTags: @ui\n\n### Open\n\n#### Open Cart\n')
+    const cart = write('shop/cart.md', '@ui\n## Cart\n\n### Open\n\n#### Open Cart\n')
     const noLayer = write('pay.md', '## Pay\n\n### Pay\n\n#### Pay\n')
     const broken = write('broken.md', 'text before any heading\n')
-    const twin = write('shop/twin.md', '## Twin\n\nTags: @ui\n\n### A\n\n#### Open Cart\n')
+    const twin = write('shop/twin.md', '@ui\n## Twin\n\n### A\n\n#### Open Cart\n')
     const twinFeature = write('twin.feature', '@ui\nFeature: Twin\n')
 
     const result = await buildTests(findSpecFiles(suitesDir))

@@ -12,7 +12,7 @@ try {
 }
 
 /**
- * Stage - format the Markdown specs: heading and list spacing, blank lines, a `---` separator
+ * Stage - format the Markdown specs as dense as Gherkin: heading and list spacing, a `---` separator
  * before every test case. Tests need no staging: they are generated from the specs on every run.
  */
 function main() {

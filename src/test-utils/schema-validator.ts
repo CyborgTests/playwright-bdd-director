@@ -1,4 +1,17 @@
 /**
+ * Schema wrapper for APIExpect.expectMatchSchema
+ */
+export interface APISchema {
+  compare: (data: unknown) => string | undefined
+}
+
+export function createAPISchema(validator: Record<string, (value: unknown) => boolean>): APISchema {
+  return {
+    compare: (data: unknown) => SchemaValidator.validate(data, validator)
+  }
+}
+
+/**
  * Schema Validator Class
  *
  * This is a lightweight alternative to Joi that provides similar functionality

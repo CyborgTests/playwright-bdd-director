@@ -8,12 +8,13 @@ description: Use when running, filtering, debugging or reporting Playwright test
 ## Before you start
 
 - Tests are generated from the specs whenever `playwright.config.ts` loads (`.director/tests/`); an invalid spec or ambiguous step stops the run with the reason - fix it, nothing else to regenerate.
-- Projects select by tag: `automated` runs `@auto`, `cyborg` runs `@cyborg`. Tags of a test: `@auto|@cyborg`, its layer `@api|@ui|@e2e`, suite `@<spec base name>`, its spec tags.
+- Projects select by tag: `api` runs `@auto` API tests once; `chrome`, `firefox` run every `@auto` UI/E2E test; `tablet`, `mobile` only `@all-devices` ones; `cyborg` runs `@cyborg`. Tags of a test: `@auto|@cyborg`, its layer `@api|@ui|@e2e`, suite `@<spec base name>`, its spec tags.
 
 ## Steps
 
 1. **Pick the command**:
-   - `npm run play <types...> [suites...] [@tags...]`. Examples: `play auto`, `play api auth-api`, `play ui auth`, `play cyborg navigation`, `play auth`, `play ui @smoke`. Layers alone (`api`, `ui`, `e2e`) run automated tests; add `cyborg` for cyborg ones.
+   - `npm run play <types...> [suites...] [@tags...] [devices...]`. Examples: `play auto`, `play api auth-api`, `play ui auth`, `play cyborg navigation`, `play auth`, `play ui @smoke`.
+   - A device name selects its project: `play e2e mobile`. Layers alone (`api`, `ui`, `e2e`) run automated tests; add `cyborg` for cyborg ones.
    - Raw: `npx playwright test --grep "(?=.*(@ui)(\s|$))(?=.*(@auth)(\s|$))"` - every group required, a tag ends at a space.
    - Single test: `npx playwright test --grep "User Login"`.
    - Visual runner with Director: `npm run show` (the list follows spec edits).

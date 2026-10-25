@@ -10,11 +10,13 @@ paths:
 
 ## Format
 
-- Markdown: `##` suite, `###` test case (`### Background` - steps before every case), `####` step. Bullet lines (`- …`) under any heading are notes for people, not part of the test. `npm run stage` formats the file and puts `---` before every `###`.
+- Markdown: `##` suite, `###` test case (`### Background` - steps before every case), `####` step. Bullet lines (`- …`) under any heading are notes for people, not part of the test. `npm run stage` formats the file as dense as Gherkin: no blank lines but around the `---` before every `###`.
 - Gherkin `.feature`: anything the parser accepts - Background, Rule (own Background), Scenario Outline + Examples (tagged too), DataTable, DocString, `# language:`.
+- Markdown is kept simple: no Rule, no tagged Examples, no step tags - never extend it; a suite that needs more moves to Gherkin.
 - One spec file = one suite. Base name is unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) and becomes the suite tag `@auth`.
-- `Tags: @smoke @JIRA-1` right under a `##`/`###` heading (Gherkin: `@tag` lines) tags the suite / case.
-- A Markdown table under a `###` heading (after `Tags:`) makes the case parametrized: `<column>` placeholders in title/steps, one test per row; the title needs a unique-valued placeholder.
+- Tags as in Gherkin: a line `@smoke @JIRA-1` right above the `##` / `###` heading; no other tag format.
+- Suite tags hold for all its tests (layer; `@all-devices`, `@slow` only if true for every test); a test carries its exceptions. Order: layer → `@all-devices` → special tags → own tags.
+- A Markdown table under a `###` heading makes the case parametrized: `<column>` placeholders in title/steps, one test per row; the title needs a unique-valued placeholder.
 - Optional bracket IDs `## [TS01] …`, `### [TC01-01] …` stay in test titles; case IDs are unique within a spec, `[]` is an empty ID.
 - English only; titles are human-readable actions/outcomes, no articles where avoidable, quotes for literal UI text (`Click "Signup" Button`).
 
@@ -22,6 +24,7 @@ paths:
 
 - Every test has exactly one layer tag `@api`, `@ui` or `@e2e`: on the suite, overridden by a case (Rule, Examples) tag. No layer or two on one level stops the run.
 - `@auto` / `@cyborg` are set by the Director - specs never write them.
+- UI / E2E tests run on desktop browsers; `@all-devices` on any level adds tablets and mobiles (never on `@api`).
 
 ## Generated tests
 

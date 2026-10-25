@@ -26,6 +26,7 @@ const TESTS: TestCoverage[] = [
   {
     title: 'Add <b>"item"</b> | cart',
     layer: 'ui',
+    devices: 'all',
     status: 'automated',
     tags: [],
     steps: { automated: 2, total: 2 }
@@ -33,6 +34,7 @@ const TESTS: TestCoverage[] = [
   {
     title: 'Check colors',
     layer: 'e2e',
+    devices: 'desktop',
     status: 'cyborg',
     tags: [],
     steps: { automated: 1, total: 3 }
@@ -40,6 +42,7 @@ const TESTS: TestCoverage[] = [
   {
     title: 'Price API',
     layer: 'api',
+    devices: 'none',
     status: 'fixme',
     tags: [],
     steps: { automated: 0, total: 1 }
@@ -47,6 +50,7 @@ const TESTS: TestCoverage[] = [
   {
     title: 'Old flow',
     layer: 'ui',
+    devices: 'desktop',
     status: 'disabled',
     tags: [],
     steps: { automated: 2, total: 2 }
@@ -80,9 +84,15 @@ describe('renderConsole', () => {
 
     expect(lines).toContain('  Shop  test-suites/shop.md')
     expect(lines).toContain(`  ${'█'.repeat(5)}${'░'.repeat(15)}  25% automated 1/4`)
-    expect(rowCells(lines[header])).toEqual(['Test', 'Layer', 'Status', 'Steps auto'])
-    expect(rowCells(lines[header + 2])).toEqual(['Check colors', 'E2E', '✋ cyborg', '1/3'])
-    expect(rowCells(lines[header + 3])).toEqual(['Price API', 'API', '○ fixme', '0/1'])
+    expect(rowCells(lines[header])).toEqual(['Test', 'Layer', 'Devices', 'Status', 'Steps auto'])
+    expect(rowCells(lines[header + 2])).toEqual([
+      'Check colors',
+      'E2E',
+      'desktop',
+      '✋ cyborg',
+      '1/3'
+    ])
+    expect(rowCells(lines[header + 3])).toEqual(['Price API', 'API', '-', '○ fixme', '0/1'])
     expect(lines.some((line) => /^\s+Steps automated\s?█+░+\s+63% 5\/8$/.test(line))).toBe(true)
     expect(output).not.toContain(ESC)
   })
@@ -101,9 +111,9 @@ describe('renderMarkdown', () => {
     const markdown = renderMarkdown(MATRIX)
 
     expect(markdown).toContain('## Shop')
-    expect(markdown).toContain('| Test | Layer | Status | Steps automated |')
-    expect(markdown).toContain('| Add <b>"item"</b> \\| cart | UI | ✅ auto | 2/2 |')
-    expect(markdown).toContain('| Check colors | E2E | ✋ cyborg | 1/3 |')
+    expect(markdown).toContain('| Test | Layer | Devices | Status | Steps automated |')
+    expect(markdown).toContain('| Add <b>"item"</b> \\| cart | UI | all | ✅ auto | 2/2 |')
+    expect(markdown).toContain('| Check colors | E2E | desktop | ✋ cyborg | 1/3 |')
   })
 })
 

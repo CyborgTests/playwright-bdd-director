@@ -3,7 +3,7 @@ import path from 'path'
 import { CONFIG } from '../config'
 import {
   BACKGROUND_TTL,
-  MD_TAGS_PREFIX,
+  MD_TAG_PREFIX,
   PLACEHOLDER_PATTERN,
   SPEC_FILE_EXTENSION,
   SPEC_TAG_PATTERN
@@ -52,15 +52,12 @@ export function isBackgroundTitle(ttl: string): boolean {
 }
 
 /**
- * Tags of MD "Tags:" line (space or comma separated), null for any other line
- * Example: "Tags: @smoke, @critical" -> ["@smoke", "@critical"]
+ * Tags of a Markdown tags line (space separated, as in Gherkin), null for any other line
+ * Example: "@smoke @critical" -> ["@smoke", "@critical"]
  */
 export function parseTagsLine(line: string): string[] | null {
-  if (!line.startsWith(MD_TAGS_PREFIX)) return null
-  return line
-    .slice(MD_TAGS_PREFIX.length)
-    .split(/[\s,]+/)
-    .filter(Boolean)
+  if (!line.startsWith(MD_TAG_PREFIX)) return null
+  return line.split(/\s+/).filter(Boolean)
 }
 
 /**

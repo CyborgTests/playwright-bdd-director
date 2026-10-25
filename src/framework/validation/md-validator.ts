@@ -6,7 +6,7 @@ import {
   MD_HEADINGS,
   MD_HORIZONTAL_RULE,
   MD_TABLE_PREFIX,
-  MD_TAGS_PREFIX
+  MD_TAG_PREFIX
 } from '@/framework/constants/markdown'
 
 import {
@@ -74,7 +74,7 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
     if (trimmed.startsWith('- ')) continue
 
     // 7. Tags line and examples table row (placement and format are checked by md-parser)
-    if (trimmed.startsWith(MD_TAGS_PREFIX) || trimmed.startsWith(MD_TABLE_PREFIX)) continue
+    if (trimmed.startsWith(MD_TAG_PREFIX) || trimmed.startsWith(MD_TABLE_PREFIX)) continue
 
     // Everything else is invalid
     errors.push({
@@ -186,11 +186,12 @@ export function validateMDStructure(filePath: string): MDValidationError[] {
 }
 
 /**
- * Auto-fix MD formatting issues:
- * - Exactly one space after ##/###/####/-
- * - Correct blank lines between headers and comments
- * - Remove multiple blank lines
- * - `---` separator before every test case (###), nowhere else
+ * Format a Markdown spec compactly, as dense as Gherkin:
+ * - exactly one space after ##/###/####/-
+ * - no blank lines inside the suite header or a test case: tags line right above its heading,
+ *   notes and examples table right under it
+ * - `---` separator before every test case (### and its tags line), a blank line around it -
+ *   the one above keeps Markdown from reading the line before `---` as a heading
  * Returns true if file was modified
  */
 export function autoFixMDFormatting(filePath: string): boolean {
@@ -200,135 +201,26 @@ export function autoFixMDFormatting(filePath: string): boolean {
   } catch {
     return false
   }
-  // Separators are placed anew below - one before every test case
-  const lines = content.split('\n').filter((line) => line.trim() !== MD_HORIZONTAL_RULE)
 
-  const isComment = (line: string): boolean => {
-    const trimmed = line.trim()
-    // Horizontal rule is a separator, not a comment - blank lines around it are kept
-    return (
-      trimmed.length > 0 &&
-      trimmed !== MD_HORIZONTAL_RULE &&
-      getBlockKind(line) === 'details' &&
-      getHeadingLevel(trimmed) === null
-    )
-  }
+  // Blank lines and separators are placed anew below
+  const lines = content
+    .split('\n')
+    .filter((line) => line.trim() !== '' && line.trim() !== MD_HORIZONTAL_RULE)
+    .map(fixSpacing)
 
-  // Tags line and examples table are blocks of their own, kept apart from details by blank
-  // lines (as Prettier does) - a list item would swallow a table, a Tags line would merge
-  const getBlockKind = (line: string): 'tags' | 'table' | 'details' => {
-    const trimmed = line.trim()
-    if (trimmed.startsWith(MD_TAGS_PREFIX)) return 'tags'
-    if (trimmed.startsWith(MD_TABLE_PREFIX)) return 'table'
-    return 'details'
-  }
-
-  const isBlank = (line: string): boolean => {
-    return line.trim() === ''
-  }
-
-  // Step 1: Fix spacing (only for valid headers)
-  const spacingFixed = lines.map((line) => {
-    const trimmed = line.trim()
-
-    // Fix H2 spacing
-    if (trimmed.match(MD_HEADINGS.SUITE.REGEX_FIX)) {
-      return trimmed.replace(MD_HEADINGS.SUITE.REGEX_FIX, MD_HEADINGS.SUITE.PREFIX)
-    }
-
-    // Fix H3 spacing
-    if (trimmed.match(MD_HEADINGS.TEST_CASE.REGEX_FIX)) {
-      return trimmed.replace(MD_HEADINGS.TEST_CASE.REGEX_FIX, MD_HEADINGS.TEST_CASE.PREFIX)
-    }
-
-    // Fix H4 spacing
-    if (trimmed.match(MD_HEADINGS.STEP.REGEX_FIX)) {
-      return trimmed.replace(MD_HEADINGS.STEP.REGEX_FIX, MD_HEADINGS.STEP.PREFIX)
-    }
-
-    // Fix list marker spacing
-    if (trimmed.startsWith('-') && !trimmed.startsWith('--')) {
-      return trimmed.replace(/^-\s*/, '- ')
-    }
-
-    return line
-  })
-
-  // Step 2: Remove multiple blank lines first
-  const noMultipleBlanks: string[] = []
-  for (let i = 0; i < spacingFixed.length; i++) {
-    const line = spacingFixed[i]
-    const lastAdded =
-      noMultipleBlanks.length > 0 ? noMultipleBlanks[noMultipleBlanks.length - 1] : null
-
-    // Skip blank lines at the beginning of file
-    if (isBlank(line) && noMultipleBlanks.length === 0) {
-      continue
-    }
-
-    // Skip multiple consecutive blank lines
-    if (isBlank(line) && lastAdded !== null && isBlank(lastAdded)) {
-      continue
-    }
-
-    noMultipleBlanks.push(line)
-  }
-
-  // Step 3: Fix blank lines between headers and comments
-  const finalLines: string[] = []
-
-  for (let i = 0; i < noMultipleBlanks.length; i++) {
-    const line = noMultipleBlanks[i]
-    const nextLine = i + 1 < noMultipleBlanks.length ? noMultipleBlanks[i + 1] : null
-    const lastAdded = finalLines.length > 0 ? finalLines[finalLines.length - 1] : null
-    const isHeader = getHeadingLevel(line.trim()) !== null
-
-    // Skip blank line between comments
-    if (
-      isBlank(line) &&
-      lastAdded !== null &&
-      isComment(lastAdded) &&
-      nextLine !== null &&
-      isComment(nextLine)
-    ) {
-      continue
-    }
-
-    finalLines.push(line)
-
-    // Add blank line after header if next line is not blank and not end
-    if (isHeader && nextLine !== null && !isBlank(nextLine)) {
-      finalLines.push('')
-    }
-
-    // Add blank line before header if previous was comment
-    const nextIsHeader = nextLine !== null && getHeadingLevel(nextLine.trim()) !== null
-    if (isComment(line) && nextIsHeader) {
-      finalLines.push('')
-    }
-
-    // Blank line between Tags line, examples table and adjacent details
-    if (
-      nextLine !== null &&
-      !isBlank(line) &&
-      !isBlank(nextLine) &&
-      !isHeader &&
-      getBlockKind(line) !== getBlockKind(nextLine)
-    ) {
-      finalLines.push('')
-    }
-  }
-
-  const separated: string[] = []
-  for (const line of finalLines) {
+  const formatted: string[] = []
+  for (const line of lines) {
     if (isHeading(line, 3)) {
-      if (separated.length > 0 && !isBlank(separated[separated.length - 1])) separated.push('')
-      separated.push(MD_HORIZONTAL_RULE, '')
+      let start = formatted.length
+      while (start > 0 && formatted[start - 1].startsWith(MD_TAG_PREFIX)) start--
+      const tagLines = formatted.splice(start)
+      if (formatted.length > 0) formatted.push('')
+      formatted.push(MD_HORIZONTAL_RULE, '', ...tagLines)
     }
-    separated.push(line)
+    formatted.push(line)
   }
 
-  const newContent = separated.join('\n')
+  const newContent = `${formatted.join('\n')}\n`
   const modified = content !== newContent
 
   if (modified) {
@@ -336,4 +228,23 @@ export function autoFixMDFormatting(filePath: string): boolean {
   }
 
   return modified
+}
+
+/** One space after a heading or list marker */
+function fixSpacing(line: string): string {
+  const trimmed = line.trim()
+
+  if (trimmed.match(MD_HEADINGS.SUITE.REGEX_FIX)) {
+    return trimmed.replace(MD_HEADINGS.SUITE.REGEX_FIX, MD_HEADINGS.SUITE.PREFIX)
+  }
+  if (trimmed.match(MD_HEADINGS.TEST_CASE.REGEX_FIX)) {
+    return trimmed.replace(MD_HEADINGS.TEST_CASE.REGEX_FIX, MD_HEADINGS.TEST_CASE.PREFIX)
+  }
+  if (trimmed.match(MD_HEADINGS.STEP.REGEX_FIX)) {
+    return trimmed.replace(MD_HEADINGS.STEP.REGEX_FIX, MD_HEADINGS.STEP.PREFIX)
+  }
+  if (trimmed.startsWith('-') && !trimmed.startsWith('--')) {
+    return trimmed.replace(/^-\s*/, '- ')
+  }
+  return line
 }

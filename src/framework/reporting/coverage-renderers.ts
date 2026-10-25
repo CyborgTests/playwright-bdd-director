@@ -1,6 +1,9 @@
+import type { Devices } from '../constants/tags'
 import type { CoverageMatrix, CoverageSummary, StepCount, TestStatus } from './coverage-matrix'
 
 const MAX_TITLE_WIDTH = 60
+
+const DEVICES_LABEL: Record<Devices, string> = { none: '-', desktop: 'desktop', all: 'all' }
 
 const CONSOLE_STATUS: Record<TestStatus, string> = {
   automated: '✔ auto',
@@ -54,8 +57,8 @@ export function renderConsole(
     Math.max('Test'.length, ...matrix.suites.flatMap((s) => s.tests.map((t) => t.title.length)))
   )
   const statusWidth = Math.max(...Object.values(CONSOLE_STATUS).map((label) => label.length))
-  const row = (title: string, layer: string, status: string, steps: string) =>
-    `    ${title}  ${layer.padEnd(5)}  ${status}  ${steps}`.trimEnd()
+  const row = (title: string, layer: string, devices: string, status: string, steps: string) =>
+    `    ${title}  ${layer.padEnd(5)}  ${devices.padEnd(7)}  ${status}  ${steps}`.trimEnd()
   const lines = ['', paint('bold', 'Coverage Matrix'), '']
 
   for (const suite of matrix.suites) {
@@ -65,7 +68,13 @@ export function renderConsole(
       '',
       paint(
         'dim',
-        row('Test'.padEnd(titleWidth), 'Layer', 'Status'.padEnd(statusWidth), 'Steps auto')
+        row(
+          'Test'.padEnd(titleWidth),
+          'Layer',
+          'Devices',
+          'Status'.padEnd(statusWidth),
+          'Steps auto'
+        )
       )
     )
     for (const test of suite.tests) {
@@ -73,6 +82,7 @@ export function renderConsole(
         row(
           truncate(test.title, titleWidth).padEnd(titleWidth),
           test.layer.toUpperCase(),
+          DEVICES_LABEL[test.devices],
           paint(STATUS_STYLE[test.status], CONSOLE_STATUS[test.status].padEnd(statusWidth)),
           formatSteps(test.steps)
         )
@@ -122,10 +132,13 @@ export function renderMarkdown(matrix: CoverageMatrix): string {
   for (const suite of matrix.suites) {
     lines.push(`## ${escapeMarkdown(suite.suiteTtl)}`, '')
     lines.push(`\`${suite.spec}\` · ${formatSummary(suite.summary)}`, '')
-    lines.push('| Test | Layer | Status | Steps automated |', '| --- | :---: | :---: | :---: |')
+    lines.push(
+      '| Test | Layer | Devices | Status | Steps automated |',
+      '| --- | :---: | :---: | :---: | :---: |'
+    )
     for (const test of suite.tests) {
       lines.push(
-        `| ${escapeMarkdown(test.title)} | ${test.layer.toUpperCase()} | ${MD_STATUS[test.status]} | ${formatSteps(test.steps)} |`
+        `| ${escapeMarkdown(test.title)} | ${test.layer.toUpperCase()} | ${DEVICES_LABEL[test.devices]} | ${MD_STATUS[test.status]} | ${formatSteps(test.steps)} |`
       )
     }
     lines.push('')
@@ -147,13 +160,13 @@ export function renderHtml(matrix: CoverageMatrix): string {
       const rows = suite.tests
         .map(
           (test) =>
-            `<tr data-state="${test.status}"><th scope="row">${escapeHtml(test.title)}</th><td>${test.layer.toUpperCase()}</td><td class="cell ${test.status}" title="${escapeHtml(STATUS_LABEL[test.status])}">${escapeHtml(CONSOLE_STATUS[test.status])}</td><td>${formatSteps(test.steps)}</td></tr>`
+            `<tr data-state="${test.status}"><th scope="row">${escapeHtml(test.title)}</th><td>${test.layer.toUpperCase()}</td><td>${DEVICES_LABEL[test.devices]}</td><td class="cell ${test.status}" title="${escapeHtml(STATUS_LABEL[test.status])}">${escapeHtml(CONSOLE_STATUS[test.status])}</td><td>${formatSteps(test.steps)}</td></tr>`
         )
         .join('\n')
       return `<details open>
 <summary><span class="suite">${escapeHtml(suite.suiteTtl)}</span> <code>${escapeHtml(suite.spec)}</code> <span class="pct">${suite.summary.automatedPercent}%</span></summary>
 <table>
-<thead><tr><th scope="col">Test</th><th scope="col">Layer</th><th scope="col">Status</th><th scope="col">Steps automated</th></tr></thead>
+<thead><tr><th scope="col">Test</th><th scope="col">Layer</th><th scope="col">Devices</th><th scope="col">Status</th><th scope="col">Steps automated</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>

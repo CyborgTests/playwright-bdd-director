@@ -25,7 +25,7 @@ export function parseSpecDocument(specPath: string): SpecDocument {
 
 /**
  * Gherkin form of a Markdown spec: suite → Feature, Background → Background (first), test case →
- * Scenario (Outline with its examples table), step → `* <step>`, Tags lines → tags, `[ID]` stays
+ * Scenario (Outline with its examples table), step → `* <step>`, tags lines → tags, `[ID]` stays
  * in the name. Details (bullet lines) are notes for people and are left out.
  * @throws Error for more than one Background
  */

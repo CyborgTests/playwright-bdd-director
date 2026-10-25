@@ -1,16 +1,21 @@
-# language: uk
-@ui @slow
-Функціонал: Пошук товарів
-  Пошук на сторінці товарів знаходить товари за частиною назви
+@ui
+Feature: Product Catalog
+  The catalog page: search by part of a name, prices matching the API
 
-  Передумова:
-    Дано user opens the products page
+  Background:
+    Given user opens the products page
 
-  Структура сценарію: Знайти "<product>" за запитом "<query>"
-    Коли user searches for "<query>"
-    Тоді search results include "<product>"
+  @all-devices
+  Scenario Outline: Find "<product>" by "<query>"
+    When user searches for "<query>"
+    Then search results include "<product>"
 
-    Приклади:
+    Examples:
       | query | product       |
       | Top   | Blue Top      |
       | Dress | Stylish Dress |
+
+  @e2e
+  Scenario: Catalog price of "Blue Top" matches the API
+    Given catalog API lists "Blue Top" for Rs. 500
+    Then products page shows "Blue Top" for Rs. 500

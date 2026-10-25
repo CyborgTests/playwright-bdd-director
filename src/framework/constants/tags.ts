@@ -10,6 +10,15 @@ export const LAYER_TAGS = ['@api', '@ui', '@e2e'] as const
 /** Layers a person can walk: an API case with a manual step stays fixme instead */
 export const CYBORG_LAYERS: readonly string[] = ['@ui', '@e2e']
 
+/**
+ * UI and E2E tests run on desktop browsers; this spec tag (any level) adds tablets and mobiles.
+ * Which browsers and devices that means is the Playwright projects' business (src/config).
+ */
+export const ALL_DEVICES_TAG = '@all-devices'
+
+/** Where a test runs: no browser (API), desktop browsers, or desktops plus tablets and mobiles */
+export type Devices = 'none' | 'desktop' | 'all'
+
 export type KindTag = (typeof KIND_TAGS)[keyof typeof KIND_TAGS]
 export type LayerTag = (typeof LAYER_TAGS)[number]
 

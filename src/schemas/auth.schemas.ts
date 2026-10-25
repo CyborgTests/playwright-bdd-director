@@ -12,20 +12,7 @@
  * schemas that mirror what would be generated from Swagger.
  */
 
-import { SchemaValidator } from '@/test-utils/schema-validator'
-
-/**
- * Schema wrapper for APIExpect compatibility
- */
-export interface APISchema {
-  compare: (data: unknown) => string | undefined
-}
-
-function createAPISchema(validator: Record<string, (value: unknown) => boolean>): APISchema {
-  return {
-    compare: (data: unknown) => SchemaValidator.validate(data, validator)
-  }
-}
+import { createAPISchema, SchemaValidator } from '@/test-utils/schema-validator'
 
 export const AuthSchemas = {
   /**

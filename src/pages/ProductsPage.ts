@@ -49,6 +49,10 @@ export class ProductsPage extends BasePage {
     await this.productCard(name).getByRole('link', { name: 'View Product' }).click()
   }
 
+  async expectProductPrice(name: string, price: string): Promise<void> {
+    await expect.soft(this.productCard(name).locator('.productinfo h2')).toHaveText(price)
+  }
+
   @Then('search results include {string}')
   async expectInSearchResults(name: string): Promise<void> {
     await expect.soft(this.searchedProductsHeading).toBeVisible()

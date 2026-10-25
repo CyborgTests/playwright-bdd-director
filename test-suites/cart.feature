@@ -6,12 +6,13 @@ Feature: Cart
   Background:
     Given user opens the products page
 
+  @all-devices
   Scenario Outline: Add "<product>" to cart
     When user adds "<product>" to cart
     And user opens the cart
     Then cart has:
       | name      | price   | quantity | total   |
-      | <product> | <price> | 1        | <price> |
+      | <product> | <price> |        1 | <price> |
 
     @smoke
     Examples: Women
@@ -37,8 +38,8 @@ Feature: Cart
 
     Examples:
       | quantity |
-      | 0        |
-      | -2       |
+      |        0 |
+      |       -2 |
 
   Rule: Removing products
 
@@ -49,15 +50,18 @@ Feature: Cart
       When user removes "Blue Top" from cart
       Then cart is empty
 
-  @e2e @logged-in @timeout:90000
+  @e2e @timeout:90000 @logged-in
   Rule: Checkout
     The user is registered through the API and logs in before the scenario
 
     Background:
       Given cart has "Blue Top"
 
-    @retries:1
+    @all-devices @retries:1 @fail:tablet
     Scenario: Place order with delivery comment
+      Known bug (seen live 2026-10-25): on a 1024px wide tablet a page container covers
+      "Proceed To Checkout", so the order cannot be placed. Other devices run the test as usual.
+
       When user places the order with comment:
         """
         Leave at the door.

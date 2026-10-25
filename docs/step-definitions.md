@@ -6,6 +6,7 @@ Every spec in `test-suites/` - Markdown or Gherkin - is automated by **step defi
 - [Quick start](#quick-start)
 - [Markdown or Gherkin](#markdown-or-gherkin)
 - [Layers](#layers)
+- [Devices](#devices)
 - [Steps](#steps)
 - [Step context](#step-context)
 - [Generated tests](#generated-tests)
@@ -23,7 +24,7 @@ The example suites in `test-suites/` use these features on a real site - README 
 - A step **with** a step definition runs automatically: `autoStep('Open Home Page', { homePage })`.
 - A step **without** one is walked by a person: `manualStep('Open Home Page')` - the Cyborg Tests control panel asks to do it and confirm.
 - A definition **without code** (empty body or comments only, `// TODO` or not) counts as none: its step stays manual.
-- A test whose steps are all automated is tagged **`@auto`** and runs in the `automated` project. A test with at least one manual step is a **cyborg test** (`@cyborg`) and runs in the `cyborg` project: headed, one at a time, no time limit.
+- A test whose steps are all automated is tagged **`@auto`** and runs in the automated projects - `api`, or one per browser and device (see [Devices](#devices)). A test with at least one manual step is a **cyborg test** (`@cyborg`) and runs in the `cyborg` project: headed, one at a time, no time limit.
 - Automation is therefore a gradient, step by step: write a definition, and on the next run its step stops asking a person; when the last one is written, the test becomes `@auto` by itself. Nothing to keep in sync by hand.
 
 `playwright.config.ts` generates the tests (`.director/tests/`, gitignored) every time Playwright loads it - `npm run play`, `npm run show`, the VS Code extension; in UI mode and the IDE they are regenerated on every change of a spec or `src/`. An invalid spec or an ambiguous step stops the run with the reason.
@@ -33,16 +34,13 @@ The example suites in `test-suites/` use these features on a real site - README 
 1. Write the spec with its layer tag - `test-suites/navigation.md`:
 
    ```markdown
+   @ui
    ## Site Navigation
-
-   Tags: @ui
 
    ---
 
    ### Open "Signup / Login" Page from Header
-
    #### Click "Signup / Login" Button in Header
-
    #### Verify "Login to your account" Form is visible
    ```
 
@@ -76,18 +74,33 @@ Both formats generate the same kind of tests, share step definitions, hooks, tag
 | Markdown `.md`     | `#### Click "Login" Button` - plain sentences, details below  | the team wants readable test cases without Gherkin syntax        |
 | Gherkin `.feature` | `When user clicks "Login" button` - keywords, Rules, Outlines | the team writes Gherkin or moves an existing Cucumber suite over |
 
-- Markdown: `##` suite, `###` test case, `####` step, `Tags:` lines, an examples table under a test case, `### Background`; bullet lines are notes for people. `npm run stage` formats the files and puts `---` before every test case.
+- Markdown: `##` suite, `###` test case, `####` step, `@tags` lines above `##` / `###` headings (as in Gherkin), an examples table under a test case, `### Background`; bullet lines are notes for people. `npm run stage` formats the files as dense as Gherkin: no blank lines but around the `---` before every test case.
 - Gherkin: anything the Gherkin parser accepts - Background, Rule (with its own Background), Scenario Outline with Examples (tagged too), DataTable, DocString, `# language:`.
+- Markdown stays simple on purpose: tags go on the suite and the test case only. A group of cases with shared tags (Rule) becomes its own spec, tagged rows (several Examples) become separate test cases. A suite that needs more moves to Gherkin.
 - Markdown steps have no keyword - define them with `Step(…)`. Gherkin keywords do not affect matching either, so one definition can serve both formats only when the texts match; different wordings share code by calling one step function from another (`src/steps/cart.steps.ts`).
 
 ## Layers
 
 Every test belongs to exactly one layer - `@api`, `@ui` or `@e2e` - written as a spec tag:
 
-- on the suite (`Tags: @ui` under `##`, `@ui` above `Feature:`) for all its test cases;
+- on the suite (`@ui` above `## Suite` or `Feature:`) for all its test cases;
 - on a test case (or Rule, Examples) to override it - the most specific level wins.
 
 A test without a layer, or with two layer tags on one level, stops the run. **Cyborg tests are UI or E2E only**: an `@api` test with a step left without definition is generated as `test.fixme` (shown in `dress` and the matrix) until every step is automated. `@auto` and `@cyborg` are set by the Director - specs never write them.
+
+## Devices
+
+UI and E2E tests run on every desktop browser (`chrome`, `firefox`). **`@all-devices`** on any level - Feature, Rule, Scenario, Examples, a Markdown suite or test case - runs them on tablets and mobiles too (`tablet`, `mobile`):
+
+```gherkin
+@e2e @all-devices
+Rule: Checkout
+```
+
+- API tests run once in the `api` project, without a browser; `@all-devices` on one stops the run.
+- Which browsers and devices exist is Playwright configuration: `src/config/devices.ts` (desktop and handheld groups), projects built from it in `src/config/projects.ts`. Specs, steps and generated tests do not change when a device is added.
+- `npm run play e2e mobile` runs on one device; the coverage matrix shows each test's devices (`desktop`, `all`, `-` for API).
+- A page that differs on small screens: the fixture picks the Page Object by `testInfo.project.use.isMobile` - steps and specs stay the same. Cyborg tests are walked on a desktop browser.
 
 ## Steps
 
@@ -182,7 +195,7 @@ Then('discount is shown', async ({ cartPage, bdd }) => {
 | step without one (or one without code) | `await manualStep('Given …')`                                                                   |
 
 - A manual Background step makes every test under it a cyborg test.
-- **Languages**: a Gherkin spec may start with `# language: uk` (any [Gherkin dialect](https://cucumber.io/docs/gherkin/languages/)). Step titles keep the localized keyword and `autoStep` gets `{ language: 'uk' }`, so `Припустимо, що user opens …` finds `Given('user opens …')`. Step definitions stay the same for every language.
+- **Languages**: a Gherkin spec may start with `# language: fr` (any [Gherkin dialect](https://cucumber.io/docs/gherkin/languages/)). Step titles keep the localized keyword and `autoStep` gets `{ language: 'fr' }`, so `Soit user opens …` finds `Given('user opens …')`. Step definitions stay the same for every language.
 - Spec base names are unique across `test-suites/**` - the name is the suite tag (`npm run play auth`) and pairs reports with the spec.
 - `autoStep` / `runHook` / `useStepHook` come from `@/framework/bdd/runtime` and exist for generated tests only - the public `@/framework/bdd` does not export them.
 - The generated files are formatted with the project Prettier config, so a failure points to readable code; they are never committed.
@@ -223,16 +236,17 @@ AfterStep({ name: 'Screenshot', tags: '@ui' }, async ({ page, bdd }) => {
 
 They stay Playwright tags too, so `npm run play @slow` works. Written on a Feature, Rule, Scenario or Examples - the level decides which tests they cover.
 
-| Tag          | Generated                                                  | Use when                                                                                                                                                                           |
-| ------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@skip`      | `test.skip(…)`                                             | the case does not apply here or yet: the feature is off on this environment, not built, out of scope for a release. Not for bugs - the reason is not a defect                      |
-| `@fixme`     | `test.fixme(…)`                                            | a confirmed bug blocks the flow, so running the test proves nothing (it hangs, or fails before reaching what it checks). The test does not run; note the bug next to the tag       |
-| `@fail`      | `test.fail(…)`                                             | a confirmed bug the test still reaches: it runs, must fail and counts as passed. Once the bug is fixed it fails - the reminder to drop the tag (`cart.feature`, quantity 0 and -2) |
-| `@slow`      | `test.slow()` in the test                                  | the test is legitimately slow - triples its timeout (`products.feature`)                                                                                                           |
-| `@retries:N` | `test.describe.configure({ retries })` on the tagged level | a dependency outside your control is unstable. A test that passes only on retry is not green - read the first attempt (`cart.feature`, placing an order)                           |
-| `@timeout:N` | `test.describe.configure({ timeout })` on the tagged level | a group needs a limit other than the project's (`cart.feature`, Rule Checkout: API registration, login and an order)                                                               |
+| Tag                                                   | Generated                                                  | Use when                                                                                                                                                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@skip`                                               | `test.skip(…)`                                             | the case does not apply here or yet: the feature is off on this environment, not built, out of scope for a release. Not for bugs - the reason is not a defect                      |
+| `@fixme`                                              | `test.fixme(…)`                                            | a confirmed bug blocks the flow, so running the test proves nothing (it hangs, or fails before reaching what it checks). The test does not run; note the bug next to the tag       |
+| `@fail`                                               | `test.fail(…)`                                             | a confirmed bug the test still reaches: it runs, must fail and counts as passed. Once the bug is fixed it fails - the reminder to drop the tag (`cart.feature`, quantity 0 and -2) |
+| `@skip:<device>`, `@fixme:<device>`, `@fail:<device>` | the same modifier with a condition on the project          | the case or the bug concerns one device (`chrome`, `firefox`, `tablet`, `mobile`); the others run the test as usual (`cart.feature`: placing an order fails on a tablet)           |
+| `@slow`                                               | `test.slow()` in the test                                  | the test is legitimately slow - triples its timeout                                                                                                                                |
+| `@retries:N`                                          | `test.describe.configure({ retries })` on the tagged level | a dependency outside your control is unstable. A test that passes only on retry is not green - read the first attempt (`cart.feature`, placing an order)                           |
+| `@timeout:N`                                          | `test.describe.configure({ timeout })` on the tagged level | a group needs a limit other than the project's (`cart.feature`, Rule Checkout: API registration, login and an order)                                                               |
 
-`@skip`, `@fixme` and `@fail` on a Feature or Rule cover all its tests. Cyborg tests have no time limit, so `@slow` and `@timeout` do not change them. An invalid value (`@retries:abc`) or two different values on one level stop the run.
+`@skip`, `@fixme` and `@fail` on a Feature or Rule cover all its tests. Cyborg tests have no time limit, so `@slow` and `@timeout` do not change them. An invalid value (`@retries:abc`), two different values on one level, an unknown device (`@fail:tabet`) or a device the test never runs on (`@fail:tablet` without `@all-devices`) stop the run.
 
 ## Reports
 

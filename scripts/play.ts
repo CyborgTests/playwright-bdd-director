@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { execSync } from 'child_process'
 
+import { desktopDevices, handheldDevices } from '@/config/devices'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
@@ -14,15 +15,20 @@ import { getIcon } from '@/framework/utils/icons'
  *   npx tsx scripts/play.ts cyborg auth    # Cyborg tests for auth suite
  *   npx tsx scripts/play.ts api ui auth    # API + UI tests for auth suite
  *   npx tsx scripts/play.ts ui @smoke      # UI tests tagged @smoke in spec
+ *   npx tsx scripts/play.ts e2e mobile     # E2E tests on the mobile device only
  */
 
 const TEST_TYPES = ['auto', 'cyborg', 'api', 'ui', 'e2e'] as const
 type TestType = (typeof TEST_TYPES)[number]
 
+/** Device ids are Playwright project names (src/config/devices.ts) */
+const DEVICE_IDS = [...desktopDevices, ...handheldDevices].map((device) => device.id)
+
 interface PlayConfig {
   testTypes?: TestType[]
   suiteNames?: string[]
   tags?: string[] // spec tags as written: '@smoke'
+  devices?: string[] // device ids: 'chrome', 'mobile'
   workers?: number
 }
 
@@ -58,6 +64,10 @@ function buildPlaywrightCommand(config: PlayConfig): string {
     cmd += ` --grep ${grepPattern}`
   }
 
+  for (const device of config.devices ?? []) {
+    cmd += ` --project=${device}`
+  }
+
   if (config.workers) {
     cmd += ` --workers=${config.workers}`
   }
@@ -91,7 +101,8 @@ Usage:
   npm run play <types> <suites> <@tags>
 
   Arguments must be in order: test types first, then suite names
-  Spec tags (Tags: line in MD, @tag in Gherkin) start with @ and may go anywhere
+  Spec tags (@tag lines above MD / Gherkin headings) start with @ and may go anywhere
+  Devices (${DEVICE_IDS.join(', ')}) may go anywhere - without one every device runs
   Example: npm run play api ui auth todo
   Example: npm run play cyborg auth
 
@@ -115,12 +126,15 @@ Examples:
   npm run play auth todo            # All auth + todo tests
   npm run play @smoke               # All tests tagged @smoke in spec
   npm run play ui auth @smoke       # UI auth tests tagged @smoke
+  npm run play e2e mobile           # E2E tests on the mobile device only
+  npm run play auto chrome firefox  # Automated tests on desktop browsers only
 
 Note:
   - Tests are generated from the specs on every run; a step without step definition is walked
     by a person, so a test is cyborg until all its steps are automated
   - api / ui / e2e alone run automated tests; add cyborg for the cyborg ones (ui / e2e only)
   - Cyborg tests run one at a time; automated tests use the worker count of playwright.config.ts
+  - UI / E2E tests run on every desktop browser; tagged @all-devices also on tablets and mobiles
 `)
 }
 
@@ -135,10 +149,17 @@ function parseArgs(): PlayConfig | null {
     return null
   }
 
-  // Spec tags may go anywhere - they narrow selected types / suites further
+  // Spec tags and devices may go anywhere - they narrow selected types / suites further
   const tags = allArgs.filter((arg) => arg.startsWith('@'))
-  const config = parseTypesAndSuites(allArgs.filter((arg) => !arg.startsWith('@')))
-  return tags.length > 0 ? { ...config, tags } : config
+  const devices = allArgs.filter((arg) => DEVICE_IDS.includes(arg))
+  const config = parseTypesAndSuites(
+    allArgs.filter((arg) => !arg.startsWith('@') && !DEVICE_IDS.includes(arg))
+  )
+  return {
+    ...config,
+    ...(tags.length > 0 ? { tags } : {}),
+    ...(devices.length > 0 ? { devices } : {})
+  }
 }
 
 /**

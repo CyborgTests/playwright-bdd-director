@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker'
 
+import { ProductsClient } from '@/clients/ProductsClient'
 import { type PaymentCard } from '@/pages/CheckoutPage'
 
 import { test as base } from './base.fixture'
@@ -9,12 +10,17 @@ import { test as base } from './base.fixture'
  */
 interface ShopFixture {
   paymentCard: PaymentCard // random card data - the example shop accepts any
+  productsClient: ProductsClient
 }
 
 /**
  * Shop test fixture extending base fixture
  */
 export const test = base.extend<ShopFixture>({
+  productsClient: async ({ apiContext }, use) => {
+    await use(new ProductsClient(apiContext))
+  },
+
   paymentCard: async ({}, use) => {
     const expiry = faker.date.future({ years: 3 })
     await use({

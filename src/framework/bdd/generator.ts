@@ -6,9 +6,13 @@ import path from 'path'
 import prettier from 'prettier'
 import { pathToFileURL } from 'url'
 
+import { desktopDevices, handheldDevices } from '@/config/devices'
+
 import { CONFIG } from '../config'
 import {
+  ALL_DEVICES_TAG,
   CYBORG_LAYERS,
+  type Devices,
   isKindTag,
   isLayerTag,
   KIND_TAGS,
@@ -55,6 +59,7 @@ export interface GeneratedTest {
   modifier?: 'skip' | 'fixme' | 'fail' // from spec tags
   tags: string[] // spec tags of the suite, rule and case, layer tags excluded
   steps: { automated: number; total: number } // Background steps included
+  devices: Devices // from the layer and @all-devices
 }
 
 export interface Generation {
@@ -131,6 +136,8 @@ const PLAYWRIGHT_HOOKS: Record<HookKind, string> = {
 /** Special tags turned into Playwright modifiers; they stay test tags too (`play @slow`) */
 const MODIFIER_TAGS = ['@skip', '@fixme', '@fail'] as const
 const CONFIGURE_TAG = /^@(retries|timeout):(.*)$/
+/** The same modifiers for one device (`@fail:tablet`) - the other devices run the test as usual */
+const DEVICE_MODIFIER_TAG = /^@(skip|fixme|fail):(.*)$/
 
 /**
  * Import step definition files (CONFIG.bdd.steps) - each Given/When/Then call registers a definition
@@ -150,7 +157,8 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
  * Its layer (@api / @ui / @e2e) comes from spec tags, the most specific level wins.
  * Hooks matching the tags: BeforeAll / AfterAll → beforeAll / afterAll of the suite,
  * Before / After → beforeEach / afterEach, tests with different hooks grouped in anonymous describes.
- * Special tags: @skip / @fixme / @fail / @slow → test modifiers, @retries:N / @timeout:N → configure.
+ * Special tags: @skip / @fixme / @fail / @slow → test modifiers, @skip:<device> / @fixme:<device> /
+ * @fail:<device> → the modifier on that device only, @retries:N / @timeout:N → configure.
  */
 export async function generateTest(specPath: string, testPath: string): Promise<Generation> {
   const { feature, markdown } = parseSpecDocument(specPath)
@@ -439,6 +447,7 @@ function emitTest(
   const kind = allManual.length > 0 && !fixme ? 'cyborg' : 'auto'
   const allTags = [...tags, KIND_TAGS[kind]]
 
+  const devices = testDevices(layer, allTags, name, context)
   const modifier = fixme ? 'fixme' : MODIFIER_TAGS.find((tag) => allTags.includes(tag))?.slice(1)
   const ownTags = withoutLayers(own.flat())
   const declare = modifier ? `test.${modifier}` : 'test'
@@ -460,12 +469,16 @@ function emitTest(
     fixme,
     ...(modifier ? { modifier: modifier as GeneratedTest['modifier'] } : {}),
     tags: [...new Set(specTags)],
-    steps: { automated: totalSteps - allManual.length, total: totalSteps }
+    steps: { automated: totalSteps - allManual.length, total: totalSteps },
+    devices
   })
 
   // A person walks a cyborg test at their own pace: its own level lifts any @timeout above it
   const unlimited = kind === 'cyborg' && levels.flat().some((tag) => tag.startsWith('@timeout:'))
-  const configure = configureLines(own.flat(), `Scenario "${name}"`, unlimited)
+  const configure = [
+    ...configureLines(own.flat(), `Scenario "${name}"`, unlimited),
+    ...deviceModifierLines(allTags, devices, kind, name, context)
+  ]
   return {
     lines:
       configure.length > 0
@@ -475,6 +488,69 @@ function emitTest(
       matchingHooks(kind, allTags)
     )
   }
+}
+
+/**
+ * API tests run without a browser, so @all-devices on one is a mistake in the spec. A person
+ * walks a cyborg test on a desktop browser - @all-devices applies once it is automated.
+ */
+function testDevices(layer: LayerTag, tags: string[], name: string, context: Context): Devices {
+  const allDevices = tags.includes(ALL_DEVICES_TAG)
+  if (layer !== '@api') return allDevices && !tags.includes(KIND_TAGS.cyborg) ? 'all' : 'desktop'
+  if (allDevices) {
+    context.errors.push(
+      `Test "${name}" is @api but tagged ${ALL_DEVICES_TAG}\n  Fix: Drop ${ALL_DEVICES_TAG} - API tests run once, without a browser`
+    )
+  }
+  return 'none'
+}
+
+/**
+ * `test.fail(() => ['tablet'].includes(test.info().project.name))` from @fail:tablet of any level -
+ * conditional modifiers of the test's describe, so @skip / @fixme come before Background. A device
+ * the test never runs on is a mistake in the spec; a cyborg test keeps its tags for when it is
+ * automated, as with @all-devices.
+ */
+function deviceModifierLines(
+  tags: string[],
+  devices: Devices,
+  kind: 'auto' | 'cyborg',
+  name: string,
+  context: Context
+): string[] {
+  const desktopIds = desktopDevices.map((device) => device.id)
+  const allIds = [...desktopIds, ...handheldDevices.map((device) => device.id)]
+  const runsOn: string[] = { none: [], desktop: desktopIds, all: allIds }[devices]
+  const byModifier = new Map<string, { ids: string[]; tags: string[] }>()
+  for (const tag of new Set(tags)) {
+    const match = tag.match(DEVICE_MODIFIER_TAG)
+    if (!match) continue
+    const [, modifier, id] = match
+    if (!allIds.includes(id)) {
+      context.errors.push(
+        `Tag ${tag} on test "${name}" names an unknown device\n  Fix: Use one of ${allIds.join(', ')} (src/config/devices.ts)`
+      )
+      continue
+    }
+    if (kind === 'auto' && !runsOn.includes(id)) {
+      context.errors.push(
+        `Test "${name}" never runs on ${id} but is tagged ${tag}\n  Fix: ${devices === 'none' ? 'Drop it - API tests run once, without a browser' : `Drop it or add ${ALL_DEVICES_TAG}`}`
+      )
+      continue
+    }
+    const entry = byModifier.get(modifier) ?? { ids: [], tags: [] }
+    entry.ids.push(id)
+    entry.tags.push(tag)
+    byModifier.set(modifier, entry)
+  }
+  if (byModifier.size === 0) return []
+  return [
+    ...[...byModifier].map(
+      ([modifier, { ids, tags }]) =>
+        `test.${modifier}(() => [${ids.map(quoteString).join(', ')}].includes(test.info().project.name), ${quoteString(tags.join(' '))})`
+    ),
+    ''
+  ]
 }
 
 /**

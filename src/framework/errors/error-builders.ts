@@ -118,14 +118,14 @@ export function buildInvalidHeadingOrderError(
 }
 
 export function buildInvalidLineFormatError(line: string): string {
-  return `Invalid line format (expected: heading, list item "- ", "Tags: @tag" or blank line)\nFound: "${line}"`
+  return `Invalid line format (expected: heading, list item "- ", tags line "@tag", table row or blank line)\nFound: "${line}"`
 }
 
 export function buildInvalidTagError(tag: string, file: string): string {
   return (
     `Invalid tag "${tag}"\n` +
     `  File: ${file}\n` +
-    `  Fix: Tags start with @ followed by letters, digits, _ . : / -, e.g. "Tags: @smoke @JIRA-123"`
+    `  Fix: Tags start with @ followed by letters, digits, _ . : / -, e.g. "@smoke @JIRA-123"`
   )
 }
 
@@ -133,7 +133,7 @@ export function buildTagsPlacementError(line: string, file: string): string {
   return (
     `Tags line in wrong place: "${line}"\n` +
     `  File: ${file}\n` +
-    `  Fix: Put "Tags:" right under the ## suite or ### test case heading, before its steps`
+    `  Fix: Put the tags line above the ## suite or ### test case heading, as in Gherkin`
   )
 }
 
@@ -141,7 +141,7 @@ export function buildTablePlacementError(line: string, file: string): string {
   return (
     `Table in wrong place: "${line}"\n` +
     `  File: ${file}\n` +
-    `  Fix: Put the examples table right under the ### test case heading (after Tags), before its steps`
+    `  Fix: Put the examples table right under the ### test case heading, before its steps`
   )
 }
 
@@ -158,6 +158,6 @@ export function buildBackgroundTagsError(line: string, file: string): string {
   return (
     `Background cannot have tags: "${line}"\n` +
     `  File: ${file}\n` +
-    `  Fix: Background runs before every test of the suite - put the tags under the ## suite heading`
+    `  Fix: Background runs before every test of the suite - put the tags above the ## suite heading`
   )
 }

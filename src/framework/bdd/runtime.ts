@@ -15,7 +15,7 @@ import {
 
 /**
  * Third argument of autoStep: Gherkin DataTable rows or DocString of the step (passed to the step
- * function last), the spec language for a non-English title (`Дано …` → `uk`); `keyword: false`
+ * function last), the spec language for a non-English title (`Soit …` → `fr`); `keyword: false`
  * for a Markdown step whose text starts with a word like "Given"
  */
 export interface StepOptions {
@@ -221,7 +221,7 @@ export function findStepDefinition(text: string): StepMatch {
 }
 
 /**
- * Step text without its keyword: "Given user …" → "user …", "Дано user …" with language "uk"
+ * Step text without its keyword: "Given user …" → "user …", "Soit user …" with language "fr"
  * @throws Error for an unknown language code
  */
 export function stripStepKeyword(title: string, language = 'en'): string {
@@ -247,7 +247,7 @@ export function splitStepKeyword(
 
 const keywordsByLanguage = new Map<string, string[]>()
 
-/** Step keywords of a Gherkin dialect, trimmed, longest first ("Припустимо, що" before "Припустимо") */
+/** Step keywords of a Gherkin dialect, trimmed, longest first ("Étant donné que" before "Étant donné") */
 function getStepKeywords(language: string): string[] {
   let keywords = keywordsByLanguage.get(language)
   if (!keywords) {
