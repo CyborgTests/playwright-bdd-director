@@ -134,8 +134,11 @@ npm run review
 
 Every run also writes reports for test management tools and CI:
 
-- `test-results/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) of every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`) - a tags line above the heading in both formats
-- `test-results/cucumber-messages.ndjson` - **Cucumber messages**, the newer Cucumber format, and `test-results/cucumber-report.html` - the **Cucumber HTML report** rendered from them (one offline file)
+- `test-results/cucumber/<device>/cucumber-report.json` - **Cucumber JSON** (Xray, Zephyr Scale, ...) per device (Playwright project): import each as a run on that device - one test in the tool, a result per device. Every test, Markdown specs included: Feature / Background / Scenario (Outline) and steps come from the spec, step results from the run (manual steps too). Failed steps carry the error and screenshots. Xray links a scenario to its Jira test by a tag with the test key - use the format your Xray expects (often `@TEST_PROJ-123`) - a tags line above the heading in both formats
+- `test-results/cucumber/<device>/cucumber-messages.ndjson` - **Cucumber messages**, the newer Cucumber format, per device as well
+- `test-results/cucumber/cucumber-report.html` - the **Cucumber HTML report** of all devices for people (one offline file): a section per device and spec, `tablet/test-suites/cart.feature`
+- A known bug (`@fail`, `@fail:tablet`) stays failed in Cucumber reports - the tool shows the product as it is - with `Expected to fail (@fail:tablet): a known bug` in the message; a test that passes despite the tag fails: the bug looks fixed
+- The folder is cleared on every run, so a run on fewer devices leaves no reports of the others
 - `test-results/junit.xml` - **JUnit XML** (TestRail, Zephyr, any CI)
 
 ### 11. Check coverage
@@ -185,7 +188,7 @@ npm run ci                            # dress -> automated tests -> coverage mat
 - Runs every automated test (`play auto`); cyborg tests need a person and are skipped
 - Failed tests do not stop the coverage matrix and reports; the exit code is 1 when any stage failed
 - `CI_MIN_COVERAGE=80 npm run ci` also fails when automated tests are below 80%
-- Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results), `cucumber-report.{json,html}`, `cucumber-messages.ndjson`, `monocart-report/`, `coverage-matrix.{html,json,md}`
+- Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results, the device in `hostname`), `cucumber/`, `monocart-report/`, `coverage-matrix.{html,json,md}`
 
 ## ⚡ Spec-Driven Testing Platform
 
@@ -311,7 +314,7 @@ npm run show
 - A test with any manual step is a **cyborg test** (`@cyborg`, UI / E2E only): headed, one at a time, no time limit. A test with all steps automated is an **automated test** (`@auto`)
 - An **API test** with a missing step stays `fixme` - nobody walks API by hand
 - The Director commands:
-  - `npm run dress` - read-only check: invalid specs, missing layers, ambiguous steps; steps a person walks; unused step definitions
+  - `npm run dress` - check before a run: invalid specs, missing layers, ambiguous steps; tests and runs per spec and project; steps a person walks; disabled tests; unused step definitions
   - `npm run steps <suite...>` - step definition skeletons for the steps without one
   - `npm run stage` - formats the Markdown specs (`---` before every test case)
   - `npm run play` - runs tests by type, suite and tag
@@ -496,18 +499,17 @@ npm run show              # Playwright UI mode with the Director
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable                 | Default                                 | Description                                         |
-| ------------------------ | --------------------------------------- | --------------------------------------------------- |
-| `TEST_SUITES_DIR`        | `test-suites`                           | Specs directory                                     |
-| `GENERATED_TESTS_DIR`    | `.director/tests`                       | Generated tests (Playwright `testDir`)              |
-| `BDD_STEPS`              | `src/steps/**/*.steps.ts`               | Step definition files                               |
-| `BDD_STEPS_DIR`          | `src/steps`                             | Where `npm run steps` writes skeletons              |
-| `COVERAGE_MATRIX_FILE`   | `test-results/coverage-matrix`          | Coverage matrix reports path (without extension)    |
-| `CUCUMBER_REPORT_FILE`   | `test-results/cucumber-report.json`     | Cucumber JSON of every run                          |
-| `CUCUMBER_MESSAGES_FILE` | `test-results/cucumber-messages.ndjson` | Cucumber messages of every run                      |
-| `CUCUMBER_HTML_FILE`     | `test-results/cucumber-report.html`     | Cucumber HTML report of every run                   |
-| `JUNIT_REPORT_FILE`      | `test-results/junit.xml`                | JUnit XML of every run                              |
-| `CI_MIN_COVERAGE`        | -                                       | `npm run ci` fails below this automated tests share |
+| Variable               | Default                           | Description                                                |
+| ---------------------- | --------------------------------- | ---------------------------------------------------------- |
+| `TEST_SUITES_DIR`      | `test-suites`                     | Specs directory                                            |
+| `GENERATED_TESTS_DIR`  | `.director/tests`                 | Generated tests (Playwright `testDir`)                     |
+| `BDD_STEPS`            | `src/steps/**/*.steps.ts`         | Step definition files                                      |
+| `BDD_STEPS_DIR`        | `src/steps`                       | Where `npm run steps` writes skeletons                     |
+| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`    | Coverage matrix reports path (without extension)           |
+| `CUCUMBER_REPORTS_DIR` | `test-results/cucumber`           | Cucumber JSON and messages per device, HTML of all devices |
+| `DRESS_REPORT_FILE`    | `test-results/dress-rehearsal.md` | Report of `npm run dress`                                  |
+| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`          | JUnit XML of every run                                     |
+| `CI_MIN_COVERAGE`      | -                                 | `npm run ci` fails below this automated tests share        |
 
 ### 2. Playwright Config
 
@@ -557,7 +559,7 @@ npm run play auto chrome firefox    # Automated tests on desktop browsers only
 ### Director Commands
 
 ```bash
-npm run dress        # check specs and step definitions (read-only)
+npm run dress        # check specs and step definitions; report in test-results/dress-rehearsal.md
 npm run steps auth   # step definition skeletons for steps of auth.md without one
 npm run stage        # format the Markdown specs
 npm run show         # Playwright UI mode with the Director
@@ -565,14 +567,28 @@ npm run lint:fix     # ESLint fix
 npm run format       # Prettier format
 ```
 
-`dress` output:
+`dress` answers three questions before a run: will it start (errors), what runs where (tests per spec, runs per project), what is left to do (steps a person walks, by test; disabled tests and known bugs; step definitions no spec uses). It never changes specs, steps or tests; the same report goes to `test-results/dress-rehearsal.md` (`DRESS_REPORT_FILE`):
 
 ```text
-⚠️  test-suites/cart.feature: 2 step(s) walked by a person
-    • And user downloads the invoice (no code: src/steps/cart.steps.ts:74)
-    • Then invoice shows total amount Rs. 500 (no code: src/steps/cart.steps.ts:78)
+  Spec                Layer    Tests  Auto  Cyborg  Fixme  Runs
+  auth-api.md         api          6     5       -      1     6
+  cart.feature        ui, e2e      8     7       1      -    21
+  ...
+  Total                           35    32       2      1    75
 
-✅  7 spec(s) ready for the show: 35 tests - 32 auto, 2 cyborg, 1 fixme
+  Runs: cyborg 2 · api 13 · chrome 20 · firefox 20 · tablet 10 · mobile 10
+
+✋  To automate
+  cart.feature
+    Check invoice of placed order (cyborg: a person walks these steps)
+      • And user downloads the invoice - definition without code: src/steps/cart.steps.ts:69
+
+⏸️  Disabled and known bugs
+  cart.feature › Quantity 0 is not added to cart    @fail
+  cart.feature › Place order with delivery comment  @fail:tablet
+
+✅  Ready for the show: 35 tests, 75 runs
+    Report: test-results/dress-rehearsal.md
 ```
 
 ### Unit Tests

@@ -61,7 +61,8 @@ export function buildCucumberMessages(
     const original = feature.uri.endsWith('.feature') ? readSource(feature.uri) : null
     const envelopes = generateMessages(
       original ?? toGherkin(feature),
-      feature.uri,
+      // A run on several devices: a section per device, the spec source in each
+      feature.device ? `${feature.device}/${feature.uri}` : feature.uri,
       SourceMediaType.TEXT_X_CUCUMBER_GHERKIN_PLAIN,
       { includeSource: true, includeGherkinDocument: true, includePickles: true, newId }
     )

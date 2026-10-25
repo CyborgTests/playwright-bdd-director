@@ -9,11 +9,12 @@ export const CONFIG = {
     generatedTests: process.env.GENERATED_TESTS_DIR ?? '.director/tests',
     // Coverage matrix reports: <path>.json / .html / .md
     coverageMatrix: process.env.COVERAGE_MATRIX_FILE ?? 'test-results/coverage-matrix',
-    // Written on every run for test management tools and CI
-    cucumberReport: process.env.CUCUMBER_REPORT_FILE ?? 'test-results/cucumber-report.json',
-    junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
-    cucumberMessages: process.env.CUCUMBER_MESSAGES_FILE ?? 'test-results/cucumber-messages.ndjson',
-    cucumberHtml: process.env.CUCUMBER_HTML_FILE ?? 'test-results/cucumber-report.html'
+    // npm run dress writes what the console shows, to read later or attach to CI
+    dressReport: process.env.DRESS_REPORT_FILE ?? 'test-results/dress-rehearsal.md',
+    // Written on every run for test management tools and CI. Cucumber: <project>/cucumber-report.json
+    // and cucumber-messages.ndjson per device for the tools, cucumber-report.html of all for people
+    cucumberReports: process.env.CUCUMBER_REPORTS_DIR ?? 'test-results/cucumber',
+    junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml'
   },
   /**
    * Step definitions: files of `steps` are loaded before generation; `npm run steps <suite>` writes

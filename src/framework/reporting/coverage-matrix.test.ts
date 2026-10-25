@@ -11,6 +11,7 @@ function generatedTest(overrides: Partial<GeneratedTest>): GeneratedTest {
     fixme: false,
     tags: [],
     steps: { automated: 2, total: 2 },
+    manual: [],
     devices: 'desktop',
     ...overrides
   }

@@ -23,7 +23,7 @@ description: Use when running, filtering, debugging or reporting Playwright test
    - `--debug` (Inspector), `--headed`, `--trace on`, `DEBUG=pw:api`.
    - Generated test: `.director/tests/<spec>.test.ts`; the failing `autoStep` names the step, its definition is in `src/steps/`.
    - Trace: `npx playwright show-trace test-results/artifacts/<test>/trace.zip` (retained on failure).
-   - Report: `npm run review` (Monocart); every run also writes `test-results/cucumber-report.{json,html}`, `cucumber-messages.ndjson` and `junit.xml`.
+   - Report: `npm run review` (Monocart); every run also writes `test-results/cucumber/` (JSON and messages per device, one HTML) and `junit.xml`.
    - Deeper analysis → `pw-triager` skill.
 4. **Flakiness check**: `--repeat-each=3 --workers=1` for order/data coupling; a pass only on retry is a failure.
 5. **Framework unit tests**: `npm run test:run` (once), `npx vitest run src/framework/<layer>/<module>.test.ts`, `npm run test:coverage`.

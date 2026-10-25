@@ -59,6 +59,7 @@ export interface GeneratedTest {
   modifier?: 'skip' | 'fixme' | 'fail' // from spec tags
   tags: string[] // spec tags of the suite, rule and case, layer tags excluded
   steps: { automated: number; total: number } // Background steps included
+  manual: string[] // titles of steps a person walks, Background included
   devices: Devices // from the layer and @all-devices
 }
 
@@ -470,6 +471,7 @@ function emitTest(
     ...(modifier ? { modifier: modifier as GeneratedTest['modifier'] } : {}),
     tags: [...new Set(specTags)],
     steps: { automated: totalSteps - allManual.length, total: totalSteps },
+    manual: [...new Set(allManual)],
     devices
   })
 

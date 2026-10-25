@@ -18,10 +18,11 @@ import { buildCucumberReport, type RunSpec, type RunStep, type TestRun } from '.
 const ANSI = new RegExp(String.raw`\u001b\[[0-9;]*m`, 'g')
 
 /**
- * Cucumber reports of every run: JSON for test management tools (CONFIG.paths.cucumberReport),
- * messages (NDJSON, cucumberMessages) and HTML rendered from them (cucumberHtml). Each test is
- * reported with the structure of its spec (Markdown or Gherkin), see buildCucumberReport.
- * Retries: the last result counts.
+ * Cucumber reports of every run in CONFIG.paths.cucumberReports: JSON and messages (NDJSON) per
+ * Playwright project - a test management tool imports each as a run on that device - and one
+ * HTML of all projects for people, the device in every scenario name. Each test is reported with
+ * the structure of its spec (Markdown or Gherkin), see buildCucumberReport. Retries: the last
+ * result counts.
  */
 export default class CucumberReporter implements Reporter {
   private readonly runs = new Map<string, TestRun>()
@@ -36,16 +37,33 @@ export default class CucumberReporter implements Reporter {
 
   async onEnd(): Promise<void> {
     if (this.runs.size === 0) return
-    const { cucumberReport, cucumberMessages, cucumberHtml } = CONFIG.paths
+    const dir = CONFIG.paths.cucumberReports
     try {
-      const report = buildCucumberReport([...this.runs.values()], createSpecFinder())
-      writeFile(cucumberReport, JSON.stringify(report, null, 2))
-      const envelopes = buildCucumberMessages(report, { readSource: readText })
-      writeFile(
-        cucumberMessages,
-        envelopes.map((envelope) => `${JSON.stringify(envelope)}\n`).join('')
+      // Reports of an earlier run on other devices would pass for this run's. The folder itself
+      // stays: on Windows it cannot be removed while a terminal or a server has it open
+      for (const entry of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+        fs.rmSync(path.join(dir, entry), { recursive: true, force: true })
+      }
+      const runs = [...this.runs.values()]
+      const findSpec = createSpecFinder()
+      for (const project of new Set(runs.map((run) => run.project ?? ''))) {
+        const report = buildCucumberReport(
+          runs.filter((run) => (run.project ?? '') === project),
+          findSpec
+        )
+        writeFile(path.join(dir, project, 'cucumber-report.json'), JSON.stringify(report, null, 2))
+        writeFile(
+          path.join(dir, project, 'cucumber-messages.ndjson'),
+          buildCucumberMessages(report, { readSource: readText })
+            .map((envelope) => `${JSON.stringify(envelope)}\n`)
+            .join('')
+        )
+      }
+      const all = buildCucumberReport(runs, findSpec, { devices: true })
+      await writeHtml(
+        buildCucumberMessages(all, { readSource: readText }),
+        path.join(dir, 'cucumber-report.html')
       )
-      await writeHtml(envelopes, cucumberHtml)
     } catch (error: unknown) {
       console.error(`Cucumber reports not written: ${getErrorMessage(error)}`)
     }
@@ -75,6 +93,7 @@ function toTestRun(test: TestCase, result: TestResult): TestRun {
   const failed = result.status !== 'passed' && result.status !== 'skipped'
   return {
     file: toProjectPath(test.location.file),
+    project: test.parent.project()?.name,
     title: test.title,
     line: test.location.line,
     tags: test.tags,
@@ -94,8 +113,20 @@ function toTestRun(test: TestCase, result: TestResult): TestRun {
               ]
             : []
         )
-      : []
+      : [],
+    ...(test.expectedStatus === 'failed' ? { expectedToFail: knownBugTag(test, result) } : {})
   }
+}
+
+/**
+ * `@fail:tablet` from the annotation the generated test sets (a conditional one lands on the
+ * result), `@fail` for a plain test.fail
+ */
+function knownBugTag(test: TestCase, result: TestResult): string {
+  return (
+    [...result.annotations, ...test.annotations].find((annotation) => annotation.type === 'fail')
+      ?.description ?? '@fail'
+  )
 }
 
 function toRunStep(step: TestStep): RunStep {

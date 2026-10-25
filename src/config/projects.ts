@@ -13,13 +13,13 @@ const API = '@api'
 
 /**
  * A broken locator or a dead page fails its action, not the whole test timeout - that one is
- * multiplied by @slow, @timeout, retries and devices. Navigation gets more: the site slows down
- * under a full parallel run.
+ * multiplied by @slow, @timeout, retries and devices. Under a full parallel run the site slows
+ * down: an action covers the page load its click starts (seen over 10 s), `goto` gets more.
  */
 const automated: Project = {
   timeout: 45000,
   use: {
-    actionTimeout: 10000,
+    actionTimeout: 15000,
     navigationTimeout: 30000,
     trace: 'retain-on-failure',
     video: 'retain-on-failure'

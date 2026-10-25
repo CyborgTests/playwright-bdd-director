@@ -36,6 +36,6 @@ paths:
 
 ## Workflow
 
-- `npm run dress` (read-only): invalid specs, missing layers, ambiguous steps (errors); steps a person walks, unused definitions (warnings).
+- `npm run dress` (changes no spec, step or test): invalid specs, missing layers, ambiguous steps (errors); tests and runs per spec and project; steps a person walks by test; disabled tests and known bugs; unused definitions. Same report in `test-results/dress-rehearsal.md`.
 - `npm run steps <suite>` appends skeletons for steps without definition to `src/steps/<suite>.steps.ts`; implement them with Page Objects / clients.
 - Changing what a test checks starts in the spec; step definitions follow. Never reword a spec just to match an existing definition when the meaning differs.

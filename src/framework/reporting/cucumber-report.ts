@@ -38,6 +38,8 @@ export interface TestRun {
   error?: string
   steps: RunStep[]
   screenshots: Attachment[] // evidence of a failed test
+  expectedToFail?: string // tag of a known bug (@fail, @fail:tablet) - the test must fail
+  project?: string // Playwright project - the device the test ran on
 }
 
 /** Spec a test file belongs to (same base name) */
@@ -91,6 +93,7 @@ export interface CucumberFeature {
   line: number
   tags: Array<{ name: string; line: number }>
   elements: CucumberElement[]
+  device?: string // report of several devices (HTML) only - Cucumber JSON has no such field
 }
 
 const MANUAL_PREFIX = /^✋ \[MANUAL\] /
@@ -103,21 +106,32 @@ const NEUTRAL_KEYWORD = '* '
  * results from the run - each spec step gets the result of the test.step with its title
  * (manual steps of cyborg tests included). Tests without a spec become features of their files.
  * @param findSpec - spec of a test file, null when there is none
+ * @param devices - a feature per spec and device (Playwright project): one report of a run on
+ * several devices, for people
  */
 export function buildCucumberReport(
   runs: TestRun[],
-  findSpec: (testFile: string) => RunSpec | null
+  findSpec: (testFile: string) => RunSpec | null,
+  { devices = false }: { devices?: boolean } = {}
 ): CucumberFeature[] {
   const features = new Map<string, CucumberFeature>()
-  const sorted = [...runs].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
+  const device = (run: TestRun) => (devices ? (run.project ?? '') : '')
+  const sorted = [...runs].sort(
+    (a, b) => a.file.localeCompare(b.file) || device(a).localeCompare(device(b)) || a.line - b.line
+  )
 
   for (const run of sorted) {
     const spec = findSpec(run.file)
     const uri = spec?.path ?? run.file
-    let feature = features.get(uri)
+    const key = `${uri}
+${device(run)}`
+    let feature = features.get(key)
     if (!feature) {
-      feature = buildFeature(uri, spec, run)
-      features.set(uri, feature)
+      feature = {
+        ...buildFeature(uri, spec, run),
+        ...(device(run) ? { device: device(run) } : {})
+      }
+      features.set(key, feature)
     }
     feature.elements.push(...buildElements(run, spec, feature.id))
   }
@@ -173,6 +187,7 @@ function buildElements(run: TestRun, spec: RunSpec | null, featureId: string): C
     .map(toHook)
   const after = childrenOf(run.steps, 'After Hooks').map(toHook)
   attributeFailure(run, [...backgroundSteps, ...steps], after)
+  if (run.expectedToFail) markKnownBug(run.expectedToFail, [...backgroundSteps, ...steps], after)
 
   const elements: CucumberElement[] = []
   if (background) {
@@ -234,6 +249,26 @@ function matchSteps(
         ...(step?.error ? { error_message: step.error } : {})
       },
       ...(step?.attachments?.length ? { embeddings: step.attachments.map(toEmbedding) } : {})
+    }
+  })
+}
+
+/**
+ * A known bug stays failed - test management shows the product as it is - with the tag in the
+ * message; a test that passes despite it fails, as in Playwright: the bug looks fixed
+ */
+function markKnownBug(tag: string, steps: CucumberStep[], after: CucumberHook[]): void {
+  const failed = [...steps, ...after].find((step) => step.result.status === 'failed')
+  if (failed) {
+    failed.result.error_message = `Expected to fail (${tag}): a known bug\n${failed.result.error_message ?? ''}`
+    return
+  }
+  after.push({
+    match: { location: 'Test' },
+    result: {
+      status: 'failed',
+      duration: 0,
+      error_message: `Passed, but tagged ${tag}: the bug looks fixed - drop the tag`
     }
   })
 }

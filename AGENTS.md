@@ -24,7 +24,7 @@ Three layers share the repo:
 ## Commands
 
 ```bash
-npm run dress                        # read-only: invalid specs, layers, ambiguous/unused steps, steps a person walks
+npm run dress                        # errors, runs per spec/project, steps a person walks, disabled tests (+ test-results/dress-rehearsal.md)
 npm run steps <suite...>             # step definition skeletons into src/steps/<suite>.steps.ts
 npm run stage                        # format Markdown specs (`---` before every ###)
 npm run play <types...> [suites...] [@tags...] [devices...]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile

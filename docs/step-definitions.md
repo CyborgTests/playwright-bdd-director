@@ -45,7 +45,7 @@ The example suites in `test-suites/` use these features on a real site - README 
    ```
 
 2. `npm run play cyborg navigation` already works: no step has a definition, so a person walks the test.
-3. `npm run dress` lists the steps a person walks; `npm run steps navigation` writes a skeleton for each into `src/steps/navigation.steps.ts`:
+3. `npm run dress` lists the steps a person walks, by test; `npm run steps navigation` writes a skeleton for each into `src/steps/navigation.steps.ts`:
 
    ```typescript
    import { Step } from './bdd'
@@ -252,9 +252,10 @@ They stay Playwright tags too, so `npm run play @slow` works. Written on a Featu
 
 Every run writes Cucumber reports of all tests, see README "Reports":
 
-- `test-results/cucumber-report.json` - Cucumber JSON for test management tools; manual steps, skipped steps and step attachments (`AfterStep` screenshots) included.
-- `test-results/cucumber-messages.ndjson` - Cucumber messages, the newer format; a Gherkin spec keeps its source (Rules, tables, language), Markdown specs get Gherkin written from the report.
-- `test-results/cucumber-report.html` - the standard Cucumber HTML report rendered from the messages: a single file, opens offline.
+- `test-results/cucumber/<device>/cucumber-report.json` - Cucumber JSON for test management tools, one per device (Playwright project); manual steps, skipped steps and step attachments (`AfterStep` screenshots) included.
+- `test-results/cucumber/<device>/cucumber-messages.ndjson` - Cucumber messages, the newer format; a Gherkin spec keeps its source (Rules, tables, language), Markdown specs get Gherkin written from the report.
+- `test-results/cucumber/cucumber-report.html` - the standard Cucumber HTML report of all devices, a section per device and spec: a single file, opens offline.
+- A known bug (`@fail`, `@fail:<device>`) stays failed with the tag in the message; a test that passes despite it fails.
 
 ## Coverage matrix
 

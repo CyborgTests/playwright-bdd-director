@@ -143,6 +143,24 @@ describe('buildCucumberMessages', () => {
     expect(pick(envelopes, 'testRunFinished')[0].success).toBe(true)
   })
 
+  it('should give a feature of one device its own section: device/spec path', () => {
+    const source = 'Feature: Shop\n  Scenario: Buy\n    When user pays\n'
+    const run = element({ steps: [step('When ', 'user pays')] })
+    const envelopes = buildCucumberMessages(
+      [
+        { ...feature('test-suites/shop.feature', [run]), device: 'chrome' },
+        { ...feature('test-suites/shop.feature', [run]), device: 'tablet' }
+      ],
+      { readSource: () => source, newId: IdGenerator.incrementing() }
+    )
+
+    expect(pick(envelopes, 'source').map((s) => [s.uri, s.data])).toEqual([
+      ['chrome/test-suites/shop.feature', source],
+      ['tablet/test-suites/shop.feature', source]
+    ])
+    expect(pick(envelopes, 'testCase')).toHaveLength(2)
+  })
+
   it('should skip pickle steps the run has no result for', () => {
     const envelopes = buildCucumberMessages(
       [

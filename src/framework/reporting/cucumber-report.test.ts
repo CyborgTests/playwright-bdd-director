@@ -203,6 +203,61 @@ describe('buildCucumberReport', () => {
     expect(pay.embeddings?.map((e) => e.data)).toEqual(['YWZ0ZXI=', 'c2NyZWVu'])
   })
 
+  it('should keep a known bug failed with its tag, and fail a test that passes despite it', () => {
+    const shop = spec({
+      testCases: [{ id: null, ttl: 'Buy', stepTtls: ['Add', 'Pay'], tags: [], examples: null }]
+    })
+
+    const [feature] = buildCucumberReport(
+      [
+        run({
+          status: 'failed',
+          expectedToFail: '@fail:tablet',
+          steps: [step('Add'), step('Pay', { error: 'Button is covered' })]
+        }),
+        run({ title: 'Buy again', expectedToFail: '@fail', steps: [step('Add'), step('Pay')] })
+      ],
+      () => shop
+    )
+
+    const [knownBug, fixed] = feature.elements
+    expect(knownBug.steps[1].result.error_message).toBe(
+      'Expected to fail (@fail:tablet): a known bug\nButton is covered'
+    )
+    expect(statuses(fixed.steps)).toEqual(['Add: passed', 'Pay: passed'])
+    expect(fixed.after).toEqual([
+      {
+        match: { location: 'Test' },
+        result: {
+          status: 'failed',
+          duration: 0,
+          error_message: 'Passed, but tagged @fail: the bug looks fixed - drop the tag'
+        }
+      }
+    ])
+  })
+
+  it('should split a spec into a feature per device only when asked', () => {
+    const shop = spec({
+      testCases: [{ id: null, ttl: 'Buy', stepTtls: ['Add'], tags: [], examples: null }]
+    })
+    const runs = [
+      run({ project: 'tablet', steps: [step('Add')] }),
+      run({ project: 'chrome', steps: [step('Add')] })
+    ]
+
+    const one = buildCucumberReport(runs, () => shop)
+    const perDevice = buildCucumberReport(runs, () => shop, { devices: true })
+
+    expect(one).toHaveLength(1)
+    expect(one[0].elements).toHaveLength(2)
+    expect(one[0]).not.toHaveProperty('device')
+    expect(perDevice.map((f) => [f.uri, f.device, f.elements.length])).toEqual([
+      ['test-suites/shop.md', 'chrome', 1],
+      ['test-suites/shop.md', 'tablet', 1]
+    ])
+  })
+
   it('should skip every step of a skipped test', () => {
     const shop = spec({
       testCases: [{ id: null, ttl: 'Buy', stepTtls: ['Add'], tags: [], examples: null }]
