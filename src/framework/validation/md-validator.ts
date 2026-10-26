@@ -202,6 +202,18 @@ export function autoFixMDFormatting(filePath: string): boolean {
     return false
   }
 
+  const newContent = formatMarkdownSpec(content)
+  const modified = content !== newContent
+
+  if (modified) {
+    fs.writeFileSync(filePath, newContent, 'utf-8')
+  }
+
+  return modified
+}
+
+/** Markdown spec text formatted as autoFixMDFormatting writes it */
+export function formatMarkdownSpec(content: string): string {
   // Blank lines and separators are placed anew below
   const lines = content
     .split('\n')
@@ -220,14 +232,7 @@ export function autoFixMDFormatting(filePath: string): boolean {
     formatted.push(line)
   }
 
-  const newContent = `${formatted.join('\n')}\n`
-  const modified = content !== newContent
-
-  if (modified) {
-    fs.writeFileSync(filePath, newContent, 'utf-8')
-  }
-
-  return modified
+  return `${formatted.join('\n')}\n`
 }
 
 /** One space after a heading or list marker */

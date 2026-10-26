@@ -12,7 +12,7 @@ paths:
 
 - Markdown: `##` suite, `###` test case (`### Background` - steps before every case), `####` step. Bullet lines (`- …`) under any heading are notes for people, not part of the test. `npm run stage` formats the file as dense as Gherkin: no blank lines but around the `---` before every `###`.
 - Gherkin `.feature`: anything the parser accepts - Background, Rule (own Background), Scenario Outline + Examples (tagged too), DataTable, DocString, `# language:`.
-- Markdown is kept simple: no Rule, no tagged Examples, no step tags - never extend it; a suite that needs more moves to Gherkin.
+- Markdown is kept simple: no Rule, no tagged Examples, no step tags - never extend it; a suite that needs more moves to Gherkin (`npm run adapt <suite>`, both ways, notes kept).
 - One spec file = one suite. Base name is unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) and becomes the suite tag `@auth`.
 - Tags as in Gherkin: a line `@smoke @JIRA-1` right above the `##` / `###` heading; no other tag format.
 - Suite tags hold for all its tests (layer; `@all-devices`, `@slow` only if true for every test); a test carries its exceptions. Order: layer → `@all-devices` → special tags → own tags.

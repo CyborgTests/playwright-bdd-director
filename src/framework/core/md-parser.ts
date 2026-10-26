@@ -284,7 +284,7 @@ function parseExamplesTable(lines: string[], caseTtl: string, mdPath: string): E
   return { columns: header, rows }
 }
 
-function splitTableRow(line: string): string[] {
+export function splitTableRow(line: string): string[] {
   return line
     .replace(/^\|/, '')
     .replace(/(?<!\\)\|$/, '')

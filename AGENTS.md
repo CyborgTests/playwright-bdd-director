@@ -17,7 +17,7 @@ Three layers share the repo:
 
 ## Stack
 
-- TypeScript strict, alias `@/*` → `src/*`; Node ≥ 18, scripts run via `tsx`.
+- TypeScript strict, alias `@/*` → `src/*`; Node ≥ 22 (24 LTS recommended), scripts run via `tsx`.
 - Playwright pinned to `1.60.0` — the patch and the forks depend on the exact version.
 - Vitest, Cucumber Expressions / Gherkin parser, Monocart reporter, ESLint + Prettier + `simple-import-sort`.
 
@@ -27,6 +27,7 @@ Three layers share the repo:
 npm run dress                        # errors, runs per spec/project, steps a person walks, disabled tests (+ test-results/dress-rehearsal.md)
 npm run steps <suite...>             # step definition skeletons into src/steps/<suite>.steps.ts
 npm run stage                        # format Markdown specs (`---` before every ###)
+npm run adapt <suite...>             # move a spec between .md and .feature (replaces the file)
 npm run play <types...> [suites...] [@tags...] [devices...]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile
 npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps
 npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)

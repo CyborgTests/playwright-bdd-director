@@ -12,9 +12,9 @@ Part of [CyborgTests](https://github.com/CyborgTests) - a modern testing ecosyst
 
 1. Open [Node.js Downloads](https://nodejs.org/en/download) in browser
 2. Select your operating system and CPU architecture
-3. Download the suggested version
+3. Download the LTS version - Node.js 22 or newer is required, 24 LTS is recommended
 4. Run the downloaded installer and follow the installation steps
-5. Open a terminal and verify that Node.js was installed successfully:
+5. Open a terminal and verify that Node.js was installed successfully (`v22` or higher):
 
 ```bash
 node --version
@@ -317,6 +317,7 @@ npm run show
   - `npm run dress` - check before a run: invalid specs, missing layers, ambiguous steps; tests and runs per spec and project; steps a person walks; disabled tests; unused step definitions
   - `npm run steps <suite...>` - step definition skeletons for the steps without one
   - `npm run stage` - formats the Markdown specs (`---` before every test case)
+  - `npm run adapt <suite...>` - moves a spec between Markdown and Gherkin
   - `npm run play` - runs tests by type, suite and tag
 
 ## 📝 Specs
@@ -364,6 +365,8 @@ Feature: Cart
 ```
 
 Both formats work the same way and can live side by side; pick per suite what reads best for its authors. Base names are unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) - the name is the suite tag (`npm run play auth`).
+
+`npm run adapt <suite...>` moves a suite to the other format and removes the old file - tags, `[ID]`s, Background, examples and notes move along (notes become descriptions and comments in Gherkin). Markdown steps become `*` steps, Gherkin steps lose their keywords; step definitions match the step text either way, so the tests stay the same. A suite with what Markdown cannot hold (Rule, DataTable, DocString, tagged or named Examples) stays in Gherkin: `adapt` lists it and changes nothing.
 
 ### 3. Layers
 
@@ -533,6 +536,25 @@ Automated projects run headless and in parallel, with trace and video on failure
 import { AuthClient } from '@/clients/AuthClient'
 ```
 
+### 4. Cyborg Tests Analytics
+
+The control panel of cyborg tests (`@cyborgtests/test`) sends usage analytics to Google Analytics by default, while a person walks the manual steps. Per the package README it collects:
+
+- a unique user ID, generated on the first run
+- test execution events (start of a test) and results (passed / failed)
+- external link clicks
+- browser, OS and country
+
+No spec content, step data or credentials are listed. To turn it off, add to `src/fixtures/base.fixture.ts`:
+
+```typescript
+import { config } from '@cyborgtests/test'
+
+config.setConfig({ analyticsEnabled: false })
+```
+
+Automated runs (`@auto`, CI) do not open the control panel and send nothing.
+
 ## 🧪 Development & Testing
 
 ### Play CLI
@@ -563,6 +585,7 @@ npm run play auto chrome firefox    # Automated tests on desktop browsers only
 npm run dress        # check specs and step definitions; report in test-results/dress-rehearsal.md
 npm run steps auth   # step definition skeletons for steps of auth.md without one
 npm run stage        # format the Markdown specs
+npm run adapt auth   # auth.md → auth.feature (and back)
 npm run show         # Playwright UI mode with the Director
 npm run lint:fix     # ESLint fix
 npm run format       # Prettier format
@@ -617,6 +640,7 @@ npm run test:coverage # Generate coverage report
 - `md-parser.ts` - Markdown structure (headings, IDs, tags, examples)
 - `gherkin-parser.ts` - Gherkin documents
 - `spec-document.ts` - a spec of either format as one Gherkin document for the generator
+- `spec-converter.ts` - Markdown ↔ Gherkin with notes kept (`npm run adapt`)
 
 **Validation (`src/framework/validation/`):** `md-validator.ts` - Markdown structure check and formatting (`stage`).
 

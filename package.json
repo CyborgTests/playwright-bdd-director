@@ -8,6 +8,7 @@
     "dress": "tsx scripts/dress-rehearsal.ts",
     "play": "tsx scripts/play.ts",
     "steps": "tsx scripts/steps.ts",
+    "adapt": "tsx scripts/adapt.ts",
     "show": "playwright test --ui",
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "matrix": "tsx scripts/coverage-matrix.ts",
@@ -71,7 +72,7 @@
     "vitest": "^4.1.12"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "ws": "^8.21.0"

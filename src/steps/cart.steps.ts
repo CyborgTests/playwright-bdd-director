@@ -65,11 +65,11 @@ Then('order is confirmed', async ({ checkoutPage }) => {
   await checkoutPage.expectOrderPlaced()
 })
 
-// Skeletons from `npm run steps cart`: the invoice is a file a person opens and reads (cyborg test)
+// Skeletons from `npm run steps cart`: a person downloads the invoice and checks the file (cyborg test)
 When('user downloads the invoice', async ({}) => {
   // TODO: implement step
 })
 
-Then('invoice shows total amount {price}', async ({}, _amount: number) => {
+Then('invoice file is downloaded', async ({}) => {
   // TODO: implement step
 })

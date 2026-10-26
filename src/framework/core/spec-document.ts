@@ -67,6 +67,6 @@ function tagLine(tags: string[], indent = ''): string[] {
   return tags.length > 0 ? [`${indent}${tags.join(' ')}`] : []
 }
 
-function escapeCell(value: string): string {
+export function escapeCell(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')
 }

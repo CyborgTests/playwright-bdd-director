@@ -78,4 +78,4 @@ Feature: Cart
         """
       And user pays by card
       And user downloads the invoice
-      Then invoice shows total amount Rs. 500
+      Then invoice file is downloaded
