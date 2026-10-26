@@ -318,6 +318,21 @@ Feature: Shop
     expect(tests[0]).toMatchObject({ kind: 'auto', fixme: true, modifier: 'fixme' })
   })
 
+  it('should keep a line separator in a step title from turning spec text into code', async () => {
+    // U+2028 ends a JS line comment and is invisible in a diff
+    const { content } = await generate(`@api
+Feature: Shop
+  Scenario: Login
+    When user logs in\u2028console.log('INJECTED')//
+`)
+
+    const injected = content.split('\n').filter((line) => line.includes('INJECTED'))
+    expect(injected.map((line) => line.trim())).toEqual([
+      "// @api test without step definitions: When user logs in console.log('INJECTED')//",
+      'await manualStep("When user logs in\\u2028console.log(\'INJECTED\')//")'
+    ])
+  })
+
   it('should make every test under a manual Background cyborg', async () => {
     Given('user is logged in', done)
 

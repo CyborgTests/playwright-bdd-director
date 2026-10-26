@@ -4,8 +4,12 @@ import { printSpecErrors } from '@/framework/reporting/console-formatter'
 import { getErrorMessage } from '@/framework/utils/helpers'
 import { getIcon } from '@/framework/utils/icons'
 
+// An unexpected failure keeps its stack: the console drops it, the generation errors file keeps it
 main().catch((error: unknown) => {
-  console.error(`${getIcon('error')}  `, getErrorMessage(error))
+  console.error(
+    `${getIcon('error')}  `,
+    error instanceof Error ? error.stack : getErrorMessage(error)
+  )
   process.exit(1)
 })
 

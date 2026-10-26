@@ -499,17 +499,18 @@ npm run show              # Playwright UI mode with the Director
 
 All paths support environment variable overrides via `src/framework/config.ts`:
 
-| Variable               | Default                           | Description                                                |
-| ---------------------- | --------------------------------- | ---------------------------------------------------------- |
-| `TEST_SUITES_DIR`      | `test-suites`                     | Specs directory                                            |
-| `GENERATED_TESTS_DIR`  | `.director/tests`                 | Generated tests (Playwright `testDir`)                     |
-| `BDD_STEPS`            | `src/steps/**/*.steps.ts`         | Step definition files                                      |
-| `BDD_STEPS_DIR`        | `src/steps`                       | Where `npm run steps` writes skeletons                     |
-| `COVERAGE_MATRIX_FILE` | `test-results/coverage-matrix`    | Coverage matrix reports path (without extension)           |
-| `CUCUMBER_REPORTS_DIR` | `test-results/cucumber`           | Cucumber JSON and messages per device, HTML of all devices |
-| `DRESS_REPORT_FILE`    | `test-results/dress-rehearsal.md` | Report of `npm run dress`                                  |
-| `JUNIT_REPORT_FILE`    | `test-results/junit.xml`          | JUnit XML of every run                                     |
-| `CI_MIN_COVERAGE`      | -                                 | `npm run ci` fails below this automated tests share        |
+| Variable                 | Default                             | Description                                                  |
+| ------------------------ | ----------------------------------- | ------------------------------------------------------------ |
+| `TEST_SUITES_DIR`        | `test-suites`                       | Specs directory                                              |
+| `GENERATED_TESTS_DIR`    | `.director/tests`                   | Generated tests (Playwright `testDir`)                       |
+| `BDD_STEPS`              | `src/steps/**/*.steps.ts`           | Step definition files                                        |
+| `BDD_STEPS_DIR`          | `src/steps`                         | Where `npm run steps` writes skeletons                       |
+| `COVERAGE_MATRIX_FILE`   | `test-results/coverage-matrix`      | Coverage matrix reports path (without extension)             |
+| `CUCUMBER_REPORTS_DIR`   | `test-results/cucumber`             | Cucumber JSON and messages per device, HTML of all devices   |
+| `DRESS_REPORT_FILE`      | `test-results/dress-rehearsal.md`   | Report of `npm run dress`                                    |
+| `GENERATION_ERRORS_FILE` | `test-results/generation-errors.md` | Failed generation with stack traces (the console omits them) |
+| `JUNIT_REPORT_FILE`      | `test-results/junit.xml`            | JUnit XML of every run                                       |
+| `CI_MIN_COVERAGE`        | -                                   | `npm run ci` fails below this automated tests share          |
 
 ### 2. Playwright Config
 

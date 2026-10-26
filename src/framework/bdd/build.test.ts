@@ -9,6 +9,13 @@ const child = vi.hoisted(() => ({
   spawn: vi.fn()
 }))
 
+// CONFIG reads it on import - failed generation must not write into the repo's test-results
+const errorsFile = vi.hoisted(() => {
+  const file = `${process.env.TEMP ?? process.env.TMPDIR ?? '/tmp'}/director-${process.pid}/generation-errors.md`
+  process.env.GENERATION_ERRORS_FILE = file
+  return file
+})
+
 vi.mock('child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('child_process')>()),
   spawnSync: child.spawnSync,
@@ -22,7 +29,8 @@ vi.mock('@/framework/bdd/generator', async (importOriginal) => ({
 }))
 
 const { buildTests, findSpecFiles } = await import('@/framework/bdd/build')
-const { prepareTests } = await import('@/framework/bdd/prepare')
+const { prepareTests, renderGenerationErrors, withoutStack } =
+  await import('@/framework/bdd/prepare')
 const { clearStepDefinitions, createBdd } = await import('@/framework/bdd/registry')
 
 const { Step } = createBdd(test)
@@ -81,20 +89,75 @@ describe('prepareTests', () => {
     expect(child.spawnSync).not.toHaveBeenCalled()
   })
 
-  it('should generate in a child process and stop the run with its output on failure', () => {
+  it('should generate in a child process and stop a CLI run with its output on failure', () => {
     vi.stubEnv('TEST_WORKER_INDEX', undefined)
+    const exit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      throw new Error(`exit ${code}`)
+    })
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
     child.spawnSync.mockReturnValueOnce({ status: 0, stdout: '', stderr: '' })
+    child.spawnSync.mockReturnValueOnce({
+      status: 1,
+      stdout: 'Test "Pay" has no layer\n',
+      stderr: 'Error: Cannot find module\n    at load (src/steps/cart.steps.ts:3:1)\n'
+    })
+
+    prepareTests()
+    expect(fs.existsSync(errorsFile)).toBe(false)
+    expect(() => prepareTests()).toThrow('exit 1')
+
+    expect(child.spawnSync.mock.calls[0][1]).toEqual([
+      expect.stringMatching(/tsx/),
+      'scripts/generate-tests.ts'
+    ])
+    expect(stderr).toHaveBeenCalledWith(
+      `Tests not generated\nTest "Pay" has no layer\nError: Cannot find module\n  Full output with stack traces: ${errorsFile.replace(/\\/g, '/')}\n`
+    )
+    const report = fs.readFileSync(errorsFile, 'utf-8')
+    expect(report).toContain('    at load (src/steps/cart.steps.ts:3:1)')
+    expect(report).toContain('## Stack trace\n\n```text\nError: Tests not generated\n    at ')
+    exit.mockRestore()
+    stderr.mockRestore()
+  })
+
+  it('should throw the output without a stack in a test server - it must stay up', () => {
+    vi.stubEnv('TEST_WORKER_INDEX', undefined)
+    const argv = process.argv
+    process.argv = [...argv, 'test-server']
     child.spawnSync.mockReturnValueOnce({
       status: 1,
       stdout: 'Test "Pay" has no layer\n',
       stderr: ''
     })
 
-    prepareTests()
-    expect(() => prepareTests()).toThrow('Tests not generated\nTest "Pay" has no layer')
-    expect(child.spawnSync.mock.calls[0][1]).toEqual([
-      expect.stringMatching(/tsx/),
-      'scripts/generate-tests.ts'
-    ])
+    try {
+      expect(() => prepareTests()).toThrow(
+        expect.objectContaining({
+          stack: expect.stringMatching(/^Error: Tests not generated\n[^]*md\n$/)
+        })
+      )
+    } finally {
+      process.argv = argv
+    }
+  })
+})
+
+describe('withoutStack', () => {
+  it('should drop the frames of stack traces and keep everything else', () => {
+    expect(
+      withoutStack('Spec: a.md\n  Fix: tag it\nError: boom\n    at x (a.ts:1:1)\n\tat y\n')
+    ).toBe('Spec: a.md\n  Fix: tag it\nError: boom')
+  })
+})
+
+describe('renderGenerationErrors', () => {
+  it('should render the output and the stack as text blocks', () => {
+    expect(renderGenerationErrors('No layer\n', 'Error: x\n    at y')).toBe(
+      '# Tests not generated\n\n## Generation output\n\n```text\nNo layer\n```\n\n## Stack trace\n\n```text\nError: x\n    at y\n```\n'
+    )
+  })
+
+  it('should leave out the stack section without a stack', () => {
+    expect(renderGenerationErrors('No layer', '')).not.toContain('## Stack trace')
   })
 })

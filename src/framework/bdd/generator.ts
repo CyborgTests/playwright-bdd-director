@@ -235,7 +235,7 @@ export async function generateTest(specPath: string, testPath: string): Promise<
     .map(([, line]) => line)
 
   const source = [
-    `// Generated from ${toPosix(specPath)} on every run - change the spec or step definitions, not this file`,
+    `// Generated from ${commentText(toPosix(specPath))} on every run - change the spec or step definitions, not this file`,
     ...sideEffects,
     sideEffects.length > 0 ? '' : null,
     ...imports,
@@ -454,7 +454,9 @@ function emitTest(
   const declare = modifier ? `test.${modifier}` : 'test'
   const declaration = [
     ...(fixme
-      ? [`// ${layer} test without step definitions: ${[...new Set(allManual)].join('; ')}`]
+      ? [
+          `// ${layer} test without step definitions: ${commentText([...new Set(allManual)].join('; '))}`
+        ]
       : []),
     `${declare}(${quoteString(name)}, ${tagDetails([KIND_TAGS[kind], layer, ...new Set(ownTags)])}, async (${fixtureParam(fixtures)}) => {`,
     ...(allTags.includes('@slow') ? ['test.slow()'] : []),
@@ -831,8 +833,24 @@ function tagNames(tags: readonly Tag[]): string[] {
   return tags.map((tag) => tag.name)
 }
 
+/**
+ * Spec text reaches generated code only through quoteString and commentText: a spec is data, and
+ * a line terminator in it (U+2028 is invisible in diffs) must not end a string or a comment early
+ */
 function quoteString(text: string): string {
-  return `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`
+  const escaped = text
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+  return `'${escaped}'`
+}
+
+/** Text for a `//` comment of a generated file: line terminators would let it out of the comment */
+function commentText(text: string): string {
+  return text.replace(/[\r\n\u2028\u2029]/g, ' ')
 }
 
 /**

@@ -22,14 +22,28 @@ if (content.includes('// DIRECTOR PATCH')) {
   }
 }
 
-// Add WebSocket server at the very beginning of the file
+// Add WebSocket server at the very beginning of the file. The patch is a function: a top-level
+// return would skip the rest of program.js
 const patch = `// DIRECTOR PATCH - Start WebSocket server for MD editing
-if (global.__directorWsServerStarted) return;
+(() => {
+// Only UI mode shows the Director panel - CLI, CI and IDE runs open no port
+const isUiMode = process.argv.some(arg => /^--ui(-host|-port)?(=|$)/.test(arg));
+if (!isUiMode || global.__directorWsServerStarted) return;
 global.__directorWsServerStarted = true;
 
 const { WebSocketServer } = require('ws');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+
+// The server reads, writes and deletes specs: only the Director UI, which gets the token through
+// uiMode.html, may connect - not another site open in the browser or another machine
+const token = crypto.randomBytes(32).toString('hex');
+function hasToken(req) {
+  const received = Buffer.from(new URL(req.url, 'http://127.0.0.1').searchParams.get('token') || '');
+  const expected = Buffer.from(token);
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
+}
 
 const testSuitesDir = path.resolve(process.cwd(), 'test-suites');
 if (!fs.existsSync(testSuitesDir)) fs.mkdirSync(testSuitesDir, { recursive: true });
@@ -50,16 +64,20 @@ function resolveSuitePath(name) {
   return filePath.startsWith(testSuitesDir + path.sep) ? filePath : null;
 }
 
-// WebSocket server on random free port
-const wss = new WebSocketServer({ port: 0 });
+// WebSocket server on a random free loopback port
+const wss = new WebSocketServer({
+  host: '127.0.0.1',
+  port: 0,
+  verifyClient: ({ req }) => hasToken(req)
+});
 
 let wsPort = null;
 wss.on('listening', () => {
   wsPort = wss.address().port;
   global.directorWsPort = wsPort;
-  console.log(\`Director WebSocket server on ws://localhost:\${wsPort}\`);
-  
-  // Patch HTML to inject port in node_modules
+  console.log(\`Director WebSocket server on ws://127.0.0.1:\${wsPort}\`);
+
+  // Patch HTML to inject port and token in node_modules
   const uiModeHtmlPath = path.resolve(process.cwd(), 'node_modules/playwright-core/lib/vite/traceViewer/uiMode.html');
   if (fs.existsSync(uiModeHtmlPath)) {
     let html = fs.readFileSync(uiModeHtmlPath, 'utf-8');
@@ -76,7 +94,7 @@ wss.on('listening', () => {
     // Change title
     html = html.replace('<title>Playwright Test</title>', '<title>Playwright BDD Director</title>');
     // Add new script
-    html = html.replace('</body>', \`<script>window.DIRECTOR_WS_PORT = \${wsPort};</script></body>\`);
+    html = html.replace('</body>', \`<script>window.DIRECTOR_WS_PORT = \${wsPort}; window.DIRECTOR_WS_TOKEN = '\${token}';</script></body>\`);
     fs.writeFileSync(uiModeHtmlPath, html);
   }
 });
@@ -165,6 +183,7 @@ wss.on('connection', (ws) => {
     }
   });
 });
+})();
 // END DIRECTOR PATCH
 
 `

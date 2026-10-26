@@ -1,6 +1,7 @@
 {
   "name": "playwright-bdd-director",
   "version": "0.5.0",
+  "private": true,
   "description": "Write the Script, We'll Play the Show",
   "scripts": {
     "stage": "tsx scripts/md-ts-director.ts",

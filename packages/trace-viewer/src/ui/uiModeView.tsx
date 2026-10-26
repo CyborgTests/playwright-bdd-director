@@ -167,22 +167,23 @@ export const UIModeView: React.FC<{}> = ({}) => {
   const [revealSource, setRevealSource] = React.useState(false)
   const onRevealSource = React.useCallback(() => setRevealSource(true), [setRevealSource])
 
-  // Director state - завантаження файлів з test-suites/
+  // Director state - spec files of test-suites/
   const [directorFiles, setDirectorFiles] = React.useState<TestFile[]>([])
 
-  // Завантаження файлів через WebSocket
+  // Load the spec files over the Director WebSocket
   React.useEffect(() => {
     const loadFiles = async () => {
       const port = (window as any).DIRECTOR_WS_PORT
-      if (!port) {
-        console.error('Director WS port not found in window')
+      const token = (window as any).DIRECTOR_WS_TOKEN
+      if (!port || !token) {
+        console.error('Director WS port or token not found in window')
         setDirectorFiles([])
         return
       }
 
       try {
         const { connectWs, getFiles } = await import('@director/index')
-        await connectWs(port)
+        await connectWs(port, token)
         const files = await getFiles()
         setDirectorFiles(files)
       } catch (e) {

@@ -85,17 +85,36 @@ describe('guard-git-and-destructive', () => {
     'git push origin main',
     'git add .',
     'git reset --hard HEAD',
-    'rm -rf dist'
+    'rm -rf dist',
+    // Spellings that must not slip past: global options, quotes, .exe, split flags, PowerShell
+    'git -C . push origin main',
+    'git -c core.pager=cat push',
+    'git --git-dir .git --work-tree . commit -m x',
+    'git --no-pager commit -m x',
+    '"git" push',
+    'git.exe push',
+    'C:/Program Files/Git/bin/git.exe add .',
+    'npm run lint && git push',
+    'rm -r -f dist',
+    'rm --recursive --force dist',
+    'Remove-Item -Recurse -Force src',
+    'remove-item src -r'
   ])('asks for %s', (command) => {
     expect(bash(command).hookSpecificOutput?.permissionDecision).toBe('ask')
   })
 
-  it.each(['git status', 'git diff --stat', 'npm run dress', 'rm file.txt'])(
-    'allows %s',
-    (command) => {
-      expect(bash(command)).toEqual({})
-    }
-  )
+  it.each([
+    'git status',
+    'git diff --stat',
+    'git -C . log --oneline',
+    'git log --grep push',
+    'npm run dress',
+    'rm file.txt',
+    'rm -r dist',
+    'Remove-Item file.txt'
+  ])('allows %s', (command) => {
+    expect(bash(command)).toEqual({})
+  })
 })
 
 describe('check-test-conventions', () => {

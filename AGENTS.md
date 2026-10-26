@@ -64,7 +64,7 @@ Code, comments, tests and `test-suites/*.md`: English only (non-English allowed 
 ## Specification index
 
 - Rules (`.claude/rules/`): `ai-spec-architecture`, `ai-spec-formats`, `typescript`, `playwright-tests`, `api-testing`, `md-specs`, `framework-code`.
-- Key skills: `md-driven-suites`, `md-to-automated`, `run-tests`, `framework-change`, `pw-triager`, `ui-explorer`, `senior-aqa-reviewer` (run before handing off step definitions or test code).
+- Key skills: `md-driven-suites`, `md-to-automated`, `run-tests`, `framework-change`, `pw-triager`, `ui-explorer`, `senior-aqa-reviewer` (run before handing off step definitions or test code), `security-audit` (changes to a trust boundary).
 
 ## Operational restrictions
 

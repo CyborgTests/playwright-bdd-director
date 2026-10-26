@@ -7,9 +7,10 @@ const pendingRequests = new Map<
   { resolve: (data: unknown) => void; reject: (error: string) => void }
 >()
 
-export function connectWs(port: number): Promise<void> {
+/** The server accepts only loopback connections with the token it put into uiMode.html */
+export function connectWs(port: number, token: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    ws = new WebSocket(`ws://localhost:${port}`)
+    ws = new WebSocket(`ws://127.0.0.1:${port}/?token=${encodeURIComponent(token)}`)
 
     ws.onopen = () => resolve()
 

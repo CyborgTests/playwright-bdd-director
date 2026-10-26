@@ -30,7 +30,7 @@ import { UIModeView } from './ui/uiModeView'
         `Service workers are not supported.\nMake sure to serve the website (${window.location}) via HTTPS or localhost.`
       )
     navigator.serviceWorker.register('sw.bundle.js').catch(() => {})
-    // Не чекаємо SW в dev mode
+    // Not waiting for the service worker in dev mode
 
     // Keep SW running.
     setInterval(function () {

@@ -11,6 +11,8 @@ export const CONFIG = {
     coverageMatrix: process.env.COVERAGE_MATRIX_FILE ?? 'test-results/coverage-matrix',
     // npm run dress writes what the console shows, to read later or attach to CI
     dressReport: process.env.DRESS_REPORT_FILE ?? 'test-results/dress-rehearsal.md',
+    // Full output of failed generation with stack traces - the console shows it without them
+    generationErrors: process.env.GENERATION_ERRORS_FILE ?? 'test-results/generation-errors.md',
     // Written on every run for test management tools and CI. Cucumber: <project>/cucumber-report.json
     // and cucumber-messages.ndjson per device for the tools, cucumber-report.html of all for people
     cucumberReports: process.env.CUCUMBER_REPORTS_DIR ?? 'test-results/cucumber',
