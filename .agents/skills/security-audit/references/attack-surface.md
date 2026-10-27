@@ -4,20 +4,22 @@ Each surface: what it holds, who can reach it, the attack classes to hunt. Out o
 
 ## Director WebSocket server (`scripts/patch-playwright.js`)
 
-Reads, writes and deletes specs, runs `scripts/md-ts-director.ts`, `scripts/adapt.ts` and `scripts/rename.ts` (renames step files too). Reachable by any site open in the user's browser (WebSockets ignore the same-origin policy) and, if it binds wider than loopback, by other machines.
+Reads, writes and deletes specs, runs `scripts/md-ts-director.ts`, `scripts/adapt.ts`, `scripts/rename.ts` (renames step files too) and `scripts/reword.ts` (rewrites step definition patterns).
+Reachable by any site open in the user's browser (WebSockets ignore the same-origin policy) and, if it binds wider than loopback, by other machines.
 
 - Invariants (`framework-code` rule): starts in UI mode only, listens on `127.0.0.1`, accepts only the token from `uiMode.html`. Check all three still hold.
 - Path traversal in `resolveSuitePath`: `..`, absolute paths, the `test-suites/` prefix, symlinks inside `test-suites/`, Windows drive letters and case.
 - `RUN_STAGE` spawns with `shell: true`: can any message field reach the command line?
 - `ADAPT_FILE` / `RENAME_FILE` pass a spec name (and a new base name) to `scripts/adapt.ts` / `scripts/rename.ts` (no shell, `runDirectorScript`): is it still checked against `resolveSuitePath` and an existing file, and can it start with `-` or name a spec outside `test-suites/`?
+- `REWORD_STEP` passes a spec and line (`--find`; `--at` with a title) or two step texts after `--` to `scripts/reword.ts`: one line each, at most 500 characters - can a text become a flag or write outside `test-suites/` and the step files?
 - `SET_RECORD_RUN` (UI "Record run") sets or deletes `RECORD_RUN` in the runner process: does it still take only `record === true` and nothing that reaches other env vars?
 - Token exposure: console output, files readable by other local users, the served HTML read cross-origin.
 
 ## Director UI (`packages/director`, `packages/trace-viewer`)
 
-Renders spec text (`react-markdown`, Gherkin) from files a PR author controls, and holds the WebSocket token: script running in the UI can read, write and delete specs.
+Renders spec text (preview `SpecPreview.tsx`, editor modes `specModes.ts`) from files a PR author controls, and holds the WebSocket token: script running in the UI can read, write and delete specs.
 
-- DOM XSS: `dangerouslySetInnerHTML`, raw HTML enabled in the Markdown renderer, `innerHTML`, `javascript:` / `data:` links.
+- DOM XSS: `dangerouslySetInnerHTML`, `innerHTML`, spec text turned into HTML instead of React elements, `javascript:` / `data:` links.
 - `postMessage` handlers without an exact origin check; data sent to `*`.
 
 ## Postinstall, forks and dependencies

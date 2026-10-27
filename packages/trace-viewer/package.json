@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@zip.js/zip.js": "2.6.62",
-    "react-markdown": "^10.1.0",
     "yaml": "2.8.3"
   },
   "devDependencies": {

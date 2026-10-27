@@ -219,6 +219,40 @@ wss.on('connection', (ws) => {
         }
       }
 
+      // Reword (npm run reword): find - the step or title at a line of an existing spec of
+      // test-suites; a title - its new text; a step - old and new text. Texts: one line each,
+      // passed after "--" (never flags)
+      else if (msg.type === 'REWORD_STEP') {
+        const data = msg.data || {};
+        if (data.line !== undefined) {
+          const filePath = resolveSuitePath(String(data.name));
+          const line = Number(data.line);
+          if (!filePath || !/\\.(md|feature)$/.test(filePath) || !fs.existsSync(filePath) || !Number.isInteger(line) || line < 1) {
+            ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Step line not found in test-suites' }));
+            return;
+          }
+          const suiteKey = path.relative(testSuitesDir, filePath).split(path.sep).join('/').replace(/\\.(md|feature)$/, '');
+          if (data.to === undefined) {
+            runDirectorScript(ws, msg.id, ['scripts/reword.ts', '--find', suiteKey, String(line)]);
+            return;
+          }
+          // A new title for the suite, a rule or a test case at the line
+          const to = data.to;
+          if (typeof to !== 'string' || !to.trim() || to.length > 500 || /[\\r\\n]/.test(to)) {
+            ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'A title is one line of text' }));
+            return;
+          }
+          runDirectorScript(ws, msg.id, ['scripts/reword.ts', '--at', suiteKey, String(line), '--', to]);
+        } else {
+          const texts = [data.from, data.to];
+          if (!texts.every(text => typeof text === 'string' && text.trim() && text.length <= 500 && !/[\\r\\n]/.test(text))) {
+            ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'A step is one line of text' }));
+            return;
+          }
+          runDirectorScript(ws, msg.id, ['scripts/reword.ts', '--', ...texts]);
+        }
+      }
+
       // "Record run" checkbox of UI mode, sent before every run: the last-run reporter of this
       // process reads RECORD_RUN when the run ends (only a boolean, nothing else is taken)
       else if (msg.type === 'SET_RECORD_RUN') {

@@ -37,6 +37,9 @@ type CodeMirrorHighlighter =
   | 'css'
   | 'markdown'
   | 'yaml'
+  | 'director-spec-md' // Director specs: modes defined by packages/director/src/specModes.ts
+  | 'director-spec-feature'
+  | 'gherkin'
 
 export const lineHeight = 20
 
@@ -293,6 +296,9 @@ function highlighterToMode(highlighter: CodeMirrorHighlighter | undefined): stri
     markdown: 'markdown',
     html: 'htmlmixed',
     css: 'css',
-    yaml: 'yaml'
+    yaml: 'yaml',
+    'director-spec-md': 'director-spec-md',
+    'director-spec-feature': 'director-spec-feature',
+    gherkin: 'gherkin'
   }[highlighter]
 }

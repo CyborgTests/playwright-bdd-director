@@ -62,15 +62,15 @@
 }
 
 .director-editor .CodeMirror .cm-variable-2 {
-  color: var(--vscode-symbolIcon-variableForeground, #9cdcfe) !important;
+  color: var(--vscode-charts-red, #f14c4c) !important; /* <placeholders> */
 }
 
 .director-editor .CodeMirror .cm-keyword {
-  color: var(--vscode-symbolIcon-keywordForeground, #569cd6) !important;
+  color: var(--vscode-charts-purple, #c586c0) !important; /* Given / When / Then, Scenario: */
 }
 
 .director-editor .CodeMirror .cm-atom {
-  color: var(--vscode-symbolIcon-constantForeground, #b5cea8) !important;
+  color: var(--vscode-descriptionForeground, #999999) !important; /* [IDs] */
 }
 
 .director-editor .CodeMirror .cm-number {
@@ -78,7 +78,7 @@
 }
 
 .director-editor .CodeMirror .cm-string {
-  color: var(--vscode-symbolIcon-stringForeground, #ce9178) !important;
+  color: var(--vscode-charts-green, #89d185) !important;
 }
 
 .director-editor .CodeMirror .cm-comment {
@@ -94,7 +94,7 @@
 }
 
 .director-editor .CodeMirror .cm-tag {
-  color: var(--vscode-symbolIcon-keywordForeground, #569cd6) !important;
+  color: var(--vscode-charts-blue, #3794ff) !important;
 }
 
 .director-editor .CodeMirror .cm-bracket {
@@ -172,6 +172,16 @@
   outline: none;
 }
 
+.director-editor-reword-group {
+  flex: 1;
+  margin-right: 8px;
+}
+
+.director-editor-reword {
+  flex: 1;
+  min-width: 0;
+}
+
 .director-spacer {
   flex: 1;
 }
@@ -228,11 +238,40 @@
   overflow: auto;
 }
 
-.director-preview-gherkin {
-  margin: 0;
-  font-family: var(--vscode-editor-font-family, monospace);
-  line-height: 1.5;
-  white-space: pre-wrap;
+/* Gherkin preview: the layout of the Markdown one - steps under their scenario like #### steps */
+.director-preview-spec .director-spec-step,
+.director-preview-spec .director-spec-comment {
+  padding-left: 32px;
+  margin: 4px 0;
+}
+
+/* Feature / scenario descriptions under their title */
+.director-preview-content .director-preview-spec p {
+  padding-left: 16px;
+}
+
+.director-preview-spec .director-spec-keyword {
+  color: var(--vscode-charts-purple, #c586c0);
+}
+
+.director-preview-spec .director-spec-tags code {
+  margin-right: 6px;
+}
+
+.director-preview-spec .director-spec-comment,
+.director-preview-spec p {
+  color: var(--vscode-descriptionForeground, #999999);
+}
+
+.director-preview-spec .director-spec-placeholder {
+  color: var(--vscode-charts-red, #f14c4c);
+}
+
+.director-preview-content .director-preview-spec table,
+.director-preview-content .director-preview-spec pre {
+  margin-left: 32px;
+  width: auto;
+  max-width: calc(100% - 32px);
 }
 
 .director-preview-content h1,
@@ -260,8 +299,6 @@
   font-size: 16px;
   padding-left: 16px;
   margin-top: 6px;
-  border-top: 2px solid var(--vscode-titleBar-activeForeground, #cccccc);
-  padding-top: 6px;
 }
 
 .director-preview-content h4 {
@@ -330,4 +367,16 @@
 .director-preview-content table th {
   background: var(--vscode-sideBar-background, #252526);
   font-weight: 600;
+}
+
+/* Tags of a Gherkin title, after its name */
+.director-preview-spec .director-spec-tags {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+/* Notes under a Markdown step */
+.director-preview-content .director-preview-spec p.director-spec-step-note {
+  padding-left: 48px;
 }

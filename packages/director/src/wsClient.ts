@@ -91,6 +91,34 @@ export async function renameFile(name: string, newName: string, check = false) {
   return result as { output: string; target: string }
 }
 
+/**
+ * What a spec line holds (1-based): a step - the pattern of its step definition or its own text -
+ * or a title (`label`: Suite, Rule, Test case)
+ */
+export async function findLine(name: string, line: number) {
+  const { output } = (await sendRequest('REWORD_STEP', { name, line }, 60000)) as {
+    output: string
+  }
+  return JSON.parse(output.trim().split('\n').pop()!) as {
+    kind: 'step' | 'title'
+    text: string
+    definition?: string
+    label?: string
+  }
+}
+
+/** `npm run reword -- --at`: a new title for the suite, a rule or a test case at the line */
+export async function rewordTitle(name: string, line: number, to: string) {
+  const result = await sendRequest('REWORD_STEP', { name, line, to }, 60000)
+  return result as { output: string }
+}
+
+/** `npm run reword`: the step's new text in every spec and in its step definition pattern */
+export async function rewordStep(from: string, to: string) {
+  const result = await sendRequest('REWORD_STEP', { from, to }, 60000)
+  return result as { output: string }
+}
+
 /** "Record run" checkbox: the next run keeps its coverage matrix in the run history or not */
 export async function setRecordRun(record: boolean) {
   return sendRequest('SET_RECORD_RUN', { record })

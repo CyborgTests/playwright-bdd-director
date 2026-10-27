@@ -1,37 +1,38 @@
-@ui @skip
-## [TS99] Conversion Demo
-- Spec to try npm run adapt on: every part the converter moves between Markdown and Gherkin
-- @skip keeps it out of runs - delete the file when done
+@api
+## Product Catalog API
+- The catalog behind the shop pages: products, brands and search. Errors come as HTTP 200 with the code in the body
 
 ---
 
-### Background
-#### Open Demo Page
-- Notes under a step become "#" comments in Gherkin
+@smoke
+### List All Products
+#### Verify Products List contains "Blue Top" for Rs. 500
 
 ---
 
-@smoke @JIRA-123
-### [TC99-01] Search for "<query>" shows "<result>"
-- Examples table: becomes a Scenario Outline with Examples
-| query  | result         |
-| ------ | -------------- |
-| Top    | Blue Top       |
-| A \| B | Pipe in a cell |
-#### Type "<query>" into Search Field
-#### Click "Search" Button
-- Wait for results to load
-- Results replace the product grid
-#### Verify "<result>" is shown in Results
+### Reject Unsupported Method on Products List
+#### Verify POST to Products List is rejected as unsupported
 
 ---
 
-### [] Case With Empty ID
-#### Open Cart Page
-#### Verify Cart is empty
+### List All Brands
+#### Verify Brands List contains "Polo"
 
 ---
 
-### Case Without ID or Notes
-#### Open Contact Page
-#### Verify "Get In Touch" Heading is visible
+### Reject Unsupported Method on Brands List
+#### Verify PUT to Brands List is rejected as unsupported
+
+---
+
+### Search Products for "<query>"
+| query | product       |
+| ----- | ------------- |
+| top   | Blue Top      |
+| dress | Stylish Dress |
+#### Search Products for "<query>" and verify "<product>" is found
+
+---
+
+### Search Without Query
+#### Verify Search without Query is rejected as bad request

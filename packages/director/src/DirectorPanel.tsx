@@ -19,7 +19,7 @@ import './DirectorPanel.css'
 import { SplitView } from '@web/components/splitView'
 import React from 'react'
 
-import { DirectorEditor } from './DirectorEditor'
+import { DirectorEditor, type LineToReword } from './DirectorEditor'
 import type { DirectorOutputEntry, StageProgress, TestFile } from './DirectorModel'
 import { DirectorOutput } from './DirectorOutput'
 import { FileExplorer } from './FileExplorer'
@@ -45,6 +45,7 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   const [outputEntries, setOutputEntries] = React.useState<DirectorOutputEntry[]>([])
   const [stageProgress, setStageProgress] = React.useState<StageProgress | undefined>()
   const [isStaging, setIsStaging] = React.useState(false)
+  const [editorRevision, setEditorRevision] = React.useState(0) // remounts the editor: file reloaded
   // Handle file selection
   const handleFileSelect = (file: TestFile) => {
     setSelectedFile(file)
@@ -133,13 +134,45 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     }
   }
 
+  // F2 or a double click on a line: npm run reword --find gives the step or title to edit there
+  const handleFindLine = async (file: TestFile, line: number): Promise<LineToReword | null> => {
+    try {
+      const { findLine } = await import('./wsClient')
+      return { line, ...(await findLine(file.name, line)) }
+    } catch (e) {
+      addScriptOutput(String(e))
+      return null
+    }
+  }
+
+  // A step: the new text in every spec and its definition pattern; a title: on its line only.
+  // The editor reloads the file
+  const handleReword = async (target: LineToReword, newText: string) => {
+    if (!selectedFile) return
+    try {
+      const { getFiles, rewordStep, rewordTitle } = await import('./wsClient')
+      const { output } =
+        target.kind === 'title'
+          ? await rewordTitle(selectedFile.name, target.line, newText)
+          : await rewordStep(target.text, newText)
+      addScriptOutput(output)
+      const updatedFiles = await getFiles()
+      onFilesRefresh?.(updatedFiles)
+      const current = updatedFiles.find((f) => f.name === selectedFile?.name)
+      if (current) setSelectedFile(current)
+      setEditorRevision((revision) => revision + 1)
+    } catch (e) {
+      addScriptOutput(String(e))
+    }
+  }
+
   const addScriptOutput = (output: string) =>
     output
       .split('\n')
       .filter((line) => line.trim())
       .forEach((line) =>
         addOutputEntry(
-          /❌|🔶|Set the keywords|^\s+[-•] /.test(line)
+          /❌|🔶|Set the keywords|Check that|^\s+[-•] /.test(line)
             ? 'error'
             : line.includes('→')
               ? 'success'
@@ -252,9 +285,12 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
             }
             main={
               <DirectorEditor
+                key={editorRevision}
                 file={selectedFile}
                 onContentChange={handleContentChange}
                 onRename={handleRename}
+                onFindLine={handleFindLine}
+                onReword={handleReword}
               />
             }
           />

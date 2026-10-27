@@ -24,6 +24,7 @@ import 'codemirror/mode/javascript/javascript'
 import 'codemirror/mode/python/python'
 import 'codemirror/mode/clike/clike'
 import 'codemirror/mode/markdown/markdown'
+import 'codemirror/mode/gherkin/gherkin' // Director: .feature specs with # language:
 import 'codemirror/addon/display/placeholder'
 import 'codemirror/addon/mode/simple'
 import 'codemirror/addon/edit/matchbrackets'

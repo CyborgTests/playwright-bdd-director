@@ -15,6 +15,7 @@ description: Use when creating, editing, renaming or deleting a spec in test-sui
 ## Steps
 
 1. **Write or edit the spec**: Markdown `@ui` (layer) above `## Suite`, `### Case`, `#### Step`, details as `- bullets`; or Gherkin with the layer tag above `Feature:`. Reuse the wording of existing steps when the meaning is the same - their definitions apply at once.
+   Rewording a step everywhere: `npm run reword "<pattern or manual text>" "<new>"` (specs + definition pattern, parameters kept); then check its code still does what the words say.
    Moving a suite to the other format: `npm run adapt <suite>`, never by hand; after `.md` → `.feature` replace every `*` with Given (context) / When (action) / Then (outcome), `And` for repeats.
 2. **Format**: `npm run stage` (Markdown spacing, `---` before every `###`).
 3. **Check**: `npm run dress`. Fix every error at its source (invalid spec, missing or double layer, ambiguous step) and re-run until no errors. "To automate" lists the steps a person walks, by test.

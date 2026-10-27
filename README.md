@@ -284,9 +284,10 @@ A combined visual interface - the Director UI (built in this project) together w
 
 **Director UI (our part):**
 
-- **File Explorer** - browse and edit Markdown and Gherkin specs with File Editor
+- **File Explorer** - browse and edit Markdown and Gherkin specs with File Editor: both formats highlighted alike (titles, Gherkin keywords, tags, notes, "strings", `<placeholders>`, tables); **Preview** shows either as a document - headings with their tags, steps, examples tables
 - **Stage** - format the Markdown specs
 - **Rename and convert** - double-click the file name above the editor: type a new name (Enter) or pick the other format from the `.md` / `.feature` list. A new format runs `npm run adapt`, a new name runs `npm run rename`, both - the conversion first, and only when the name is free; Escape cancels. The output (the "Not finished" warning too) goes to Output
+- **Reword** - F2 or a double click on a step or title line: the field above the editor shows the pattern of the step definition (`Step pattern:`), the text of a manual step (`Step:`) or the title (`Suite:`, `Rule:`, `Test case:`). Enter runs `npm run reword`: a step changes in every spec and in its pattern, a title on its line only (refused when two test cases would share it); Escape cancels. The code of a step does not change: Output warns to check that it still does what the new words say
 - **Record run** - checkbox in Testing Options: every run started while it is on keeps its coverage matrix in the run history (as `npm run play -- --record`)
 
 **Playwright UI (Playwright's part):**
@@ -335,6 +336,7 @@ npm run show
   - `npm run stage` - formats the Markdown specs (`---` before every test case)
   - `npm run adapt <suite...>` - moves a spec between Markdown and Gherkin
   - `npm run rename <suite> <new-name>` - renames a spec and its step file
+  - `npm run reword "<old>" "<new>"` - rewords a step in every spec and in its step definition pattern; `-- --at <suite> <line> "<title>"` - a suite, rule or test case title
   - `npm run play` - runs tests by type, suite and tag
 
 ## 📝 Specs
@@ -608,6 +610,7 @@ npm run steps auth   # step definition skeletons for steps of auth.md without on
 npm run stage        # format the Markdown specs
 npm run adapt auth   # auth.md → auth.feature (and back)
 npm run rename auth login  # auth.md → login.md, src/steps/auth.steps.ts → login.steps.ts
+npm run reword "user adds {string} to cart" "user puts {string} in the cart"  # a step everywhere
 npm run show         # Playwright UI mode with the Director
 npm run lint:fix     # ESLint fix
 npm run format       # Prettier format
@@ -656,6 +659,7 @@ npm run test:coverage # Generate coverage report
 - `prepare.ts` - generation when Playwright loads the config; regenerates on changes in UI mode and the IDE
 - `runtime.ts` - `autoStep`, hooks and the `bdd` context of generated tests
 - `skeletons.ts` - step definition skeletons for `npm run steps`
+- `step-reword.ts` - new text for a step in every spec and its definition pattern, or for a title on its line, all or nothing (`npm run reword`)
 
 **Parsers (`src/framework/core/`):**
 
