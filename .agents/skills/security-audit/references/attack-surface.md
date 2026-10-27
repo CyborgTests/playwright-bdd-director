@@ -4,11 +4,12 @@ Each surface: what it holds, who can reach it, the attack classes to hunt. Out o
 
 ## Director WebSocket server (`scripts/patch-playwright.js`)
 
-Reads, writes and deletes specs, runs `scripts/md-ts-director.ts`. Reachable by any site open in the user's browser (WebSockets ignore the same-origin policy) and, if it binds wider than loopback, by other machines.
+Reads, writes and deletes specs, runs `scripts/md-ts-director.ts`, `scripts/adapt.ts` and `scripts/rename.ts` (renames step files too). Reachable by any site open in the user's browser (WebSockets ignore the same-origin policy) and, if it binds wider than loopback, by other machines.
 
 - Invariants (`framework-code` rule): starts in UI mode only, listens on `127.0.0.1`, accepts only the token from `uiMode.html`. Check all three still hold.
 - Path traversal in `resolveSuitePath`: `..`, absolute paths, the `test-suites/` prefix, symlinks inside `test-suites/`, Windows drive letters and case.
 - `RUN_STAGE` spawns with `shell: true`: can any message field reach the command line?
+- `ADAPT_FILE` / `RENAME_FILE` pass a spec name (and a new base name) to `scripts/adapt.ts` / `scripts/rename.ts` (no shell, `runDirectorScript`): is it still checked against `resolveSuitePath` and an existing file, and can it start with `-` or name a spec outside `test-suites/`?
 - Token exposure: console output, files readable by other local users, the served HTML read cross-origin.
 
 ## Director UI (`packages/director`, `packages/trace-viewer`)

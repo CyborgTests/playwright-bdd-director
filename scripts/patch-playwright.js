@@ -64,6 +64,22 @@ function resolveSuitePath(name) {
   return filePath.startsWith(testSuitesDir + path.sep) ? filePath : null;
 }
 
+// A Director script run with tsx without a shell - message values never reach a command line;
+// SUCCESS carries its output and the spec it leaves (target), ERROR its output
+function runDirectorScript(ws, id, args, target) {
+  const { spawn } = require('child_process');
+  const tsxCli = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
+  const child = spawn(process.execPath, [tsxCli, ...args], { cwd: process.cwd(), stdio: 'pipe', shell: false });
+  let output = '';
+  child.stdout.on('data', (data) => { output += data.toString(); });
+  child.stderr.on('data', (data) => { output += data.toString(); });
+  child.on('close', (code) => {
+    ws.send(JSON.stringify(code === 0
+      ? { id, type: 'SUCCESS', data: { output, target } }
+      : { id, type: 'ERROR', error: output }));
+  });
+}
+
 // WebSocket server on a random free loopback port
 const wss = new WebSocketServer({
   host: '127.0.0.1',
@@ -177,7 +193,32 @@ wss.on('connection', (ws) => {
           }));
         });
       }
-      
+
+      // Convert a spec between .md and .feature (npm run adapt) or give it a new name
+      // (npm run rename): only an existing spec of test-suites and a plain base name
+      else if (msg.type === 'ADAPT_FILE' || msg.type === 'RENAME_FILE') {
+        const filePath = resolveSuitePath(String(msg.data && msg.data.name));
+        if (!filePath || !/\\.(md|feature)$/.test(filePath) || !fs.existsSync(filePath)) {
+          ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Spec not found in test-suites' }));
+          return;
+        }
+        const suiteKey = path.relative(testSuitesDir, filePath).split(path.sep).join('/').replace(/\\.(md|feature)$/, '');
+        const extension = path.extname(filePath);
+        if (msg.type === 'ADAPT_FILE') {
+          const target = 'test-suites/' + suiteKey + (extension === '.md' ? '.feature' : '.md');
+          runDirectorScript(ws, msg.id, ['scripts/adapt.ts', suiteKey], target);
+        } else {
+          const newName = String(msg.data && msg.data.newName);
+          if (!/^[A-Za-z0-9][\\w.-]*$/.test(newName)) {
+            ws.send(JSON.stringify({ id: msg.id, type: 'ERROR', error: 'Invalid spec name: letters, digits, ".", "_" and "-" only' }));
+            return;
+          }
+          const target = 'test-suites/' + path.posix.join(path.posix.dirname(suiteKey), newName + extension).replace(/^\\.\\//, '');
+          const check = msg.data.check === true ? ['--check'] : [];
+          runDirectorScript(ws, msg.id, ['scripts/rename.ts', suiteKey, newName, ...check], target);
+        }
+      }
+
     } catch (e) {
       ws.send(JSON.stringify({ id: msg?.id || 0, type: 'ERROR', error: String(e) }));
     }

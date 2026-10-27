@@ -1,10 +1,13 @@
 const SEPARATOR_WIDTH = 64
 
-/** Console icons of the CLI output - one per message type */
+/**
+ * Console icons of the CLI output - one per message type. Each takes two terminal cells, so the
+ * text after them lines up: no symbol + U+FE0F emoji such as ⚠️, many terminals draw it one cell wide
+ */
 const ICONS = {
   start: '✨',
   success: '✅',
-  warning: '⚠️',
+  warning: '🔶',
   error: '❌',
   info: '💡',
   fix: '🔧',

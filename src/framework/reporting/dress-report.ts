@@ -5,6 +5,7 @@ import type { GeneratedTest } from '../bdd/generator'
 import { CONFIG } from '../config'
 import { KIND_TAGS } from '../constants/tags'
 import { getMarkdownBaseName, toPosix } from '../utils/helpers'
+import { getIcon } from '../utils/icons'
 
 /** Playwright project as far as picking tests goes */
 export interface RunProject {
@@ -134,7 +135,8 @@ export function buildDressReport(
  * Projects whose grep / grepInvert pick the test - Playwright matches them against the title
  * with the tags, the projects match tags only
  */
-function runningProjects(test: GeneratedTest, projects: RunProject[]): string[] {
+/** Projects whose grep picks the test - one run each */
+export function runningProjects(test: GeneratedTest, projects: RunProject[]): string[] {
   const text = [...test.tags, test.layer, KIND_TAGS[test.kind]].join(' ')
   const matches = (patterns?: RegExp | RegExp[] | null) =>
     [patterns ?? []].flat().some((pattern) => pattern.test(text))
@@ -209,7 +211,7 @@ export function renderDressConsole(report: DressReport): string {
   }
 
   if (report.disabled.length > 0) {
-    lines.push('⏸️  Disabled and known bugs')
+    lines.push('💤  Disabled and known bugs')
     const width = Math.max(...report.disabled.map((test) => `${test.spec} › ${test.title}`.length))
     report.disabled.forEach((test) =>
       lines.push(`  ${`${test.spec} › ${test.title}`.padEnd(width)}  ${test.tags.join(' ')}`)
@@ -218,7 +220,7 @@ export function renderDressConsole(report: DressReport): string {
   }
 
   if (report.unused.length > 0) {
-    lines.push('⚠️  Step definitions no spec uses')
+    lines.push(`${getIcon('warning')}  Step definitions no spec uses`)
     report.unused.forEach((definition) =>
       lines.push(`  • ${definition.pattern} - ${definition.location}`)
     )

@@ -28,8 +28,9 @@ npm run dress                        # errors, runs per spec/project, steps a pe
 npm run steps <suite...>             # step definition skeletons into src/steps/<suite>.steps.ts
 npm run stage                        # format Markdown specs (`---` before every ###)
 npm run adapt <suite...>             # move a spec between .md and .feature (replaces the file)
+npm run rename <suite> <new-name>    # rename a spec and its step file (the suite tag changes too)
 npm run play <types...> [suites...] [@tags...] [devices...]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile
-npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps
+npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps, last run, by tag
 npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)
 npm run show | review                # Playwright UI mode with Director | Monocart report
 npm run test:run                     # Vitest unit tests (framework)
@@ -51,6 +52,7 @@ Tests are generated into `.director/tests/` (gitignored) whenever `playwright.co
 
 - Framework code changed → `npm run test:run` green; new behavior covered by a unit test.
 - Specs/steps changed → `npm run dress` without errors; affected tests green on the first attempt.
+- User-visible change (command, option, output, report, behavior) → in the same task: `README.md`, then every mention found by grepping its name in `docs/`, `AGENTS.md`, rules, skills and script headers.
 - Always → `npm run lint` and `npx tsc --noEmit` clean (both green on main; `packages/` has its own toolchain). Report failures as they are.
 
 ## Language

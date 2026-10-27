@@ -1,3 +1,4 @@
+import { escapeRegExp } from '../utils/helpers'
 import type { MissingStep } from './generator'
 
 const STEPS_MODULE = './bdd'
@@ -48,8 +49,4 @@ function addImport(content: string, module: string, names: string[]): string {
     return `${content.slice(0, end)}\n${line}${content.slice(end)}`
   }
   return `${line}\n${content}`
-}
-
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 }

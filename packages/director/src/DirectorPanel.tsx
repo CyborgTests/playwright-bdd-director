@@ -94,6 +94,60 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
     }
   }
 
+  // The file name edited above the editor: a new extension converts the spec (npm run adapt), a
+  // new name renames it with its step file (npm run rename) - both: convert first, it may refuse
+  const handleRename = async (file: TestFile, newName: string) => {
+    const parse = (name: string) => name.match(/^(.*\/)?([^/]+?)(\.md|\.feature)?$/)!
+    const [, folder = '', base, extension] = parse(file.name)
+    const [, newFolder = '', newBase, newExtension] = parse(newName)
+    if (!newExtension) {
+      addOutputEntry('error', 'A spec ends with .md or .feature - nothing was renamed')
+      return
+    }
+    if (newFolder !== folder) {
+      addOutputEntry('error', 'Only the name and the extension can change here, not the folder')
+      return
+    }
+
+    let current = file.name
+    try {
+      const { adaptFile, getFiles, renameFile } = await import('./wsClient')
+      // A taken name must stop the conversion too - all or nothing
+      if (newBase !== base && newExtension !== extension) await renameFile(current, newBase, true)
+      if (newExtension !== extension) {
+        const converted = await adaptFile(current)
+        addScriptOutput(converted.output)
+        current = converted.target.replace(/^test-suites\//, '')
+      }
+      if (newBase !== base) {
+        const renamed = await renameFile(current, newBase)
+        addScriptOutput(renamed.output)
+        current = renamed.target.replace(/^test-suites\//, '')
+      }
+      const updatedFiles = await getFiles()
+      onFilesRefresh?.(updatedFiles)
+      const result = updatedFiles.find((f) => f.name === current)
+      if (result) handleFileSelect(result)
+    } catch (e) {
+      addScriptOutput(String(e))
+    }
+  }
+
+  const addScriptOutput = (output: string) =>
+    output
+      .split('\n')
+      .filter((line) => line.trim())
+      .forEach((line) =>
+        addOutputEntry(
+          /❌|🔶|Set the keywords|^\s+[-•] /.test(line)
+            ? 'error'
+            : line.includes('→')
+              ? 'success'
+              : 'info',
+          line.trim()
+        )
+      )
+
   // Handle stage - run real npm run stage via WebSocket
   const handleStage = async () => {
     const mdFiles = files.filter((f) => f.name.endsWith('.md') || f.name.endsWith('.feature'))
@@ -196,7 +250,13 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
                 onClear={handleClearOutput}
               />
             }
-            main={<DirectorEditor file={selectedFile} onContentChange={handleContentChange} />}
+            main={
+              <DirectorEditor
+                file={selectedFile}
+                onContentChange={handleContentChange}
+                onRename={handleRename}
+              />
+            }
           />
         }
       />

@@ -152,6 +152,26 @@
   margin-left: 8px;
 }
 
+.director-editor-rename-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.director-editor-rename-group .director-editor-filename + .director-editor-rename {
+  margin-left: 0;
+}
+
+.director-editor-rename {
+  color: var(--vscode-input-foreground, #cccccc);
+  background: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-focusBorder, #007fd4);
+  border-radius: 2px;
+  padding: 1px 4px;
+  font-family: inherit;
+  outline: none;
+}
+
 .director-spacer {
   flex: 1;
 }

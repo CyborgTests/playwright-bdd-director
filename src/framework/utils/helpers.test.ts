@@ -2,6 +2,7 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 import {
+  escapeRegExp,
   getErrorMessage,
   getMarkdownBaseName,
   getSuiteKey,
@@ -87,6 +88,14 @@ describe('getTestFileBaseName', () => {
 
   it('should throw error for file name starting with dot', () => {
     expect(() => getTestFileBaseName('.MANUAL.test.ts')).toThrow('Invalid file name')
+  })
+})
+
+describe('escapeRegExp', () => {
+  it('should make every special character match itself', () => {
+    const text = 'a.b*c+d?e^f$g{h}i(j)k|l[m]n\\o/p'
+    expect(new RegExp(`^${escapeRegExp(text)}$`).test(text)).toBe(true)
+    expect(new RegExp(escapeRegExp('a.b')).test('axb')).toBe(false)
   })
 })
 

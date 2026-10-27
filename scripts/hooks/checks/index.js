@@ -9,6 +9,7 @@ module.exports = [
   require('./protect-paths'),
   require('./guard-git-and-destructive'),
   require('./note-generated-sync'),
+  require('./note-docs-sync'),
   require('./note-spec-mirror'),
   require('./note-ui-investigation'),
   require('./check-spec-budget'),

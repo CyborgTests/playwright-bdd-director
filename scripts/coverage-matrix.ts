@@ -2,6 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 
+import { allProjects } from '@/config/projects'
 import { CONFIG } from '@/framework/config'
 import {
   collectCoverageMatrix,
@@ -14,7 +15,7 @@ import { getIcon } from '@/framework/utils/icons'
 
 /**
  * Coverage matrix: every test generated from the specs - its layer, automated or walked by a
- * person (cyborg), share of automated steps
+ * person (cyborg), share of automated steps, last run per device; the same counts by spec tag
  * Usage: npm run matrix [-- @tags] [--json[=path]] [--html[=path]] [--md[=path]] [--min=<percent>]
  *
  * Examples:
@@ -59,7 +60,7 @@ async function main() {
   }
 
   const tags = args.filter((arg) => arg.startsWith('@'))
-  const collected = await collectCoverageMatrix()
+  const collected = await collectCoverageMatrix(allProjects)
   const matrix = tags.length > 0 ? filterCoverageByTags(collected, tags) : collected
   const color = process.stdout.isTTY && !process.env.NO_COLOR
   console.log(`${renderConsole(matrix, { color })}\n`)

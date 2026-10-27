@@ -5,7 +5,7 @@ import { getIcon } from '@/framework/utils/icons'
 describe('getIcon', () => {
   it('should return the icon of each message type', () => {
     expect((['start', 'success', 'warning', 'error', 'info', 'fix'] as const).map(getIcon)).toEqual(
-      ['✨', '✅', '⚠️', '❌', '💡', '🔧']
+      ['✨', '✅', '🔶', '❌', '💡', '🔧']
     )
   })
 

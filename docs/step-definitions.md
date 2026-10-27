@@ -76,7 +76,7 @@ Both formats generate the same kind of tests, share step definitions, hooks, tag
 
 - Markdown: `##` suite, `###` test case, `####` step, `@tags` lines above `##` / `###` headings (as in Gherkin), an examples table under a test case, `### Background`; bullet lines are notes for people. `npm run stage` formats the files as dense as Gherkin: no blank lines but around the `---` before every test case.
 - Gherkin: anything the Gherkin parser accepts - Background, Rule (with its own Background), Scenario Outline with Examples (tagged too), DataTable, DocString, `# language:`.
-- Markdown stays simple on purpose: tags go on the suite and the test case only. A group of cases with shared tags (Rule) becomes its own spec, tagged rows (several Examples) become separate test cases. A suite that needs more moves to Gherkin: `npm run adapt <suite>` converts it (and back, while it fits Markdown).
+- Markdown stays simple on purpose: tags go on the suite and the test case only. A group of cases with shared tags (Rule) becomes its own spec, tagged rows (several Examples) become separate test cases. A suite that needs more moves to Gherkin: `npm run adapt <suite>` converts it (and back, while it fits Markdown); its steps come out as `*`, so set Given / When / Then before using it.
 - Markdown steps have no keyword - define them with `Step(…)`. Gherkin keywords do not affect matching either, so one definition can serve both formats only when the texts match; different wordings share code by calling one step function from another (`src/steps/cart.steps.ts`).
 
 ## Layers
@@ -259,7 +259,7 @@ Every run writes Cucumber reports of all tests, see README "Reports":
 
 ## Coverage matrix
 
-`npm run matrix` lists every generated test with its layer, status - `auto`, `cyborg`, `fixme` (API test waiting for definitions), `disabled` (`@skip` / `@fixme` / `@fail`) - and how many of its steps are automated. It generates the tests in memory, so it always reflects the current specs and step definitions.
+`npm run matrix` lists every generated test with its layer, status - `auto`, `cyborg`, `fixme` (API test waiting for definitions), `disabled` (`@skip` / `@fixme` / `@fail`) - and how many of its steps are automated. It generates the tests in memory, so it always reflects the current specs and step definitions. Next to that it shows the last run of every test on every device that runs it - one run per Playwright project, as `npm run dress` counts them (`test-results/last-run.json`, kept across partial runs) - and the same counts by spec tag.
 
 ## Migrating from other tools
 

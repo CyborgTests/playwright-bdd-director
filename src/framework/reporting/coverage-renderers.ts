@@ -51,6 +51,14 @@ const MD_RUN: Record<RunState, string> = {
 
 const RUN_STATES: RunState[] = ['passed', 'failed', 'flaky', 'skipped', 'notRun']
 
+const RUN_NAME: Record<RunState, string> = {
+  passed: 'passed',
+  failed: 'failed',
+  flaky: 'flaky',
+  skipped: 'skipped',
+  notRun: 'not run'
+}
+
 const ANSI = { bold: 1, dim: 2, red: 31, green: 32, yellow: 33, magenta: 35, cyan: 36 } as const
 
 type Paint = (style: keyof typeof ANSI, text: string) => string
@@ -153,7 +161,7 @@ export function renderConsole(
         )
       )
     }
-    lines.push('')
+    lines.push('', paint('dim', `    ${formatTagNote(matrix)}`), '')
   }
 
   const { summary } = matrix
@@ -163,7 +171,7 @@ export function renderConsole(
 
   lines.push(
     paint('dim', `  ${'─'.repeat(BAR_WIDTH + 30)}`),
-    `  ${paint('bold', 'Total')}  ${summary.totalTests} tests in ${matrix.suites.length} suite(s)`,
+    `  ${paint('bold', 'Total')}  ${summary.totalTests} tests · ${summary.runs} runs in ${matrix.suites.length} suite(s)`,
     totalLine('Automated', summary.automatedTests, summary.totalTests),
     totalLine('Cyborg', summary.cyborgTests, summary.totalTests, 'cyan'),
     totalLine('Fixme (API)', summary.fixmeTests, summary.totalTests, 'yellow'),
@@ -171,9 +179,8 @@ export function renderConsole(
     totalLine('Steps automated', summary.steps.automated, summary.steps.total),
     `  ${'Last run'.padEnd(16)}${formatLastRun(matrix, (state, text) => paint(RUN_STYLE[state], text))}`,
     '',
-    paint(
-      'dim',
-      `  ${STATUSES.map((status) => `${CONSOLE_STATUS[status]}: ${STATUS_LABEL[status]}`).join('   ')}`
+    ...STATUSES.map((status) =>
+      paint('dim', `  ${CONSOLE_STATUS[status].padEnd(statusWidth)}  ${STATUS_LABEL[status]}`)
     )
   )
   return lines.join('\n')
@@ -227,6 +234,8 @@ export function renderMarkdown(matrix: CoverageMatrix): string {
         ({ tag, summary }) =>
           `| ${tag} | ${summary.totalTests} | ${formatAutomated(summary)} | ${summary.cyborgTests} | ${summary.fixmeTests} | ${summary.disabledTests} | ${formatTagRun(summary)} |`
       ),
+      '',
+      formatTagNote(matrix),
       ''
     )
   }
@@ -343,7 +352,7 @@ td { font-variant-numeric: tabular-nums; }
 <div class="card"><b>${summary.cyborgTests}</b><span>cyborg</span></div>
 <div class="card"><b>${summary.fixmeTests}</b><span>fixme (API)</span></div>
 <div class="card"><b>${formatSteps(summary.steps)}</b><span>steps automated</span></div>
-<div class="card"><b>${summary.run.failed}</b><span>failed last run</span></div>
+<div class="card"><b>${summary.run.failed}</b><span>failed runs</span></div>
 </div>
 <div class="filters" role="group" aria-label="Filter tests">
 <button type="button" data-filter="all" aria-pressed="true">All</button>
@@ -352,7 +361,7 @@ ${STATUSES.map((status) => `<button type="button" data-filter="${status}" aria-p
 ${suites}
 <p class="empty hidden">No tests match this filter.</p>
 ${renderHtmlTags(matrix)}
-<p class="legend">${STATUSES.map((status) => `${escapeHtml(CONSOLE_STATUS[status])}: ${escapeHtml(STATUS_LABEL[status])}`).join(' · ')}. Steps automated include Background steps. Last run: latest result on every project the test ran on, passed / runs; a known bug (@fail) failing as expected passes.</p>
+<p class="legend">${STATUSES.map((status) => `${escapeHtml(CONSOLE_STATUS[status])}: ${escapeHtml(STATUS_LABEL[status])}`).join(' · ')}. Steps automated include Background steps. Last run: latest result on every project (device) that runs the test, passed / runs; a known bug (@fail) failing as expected passes.</p>
 ${errors}
 </main>
 <script>
@@ -379,14 +388,15 @@ document.querySelectorAll('[data-filter]').forEach(function (button) {
 
 export function formatSummary(summary: CoverageSummary): string {
   return (
-    `${summary.totalTests} tests · automated ${summary.automatedTests} (${summary.automatedPercent}%)` +
+    `${summary.totalTests} tests · ${summary.runs} runs · automated ${summary.automatedTests} (${summary.automatedPercent}%)` +
     ` · cyborg ${summary.cyborgTests} · fixme ${summary.fixmeTests} · disabled ${summary.disabledTests}` +
     ` · steps automated ${formatSteps(summary.steps)}`
   )
 }
 
 /** Coverage by spec tag; the status filters leave it as is */
-function renderHtmlTags({ tags }: CoverageMatrix): string {
+function renderHtmlTags(matrix: CoverageMatrix): string {
+  const { tags } = matrix
   if (tags.length === 0) return ''
   const rows = tags
     .map(
@@ -402,7 +412,17 @@ function renderHtmlTags({ tags }: CoverageMatrix): string {
 ${rows}
 </tbody>
 </table>
+<p class="legend">${escapeHtml(formatTagNote(matrix))}</p>
 </details>`
+}
+
+/** Why the tag rows do not add up to the total: several tags per test, tests without one */
+function formatTagNote({ untagged }: CoverageMatrix): string {
+  const left =
+    untagged.totalTests > 0
+      ? `; ${untagged.totalTests} tests (${untagged.runs} runs) without a tag are not listed`
+      : ''
+  return `A test with several tags counts in each of them${left}.`
 }
 
 /** `92% 11/12` */
@@ -410,32 +430,40 @@ function formatAutomated(summary: CoverageSummary): string {
   return `${summary.automatedPercent}% ${summary.automatedTests}/${summary.totalTests}`
 }
 
-/** `passed 10/12 · failed 1` - failed and flaky only when there are any; `not run` when none ran */
-function formatTagRun({ run, totalTests }: CoverageSummary): string {
-  if (run.notRun === totalTests) return 'not run'
+/** `passed 20/24 runs · failed 1` - failed and flaky only when there are any; `not run` when none ran */
+function formatTagRun({ run, runs }: CoverageSummary): string {
+  if (run.notRun === runs) return 'not run'
   const problems = (['failed', 'flaky'] as const)
     .filter((state) => run[state] > 0)
     .map((state) => ` · ${state} ${run[state]}`)
-  return `passed ${run.passed}/${totalTests}${problems.join('')}`
+  return `passed ${run.passed}/${runs} runs${problems.join('')}`
 }
 
-/** `✔ passed 2/2`, `✘ failed 1/2 (firefox)` - runs passed of all its projects, the others named */
+/**
+ * `✔ passed 4/4`, `✘ failed 1/2 (failed: firefox)`, `✔ passed 2/4 (not run: tablet, mobile)` -
+ * runs passed of the test's projects, the ones that failed, were flaky or did not run named
+ */
 function formatRun({ run, runs }: TestCoverage, labels: Record<RunState, string>): string {
   if (run === 'notRun' || run === 'skipped') return labels[run]
-  const passed = runs.filter((r) => r.outcome === 'passed')
-  const others = runs.filter((r) => r.outcome !== 'passed' && r.outcome !== 'skipped')
-  const projects = others.length > 0 ? ` (${others.map((r) => r.project).join(', ')})` : ''
-  return `${labels[run]} ${passed.length}/${runs.length}${projects}`
+  const passed = runs.filter((r) => r.outcome === 'passed').length
+  const named = (['failed', 'flaky', 'notRun'] as const)
+    .map((state) => [state, runs.filter((r) => r.outcome === state).map((r) => r.project)] as const)
+    .filter(([, projects]) => projects.length > 0)
+    .map(([state, projects]) => `${RUN_NAME[state]}: ${projects.join(', ')}`)
+  return `${labels[run]} ${passed}/${runs.length}${named.length > 0 ? ` (${named.join('; ')})` : ''}`
 }
 
-/** `passed 30 · failed 1 · flaky 0 · skipped 2 · not run 2 · 2026-10-26 21:47 UTC` */
+/** `passed 72/75 runs · failed 0 · flaky 0 · skipped 1 · not run 2 · 2026-10-26 21:47 UTC` */
 function formatLastRun(
   { summary, lastRunAt }: CoverageMatrix,
   paint: (state: RunState, text: string) => string = (_, text) => text
 ): string {
   if (!lastRunAt) return 'no results yet - run the tests (npm run play)'
   const counts = RUN_STATES.map((state) =>
-    paint(state, `${state === 'notRun' ? 'not run' : state} ${summary.run[state]}`)
+    paint(
+      state,
+      `${RUN_NAME[state]} ${summary.run[state]}${state === 'passed' ? `/${summary.runs} runs` : ''}`
+    )
   )
   return `${counts.join(' · ')} · ${lastRunAt.slice(0, 16).replace('T', ' ')} UTC`
 }

@@ -52,11 +52,16 @@ function main() {
     )
     fs.rmSync(specPath)
     console.log(`${getIcon('fix')}  ${toPosix(specPath)} → ${toPosix(target)}`)
-    console.log(
-      toFeature
-        ? '    Steps start with "*": change them to Given / When / Then as you like'
-        : '    Step keywords are dropped: step definitions match the step text only'
-    )
+    if (toFeature) {
+      // Markdown steps have no keywords, and which one fits (context, action, outcome) takes
+      // understanding the step - adapt leaves it to the author
+      console.log(
+        `\n${getIcon('warning')}  Not finished: every step starts with "*" - Gherkin without Given / When / Then.\n` +
+          `    Set the keywords in ${toPosix(target)} before using it (adapt cannot tell context from action from outcome)`
+      )
+    } else {
+      console.log('    Step keywords are dropped: step definitions match the step text only')
+    }
   }
   console.log(`\n${getIcon('info')}  Check specs and step definitions: npm run dress\n`)
 }

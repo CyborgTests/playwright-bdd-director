@@ -67,7 +67,8 @@ describe('buildCoverageMatrix', () => {
       disabledTests: 1,
       automatedPercent: 25,
       steps: { automated: 5, total: 8 },
-      run: { passed: 0, failed: 0, flaky: 0, skipped: 0, notRun: 4 }
+      runs: 0,
+      run: { passed: 0, failed: 0, flaky: 0, skipped: 0, notRun: 0 }
     })
     expect(matrix.lastRunAt).toBeNull()
   })
@@ -94,8 +95,39 @@ describe('buildCoverageMatrix', () => {
       ['Price API', 'skipped', 1],
       ['Old flow', 'notRun', 0]
     ])
-    expect(matrix.summary.run).toEqual({ passed: 0, failed: 1, flaky: 1, skipped: 1, notRun: 1 })
+    expect(matrix.summary.run).toEqual({ passed: 1, failed: 1, flaky: 1, skipped: 1, notRun: 0 })
     expect(matrix.lastRunAt).toBe(LATER)
+  })
+
+  it('should give a test one run per project that picks it, not run until it ran there', () => {
+    const projects = [
+      { name: 'api', grep: /@api/ },
+      { name: 'chrome', grep: /@ui/, grepInvert: /@cyborg/ },
+      { name: 'cyborg', grep: /@cyborg/ }
+    ]
+    const entry = (title: string, project: string) => ({
+      file: '.director/tests/test-suites/shop.md.test.ts',
+      title,
+      project,
+      outcome: 'passed' as const,
+      finishedAt: EARLIER
+    })
+    const matrix = buildCoverageMatrix(
+      { generations: [SHOP], errors: [] },
+      [entry('Add to cart', 'chrome'), entry('Add to cart', 'firefox')],
+      projects
+    )
+
+    expect(matrix.suites[0].tests.map((t) => [t.title, t.run, t.runs])).toEqual([
+      ['Add to cart', 'passed', [{ project: 'chrome', outcome: 'passed' }]],
+      ['Check colors', 'notRun', [{ project: 'cyborg', outcome: 'notRun' }]],
+      ['Price API', 'notRun', [{ project: 'api', outcome: 'notRun' }]],
+      ['Old flow', 'notRun', [{ project: 'chrome', outcome: 'notRun' }]]
+    ])
+    expect(matrix.summary).toMatchObject({
+      runs: 4,
+      run: { passed: 1, failed: 0, flaky: 0, skipped: 0, notRun: 3 }
+    })
   })
 
   it('should group tests by spec tag, most tests first, without run settings', () => {
@@ -109,6 +141,7 @@ describe('buildCoverageMatrix', () => {
       ['@checkout', 1]
     ])
     expect(matrix.tags[0].summary).toMatchObject({ automatedTests: 2, disabledTests: 1 })
+    expect(matrix.untagged.totalTests).toBe(2) // Check colors, Price API
   })
 
   it('should list generation errors with their spec', () => {

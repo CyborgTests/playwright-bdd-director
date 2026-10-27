@@ -55,7 +55,7 @@ describe('hook dispatcher', () => {
   })
 
   it('stays silent for unrelated files and invalid input', () => {
-    expect(edit('src/framework/core/md-parser.ts', 'const a = 1')).toEqual({})
+    expect(edit('src/schemas/user.schema.ts', 'const a = 1')).toEqual({})
     const result = spawnSync(process.execPath, [dispatcher, 'edit'], {
       input: 'not json',
       encoding: 'utf8'
@@ -130,7 +130,29 @@ describe('check-test-conventions', () => {
       edit('src/pages/LoginPage.ts', '// await page.waitForTimeout(500)').hookSpecificOutput
         ?.additionalContext ?? ''
     ).not.toContain('waitForTimeout')
-    expect(edit('src/framework/bdd/generator.ts', 'page.waitForTimeout(1)')).toEqual({})
+    expect(
+      edit('src/framework/bdd/generator.ts', 'page.waitForTimeout(1)').hookSpecificOutput
+        ?.additionalContext ?? ''
+    ).not.toContain('waitForTimeout')
+  })
+})
+
+describe('note-docs-sync', () => {
+  it.each(['src/framework/reporting/coverage-matrix.ts', 'scripts/adapt.ts'])(
+    'reminds to update the docs for %s',
+    (filePath) => {
+      expect(edit(filePath).hookSpecificOutput?.additionalContext).toContain('grep the command')
+    }
+  )
+
+  it.each([
+    'src/framework/reporting/coverage-matrix.test.ts',
+    'scripts/hooks/hooks.test.ts',
+    'src/pages/ProductsPage.ts'
+  ])('stays quiet for %s', (filePath) => {
+    expect(edit(filePath).hookSpecificOutput?.additionalContext ?? '').not.toContain(
+      'grep the command'
+    )
   })
 })
 

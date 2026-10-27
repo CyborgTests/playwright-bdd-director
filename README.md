@@ -159,28 +159,31 @@ npm run matrix -- @smoke                 # only tests tagged @smoke
 
     Test                                            Layer  Devices  Status      Steps auto  Last run
     Open "Signup / Login" Page from Header          UI     all      ✔ auto      4/4         ✔ passed 4/4
-    Return to Home Page from "Signup / Login" Page  UI     all      ✔ auto      4/4         ✘ failed 3/4 (firefox)
+    Return to Home Page from "Signup / Login" Page  UI     all      ✔ auto      4/4         ✘ failed 2/4 (failed: firefox; not run: mobile)
     Subscribe to Newsletter from Footer             UI     all      ✋ cyborg    1/5         · not run
 
   By tag
 
     Tag           Tests  Automated     Cyborg  Last run
-    @all-devices      8  88% 7/8            1  passed 6/8 · failed 1
-    @smoke            5  100% 5/5           0  passed 5/5
+    @all-devices      8  88% 7/8            1  passed 26/29 runs · failed 1
+    @smoke            5  100% 5/5           0  passed 14/14 runs
 
-  Total  16 tests in 4 suite(s)
+    A test with several tags counts in each of them; 6 tests (9 runs) without a tag are not listed.
+
+  Total  16 tests · 38 runs in 4 suite(s)
   Automated       ███████████████████░  94% 15/16
   Cyborg          █░░░░░░░░░░░░░░░░░░░   6% 1/16
   Fixme (API)     ░░░░░░░░░░░░░░░░░░░░   0% 0/16
   Disabled        ░░░░░░░░░░░░░░░░░░░░   0% 0/16
   Steps automated ██████████████████░░  91% 41/45
-  Last run        passed 14 · failed 1 · flaky 0 · skipped 0 · not run 1 · 2026-10-26 23:00 UTC
+  Last run        passed 35/38 runs · failed 1 · flaky 0 · skipped 0 · not run 2 · 2026-10-26 23:00 UTC
 ```
 
 - **Status**: `auto` every step automated · `cyborg` a person walks the rest · `fixme` an API test waiting for step definitions · `disabled` `@skip` / `@fixme` / `@fail` in the spec
 - **Steps auto**: automated / total steps of the test, Background included
-- **Last run**: the latest result on every device the test ran on - passed / runs, the devices where it failed or was flaky in brackets. Each run replaces the results of the tests it ran and keeps the others (`npm run play cyborg` leaves the automated results), in `test-results/last-run.json` (`LAST_RUN_FILE`). A known bug (`@fail`) failing as expected counts as passed
-- **By tag**: the same counts for every spec tag across suites, most tests first; run settings (`@retries:N`, `@timeout:N`, `@fail:<device>`) get no row. `npm run matrix -- @smoke` keeps only the tests with the tag
+- **Runs**: a test runs once per device that picks it (Playwright project: API once, UI on desktops, `@all-devices` on tablets and mobiles too, cyborg in its own project) - `npm run dress` counts the same runs
+- **Last run**: the latest result of every run of the test - passed / runs, in brackets the devices where it failed, was flaky or has not run yet; the totals and **By tag** count runs too. Each run replaces the results of the tests it ran and keeps the others (`npm run play cyborg` leaves the automated results), in `test-results/last-run.json` (`LAST_RUN_FILE`). A known bug (`@fail`) failing as expected counts as passed
+- **By tag**: the same counts for every spec tag across suites, most tests first; run settings (`@retries:N`, `@timeout:N`, `@fail:<device>`) get no row. The rows do not add up to the total: a test with several tags counts in each, tests without a tag are only counted in the note under the table. `npm run matrix -- @smoke` keeps only the tests with the tag
 - **HTML** is a single self-contained file with filters by status and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
 ### 12. Run in CI
@@ -281,6 +284,7 @@ A combined visual interface - the Director UI (built in this project) together w
 
 - **File Explorer** - browse and edit Markdown and Gherkin specs with File Editor
 - **Stage** - format the Markdown specs
+- **Rename and convert** - double-click the file name above the editor: type a new name (Enter) or pick the other format from the `.md` / `.feature` list. A new format runs `npm run adapt`, a new name runs `npm run rename`, both - the conversion first, and only when the name is free; Escape cancels. The output (the "Not finished" warning too) goes to Output
 
 **Playwright UI (Playwright's part):**
 
@@ -327,6 +331,7 @@ npm run show
   - `npm run steps <suite...>` - step definition skeletons for the steps without one
   - `npm run stage` - formats the Markdown specs (`---` before every test case)
   - `npm run adapt <suite...>` - moves a spec between Markdown and Gherkin
+  - `npm run rename <suite> <new-name>` - renames a spec and its step file
   - `npm run play` - runs tests by type, suite and tag
 
 ## 📝 Specs
@@ -375,7 +380,7 @@ Feature: Cart
 
 Both formats work the same way and can live side by side; pick per suite what reads best for its authors. Base names are unique across `test-suites/**` (`auth.md` and `auth.feature` cannot coexist) - the name is the suite tag (`npm run play auth`).
 
-`npm run adapt <suite...>` moves a suite to the other format and removes the old file - tags, `[ID]`s, Background, examples and notes move along (notes become descriptions and comments in Gherkin). Markdown steps become `*` steps, Gherkin steps lose their keywords; step definitions match the step text either way, so the tests stay the same. A suite with what Markdown cannot hold (Rule, DataTable, DocString, tagged or named Examples) stays in Gherkin: `adapt` lists it and changes nothing.
+`npm run adapt <suite...>` moves a suite to the other format and removes the old file - tags, `[ID]`s, Background, examples and notes move along (notes become descriptions and comments in Gherkin). Gherkin steps lose their keywords; step definitions match the step text either way, so the tests stay the same. **Markdown → Gherkin is not finished by `adapt`**: Markdown steps have no keywords, so every step comes out as `*` - set Given / When / Then before using the `.feature` file (which one fits takes understanding the step, `adapt` warns about it). A suite with what Markdown cannot hold (Rule, DataTable, DocString, tagged or named Examples) stays in Gherkin: `adapt` lists it and changes nothing.
 
 ### 3. Layers
 
@@ -475,7 +480,7 @@ playwright-bdd-director/
 │       ├── reporting/     # Coverage matrix, Cucumber reports, console output
 │       ├── constants/ errors/ utils/
 │       └── config.ts      # Framework configuration (env-overridable paths)
-├── scripts/               # CLI: play, dress, stage, steps, matrix, ci; generate-tests (run by the config)
+├── scripts/               # CLI: play, dress, stage, adapt, rename, steps, matrix, ci; generate-tests (run by the config)
 ├── packages/              # Director UI & Playwright integration
 └── .director/tests/       # Generated tests (gitignored, rewritten on every run)
 ```
@@ -596,6 +601,7 @@ npm run dress        # check specs and step definitions; report in test-results/
 npm run steps auth   # step definition skeletons for steps of auth.md without one
 npm run stage        # format the Markdown specs
 npm run adapt auth   # auth.md → auth.feature (and back)
+npm run rename auth login  # auth.md → login.md, src/steps/auth.steps.ts → login.steps.ts
 npm run show         # Playwright UI mode with the Director
 npm run lint:fix     # ESLint fix
 npm run format       # Prettier format
@@ -617,7 +623,7 @@ npm run format       # Prettier format
     Check invoice of placed order (cyborg: a person walks these steps)
       • And user downloads the invoice - definition without code: src/steps/cart.steps.ts:69
 
-⏸️  Disabled and known bugs
+💤  Disabled and known bugs
   cart.feature › Quantity 0 is not added to cart    @fail
   cart.feature › Place order with delivery comment  @fail:tablet
 
@@ -651,6 +657,7 @@ npm run test:coverage # Generate coverage report
 - `gherkin-parser.ts` - Gherkin documents
 - `spec-document.ts` - a spec of either format as one Gherkin document for the generator
 - `spec-converter.ts` - Markdown ↔ Gherkin with notes kept (`npm run adapt`)
+- `spec-rename.ts` - a new name for a spec and its step file, all or nothing (`npm run rename`)
 
 **Validation (`src/framework/validation/`):** `md-validator.ts` - Markdown structure check and formatting (`stage`).
 

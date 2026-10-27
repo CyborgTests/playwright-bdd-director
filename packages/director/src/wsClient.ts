@@ -76,6 +76,21 @@ export async function deleteFile(name: string) {
   return sendRequest('DELETE_FILE', { name })
 }
 
+/** `npm run adapt` on the spec: .md ↔ .feature, the new file replaces it (`target`) */
+export async function adaptFile(name: string) {
+  const result = await sendRequest('ADAPT_FILE', { name }, 60000)
+  return result as { output: string; target: string }
+}
+
+/**
+ * `npm run rename` on the spec: new base name for it and its step file (`target`); `check` only
+ * finds out whether the name is free (rejects otherwise)
+ */
+export async function renameFile(name: string, newName: string, check = false) {
+  const result = await sendRequest('RENAME_FILE', { name, newName, check }, 60000)
+  return result as { output: string; target: string }
+}
+
 export async function runStage() {
   const result = await sendRequest('RUN_STAGE', undefined, 300000)
   return result as { output: string; code: number }

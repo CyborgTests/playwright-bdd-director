@@ -35,6 +35,7 @@ paths:
 
 - React 19 + Vite, own `package.json`/tsconfig; talks to the patched runner over WebSocket (`wsClient.ts`).
 - The WebSocket server reads, writes and deletes specs, so it starts in UI mode only, listens on `127.0.0.1` and accepts only the random token injected into `uiMode.html`; keep all three when changing it.
+- A command it runs with a value from a message (`ADAPT_FILE`, `RENAME_FILE`) takes only an existing spec of `test-suites` and spawns without a shell, so the value never reaches a command line.
 - After changes run `npm run build` (builds director + trace-viewer, then re-patches Playwright) and check the UI with `npm run show`.
 
 ## Playwright integration

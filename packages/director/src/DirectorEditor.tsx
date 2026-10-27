@@ -69,10 +69,17 @@ function buildMarkdownComponents(content: string): Components {
 export interface DirectorEditorProps {
   file: TestFile | null
   onContentChange: (content: string) => void
+  /** The file name was edited in the toolbar: a new extension converts the spec */
+  onRename?: (file: TestFile, newName: string) => void
 }
 
-export const DirectorEditor: React.FC<DirectorEditorProps> = ({ file, onContentChange }) => {
+export const DirectorEditor: React.FC<DirectorEditorProps> = ({
+  file,
+  onContentChange,
+  onRename
+}) => {
   const [mode, setMode] = React.useState<EditorMode>('editor')
+  const [renaming, setRenaming] = React.useState(false)
   const [editedContent, setEditedContent] = React.useState<string>(file?.content || '')
   const markdownComponents = React.useMemo(
     () => buildMarkdownComponents(editedContent),
@@ -81,7 +88,33 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({ file, onContentC
 
   React.useEffect(() => {
     setEditedContent(file?.content || '')
+    setRenaming(false)
   }, [file?.path])
+
+  // Rename: the name is typed, the extension picked from the two a spec can have
+  const baseRef = React.useRef<HTMLInputElement>(null)
+  const extensionRef = React.useRef<HTMLSelectElement>(null)
+  const renameDone = React.useRef(false)
+  const nameParts = (name: string) => {
+    const [, folder = '', base, extension = '.md'] = name.match(
+      /^(.*\/)?([^/]+?)(\.md|\.feature)?$/
+    )!
+    return { folder, base, extension }
+  }
+
+  const startRename = () => {
+    renameDone.current = false
+    setRenaming(true)
+  }
+
+  const finishRename = (cancel = false) => {
+    if (!file || renameDone.current) return // Enter / select change, then the blur of unmounting
+    renameDone.current = true
+    setRenaming(false)
+    const base = baseRef.current?.value.trim() ?? ''
+    const newName = `${nameParts(file.name).folder}${base}${extensionRef.current?.value ?? ''}`
+    if (!cancel && base && newName !== file.name) onRename?.(file, newName)
+  }
 
   const handleContentChange = (content: string) => {
     setEditedContent(content)
@@ -105,7 +138,51 @@ export const DirectorEditor: React.FC<DirectorEditorProps> = ({ file, onContentC
   return (
     <div className="director-editor">
       <Toolbar noShadow={true} className="director-section-toolbar">
-        <span className="director-editor-filename">{file?.name || 'No file selected'}</span>
+        {renaming ? (
+          <span
+            className="director-editor-rename-group"
+            onBlur={(e) => {
+              // Moving between the name and the extension keeps editing
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) finishRename()
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') finishRename()
+              if (e.key === 'Escape') finishRename(true)
+            }}
+          >
+            {nameParts(file.name).folder && (
+              <span className="director-editor-filename">{nameParts(file.name).folder}</span>
+            )}
+            <input
+              ref={baseRef}
+              className="director-editor-filename director-editor-rename"
+              aria-label="Spec name"
+              defaultValue={nameParts(file.name).base}
+              autoFocus
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <select
+              ref={extensionRef}
+              className="director-editor-rename"
+              aria-label="Spec format"
+              defaultValue={nameParts(file.name).extension}
+              onChange={() => finishRename()}
+            >
+              <option value=".md">.md</option>
+              <option value=".feature">.feature</option>
+            </select>
+          </span>
+        ) : (
+          <span
+            className="director-editor-filename"
+            title={
+              onRename ? 'Double-click to rename; .md ↔ .feature converts the spec' : undefined
+            }
+            onDoubleClick={() => onRename && startRename()}
+          >
+            {file.name}
+          </span>
+        )}
         <div className="director-spacer" />
 
         {/* Mode toggle */}

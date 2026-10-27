@@ -208,3 +208,8 @@ export function matchesSpecCase(
   if (specCase.id) return test.id === specCase.id
   return test.ttl === specCase.ttl || findExampleRow(specCase, test.ttl) !== null
 }
+
+/** Text matched literally inside a RegExp */
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+}
