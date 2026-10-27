@@ -45,8 +45,13 @@ export class ProductsPage extends BasePage {
     await this.continueShopping()
   }
 
+  /**
+   * Waits for the product page load: its "Add to cart" handler comes from cart.js at the end of the
+   * page, and a click before that adds nothing (seen on Firefox, trace 2026-10-27)
+   */
   async openProduct(name: string): Promise<void> {
     await this.productCard(name).getByRole('link', { name: 'View Product' }).click()
+    await this.page.waitForURL(/\/product_details\/\d+/)
   }
 
   async expectProductPrice(name: string, price: string): Promise<void> {

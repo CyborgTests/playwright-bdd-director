@@ -1,7 +1,8 @@
 import { type BuildResult, buildTests } from '../bdd/build'
 import type { GeneratedTest } from '../bdd/generator'
-import type { Devices } from '../constants/tags'
-import { toPosix } from '../utils/helpers'
+import { type Devices, isRunSettingTag } from '../constants/tags'
+import { toPosix, toProjectPath } from '../utils/helpers'
+import { type LastRunEntry, readLastRun, type RunOutcome } from './last-run'
 
 /**
  * - automated: every step has a step definition
@@ -10,6 +11,14 @@ import { toPosix } from '../utils/helpers'
  * - disabled: @skip / @fixme / @fail in the spec
  */
 export type TestStatus = 'automated' | 'cyborg' | 'fixme' | 'disabled'
+
+/** Last run of a test over its projects: any failed → failed, any flaky → flaky, all skipped → skipped */
+export type RunState = RunOutcome | 'notRun'
+
+export interface ProjectRun {
+  project: string
+  outcome: RunOutcome
+}
 
 export interface StepCount {
   automated: number
@@ -23,6 +32,8 @@ export interface TestCoverage {
   status: TestStatus
   tags: string[] // spec tags of suite, rule and test case (layer excluded)
   steps: StepCount // Background steps included
+  run: RunState
+  runs: ProjectRun[] // latest result per project, none when the test has not run
 }
 
 export interface CoverageSummary {
@@ -33,6 +44,7 @@ export interface CoverageSummary {
   disabledTests: number
   automatedPercent: number
   steps: StepCount
+  run: Record<RunState, number> // tests by last run
 }
 
 export interface SuiteCoverage {
@@ -42,10 +54,18 @@ export interface SuiteCoverage {
   summary: CoverageSummary
 }
 
+/** Tests of one spec tag across suites */
+export interface TagCoverage {
+  tag: string
+  summary: CoverageSummary
+}
+
 export interface CoverageMatrix {
   generatedAt: string
   suites: SuiteCoverage[]
   summary: CoverageSummary
+  tags: TagCoverage[] // most tests first; layers and run settings (@retries:2) have no group
+  lastRunAt: string | null // end of the latest run among the tests shown
   errors: string[] // specs that could not be generated, problems that stop a run
 }
 
@@ -54,15 +74,22 @@ export interface CoverageMatrix {
  * with its layer, whether a person still walks it and how many of its steps are automated
  */
 export async function collectCoverageMatrix(): Promise<CoverageMatrix> {
-  return buildCoverageMatrix(await buildTests())
+  return buildCoverageMatrix(await buildTests(), readLastRun())
 }
 
-export function buildCoverageMatrix({
-  generations,
-  errors
-}: Pick<BuildResult, 'generations' | 'errors'>): CoverageMatrix {
+/** @param lastRun - results of the last-run reporter, matched by generated test file and title */
+export function buildCoverageMatrix(
+  { generations, errors }: Pick<BuildResult, 'generations' | 'errors'>,
+  lastRun: LastRunEntry[] = []
+): CoverageMatrix {
+  const matched: LastRunEntry[] = []
   const suites = generations.map((generation): SuiteCoverage => {
-    const tests = generation.tests.map(toTestCoverage)
+    const file = toProjectPath(generation.testPath)
+    const tests = generation.tests.map((test) => {
+      const entries = lastRun.filter((entry) => entry.file === file && entry.title === test.title)
+      matched.push(...entries)
+      return toTestCoverage(test, entries)
+    })
     return {
       spec: toPosix(generation.specPath),
       suiteTtl: generation.suiteTtl,
@@ -74,6 +101,12 @@ export function buildCoverageMatrix({
     generatedAt: new Date().toISOString(),
     suites,
     summary: summarize(suites.flatMap((suite) => suite.tests)),
+    tags: groupByTag(suites),
+    lastRunAt:
+      matched
+        .map((entry) => entry.finishedAt)
+        .sort()
+        .at(-1) ?? null,
     errors: errors.flatMap(({ file, errors: messages }) =>
       messages.map((message) => `${toPosix(file)}: ${message}`)
     )
@@ -91,10 +124,25 @@ export function filterCoverageByTags(matrix: CoverageMatrix, tags: string[]): Co
     })
     .filter((suite) => suite.tests.length > 0)
 
-  return { ...matrix, suites, summary: summarize(suites.flatMap((suite) => suite.tests)) }
+  return {
+    ...matrix,
+    suites,
+    summary: summarize(suites.flatMap((suite) => suite.tests)),
+    tags: groupByTag(suites)
+  }
 }
 
-function toTestCoverage(test: GeneratedTest): TestCoverage {
+function groupByTag(suites: SuiteCoverage[]): TagCoverage[] {
+  const tests = suites.flatMap((suite) => suite.tests)
+  const tags = [...new Set(tests.flatMap((test) => test.tags))].filter(
+    (tag) => !isRunSettingTag(tag)
+  )
+  return tags
+    .map((tag) => ({ tag, summary: summarize(tests.filter((test) => test.tags.includes(tag))) }))
+    .sort((a, b) => b.summary.totalTests - a.summary.totalTests || a.tag.localeCompare(b.tag))
+}
+
+function toTestCoverage(test: GeneratedTest, entries: LastRunEntry[]): TestCoverage {
   const status: TestStatus = test.fixme
     ? 'fixme'
     : test.modifier
@@ -108,8 +156,17 @@ function toTestCoverage(test: GeneratedTest): TestCoverage {
     devices: test.devices,
     status,
     tags: test.tags,
-    steps: test.steps
+    steps: test.steps,
+    run: runState(entries.map((entry) => entry.outcome)),
+    runs: entries.map(({ project, outcome }) => ({ project, outcome }))
   }
+}
+
+function runState(outcomes: RunOutcome[]): RunState {
+  if (outcomes.length === 0) return 'notRun'
+  if (outcomes.includes('failed')) return 'failed'
+  if (outcomes.includes('flaky')) return 'flaky'
+  return outcomes.every((outcome) => outcome === 'skipped') ? 'skipped' : 'passed'
 }
 
 function summarize(tests: TestCoverage[]): CoverageSummary {
@@ -122,6 +179,13 @@ function summarize(tests: TestCoverage[]): CoverageSummary {
     fixmeTests: count('fixme'),
     disabledTests: count('disabled'),
     automatedPercent: tests.length ? Math.round((automatedTests / tests.length) * 100) : 0,
+    run: {
+      passed: tests.filter((test) => test.run === 'passed').length,
+      failed: tests.filter((test) => test.run === 'failed').length,
+      flaky: tests.filter((test) => test.run === 'flaky').length,
+      skipped: tests.filter((test) => test.run === 'skipped').length,
+      notRun: tests.filter((test) => test.run === 'notRun').length
+    },
     steps: tests.reduce<StepCount>(
       (sum, test) => ({
         automated: sum.automated + test.steps.automated,

@@ -16,7 +16,9 @@ export const CONFIG = {
     // Written on every run for test management tools and CI. Cucumber: <project>/cucumber-report.json
     // and cucumber-messages.ndjson per device for the tools, cucumber-report.html of all for people
     cucumberReports: process.env.CUCUMBER_REPORTS_DIR ?? 'test-results/cucumber',
-    junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml'
+    junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
+    // Latest result of every test per project, merged run after run - the coverage matrix shows it
+    lastRun: process.env.LAST_RUN_FILE ?? 'test-results/last-run.json'
   },
   /**
    * Step definitions: files of `steps` are loaded before generation; `npm run steps <suite>` writes

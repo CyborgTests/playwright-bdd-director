@@ -143,7 +143,7 @@ Every run also writes reports for test management tools and CI:
 
 ### 11. Check coverage
 
-See which tests are automated, which a person still walks and how many steps are automated - no test run needed:
+See which tests are automated, which a person still walks, how many steps are automated and how each test did in its last run - the matrix itself runs no test:
 
 ```bash
 npm run matrix                           # console table
@@ -157,10 +157,16 @@ npm run matrix -- @smoke                 # only tests tagged @smoke
   Site Navigation  test-suites/navigation.md
   █████████████░░░░░░░  67% automated 2/3
 
-    Test                                            Layer  Status      Steps auto
-    Open "Signup / Login" Page from Header          UI     ✔ auto      4/4
-    Return to Home Page from "Signup / Login" Page  UI     ✔ auto      4/4
-    Subscribe to Newsletter from Footer             UI     ✋ cyborg    1/5
+    Test                                            Layer  Devices  Status      Steps auto  Last run
+    Open "Signup / Login" Page from Header          UI     all      ✔ auto      4/4         ✔ passed 4/4
+    Return to Home Page from "Signup / Login" Page  UI     all      ✔ auto      4/4         ✘ failed 3/4 (firefox)
+    Subscribe to Newsletter from Footer             UI     all      ✋ cyborg    1/5         · not run
+
+  By tag
+
+    Tag           Tests  Automated     Cyborg  Last run
+    @all-devices      8  88% 7/8            1  passed 6/8 · failed 1
+    @smoke            5  100% 5/5           0  passed 5/5
 
   Total  16 tests in 4 suite(s)
   Automated       ███████████████████░  94% 15/16
@@ -168,10 +174,13 @@ npm run matrix -- @smoke                 # only tests tagged @smoke
   Fixme (API)     ░░░░░░░░░░░░░░░░░░░░   0% 0/16
   Disabled        ░░░░░░░░░░░░░░░░░░░░   0% 0/16
   Steps automated ██████████████████░░  91% 41/45
+  Last run        passed 14 · failed 1 · flaky 0 · skipped 0 · not run 1 · 2026-10-26 23:00 UTC
 ```
 
 - **Status**: `auto` every step automated · `cyborg` a person walks the rest · `fixme` an API test waiting for step definitions · `disabled` `@skip` / `@fixme` / `@fail` in the spec
 - **Steps auto**: automated / total steps of the test, Background included
+- **Last run**: the latest result on every device the test ran on - passed / runs, the devices where it failed or was flaky in brackets. Each run replaces the results of the tests it ran and keeps the others (`npm run play cyborg` leaves the automated results), in `test-results/last-run.json` (`LAST_RUN_FILE`). A known bug (`@fail`) failing as expected counts as passed
+- **By tag**: the same counts for every spec tag across suites, most tests first; run settings (`@retries:N`, `@timeout:N`, `@fail:<device>`) get no row. `npm run matrix -- @smoke` keeps only the tests with the tag
 - **HTML** is a single self-contained file with filters by status and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
 ### 12. Run in CI
@@ -513,6 +522,7 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 | `DRESS_REPORT_FILE`      | `test-results/dress-rehearsal.md`   | Report of `npm run dress`                                    |
 | `GENERATION_ERRORS_FILE` | `test-results/generation-errors.md` | Failed generation with stack traces (the console omits them) |
 | `JUNIT_REPORT_FILE`      | `test-results/junit.xml`            | JUnit XML of every run                                       |
+| `LAST_RUN_FILE`          | `test-results/last-run.json`        | Latest result per test and device for the coverage matrix    |
 | `CI_MIN_COVERAGE`        | -                                   | `npm run ci` fails below this automated tests share          |
 
 ### 2. Playwright Config
@@ -644,7 +654,7 @@ npm run test:coverage # Generate coverage report
 
 **Validation (`src/framework/validation/`):** `md-validator.ts` - Markdown structure check and formatting (`stage`).
 
-**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, `dress` report, Cucumber JSON / messages / HTML reporter, console formatter.
+**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, last-run reporter (results for the matrix), `dress` report, Cucumber JSON / messages / HTML reporter, console formatter.
 
 **Test Utilities (`src/test-utils/`):**
 

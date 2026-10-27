@@ -11,7 +11,9 @@ import { desktopDevices, handheldDevices } from '@/config/devices'
 import { CONFIG } from '../config'
 import {
   ALL_DEVICES_TAG,
+  CONFIGURE_TAG,
   CYBORG_LAYERS,
+  DEVICE_MODIFIER_TAG,
   type Devices,
   isKindTag,
   isLayerTag,
@@ -136,9 +138,6 @@ const PLAYWRIGHT_HOOKS: Record<HookKind, string> = {
 
 /** Special tags turned into Playwright modifiers; they stay test tags too (`play @slow`) */
 const MODIFIER_TAGS = ['@skip', '@fixme', '@fail'] as const
-const CONFIGURE_TAG = /^@(retries|timeout):(.*)$/
-/** The same modifiers for one device (`@fail:tablet`) - the other devices run the test as usual */
-const DEVICE_MODIFIER_TAG = /^@(skip|fixme|fail):(.*)$/
 
 /**
  * Import step definition files (CONFIG.bdd.steps) - each Given/When/Then call registers a definition

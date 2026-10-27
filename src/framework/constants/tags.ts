@@ -16,6 +16,12 @@ export const CYBORG_LAYERS: readonly string[] = ['@ui', '@e2e']
  */
 export const ALL_DEVICES_TAG = '@all-devices'
 
+/** Run settings of a level: `@retries:2`, `@timeout:90000` */
+export const CONFIGURE_TAG = /^@(retries|timeout):(.*)$/
+
+/** A modifier for one device (`@fail:tablet`) - the other devices run the test as usual */
+export const DEVICE_MODIFIER_TAG = /^@(skip|fixme|fail):(.*)$/
+
 /** Where a test runs: no browser (API), desktop browsers, or desktops plus tablets and mobiles */
 export type Devices = 'none' | 'desktop' | 'all'
 
@@ -23,6 +29,11 @@ export type LayerTag = (typeof LAYER_TAGS)[number]
 
 export function isLayerTag(tag: string): tag is LayerTag {
   return (LAYER_TAGS as readonly string[]).includes(tag)
+}
+
+/** A tag that tunes how a test runs rather than what it is about - no coverage group of its own */
+export function isRunSettingTag(tag: string): boolean {
+  return CONFIGURE_TAG.test(tag) || DEVICE_MODIFIER_TAG.test(tag)
 }
 
 export function isKindTag(tag: string): boolean {

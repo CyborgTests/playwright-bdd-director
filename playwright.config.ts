@@ -16,7 +16,9 @@ export default defineConfig({
     ['list'],
     // Test management tools (Xray, Zephyr, TestRail, CI): spec-structured Cucumber JSON, JUnit XML
     ['./src/framework/reporting/cucumber-reporter.ts'],
-    ['junit', { outputFile: CONFIG.paths.junitReport }]
+    ['junit', { outputFile: CONFIG.paths.junitReport }],
+    // Latest result per test and device for the coverage matrix (npm run matrix)
+    ['./src/framework/reporting/last-run-reporter.ts']
   ],
   use: {
     baseURL: 'https://www.automationexercise.com',
