@@ -183,6 +183,7 @@ npm run matrix -- @smoke                 # only tests tagged @smoke
 - **Steps auto**: automated / total steps of the test, Background included
 - **Runs**: a test runs once per device that picks it (Playwright project: API once, UI on desktops, `@all-devices` on tablets and mobiles too, cyborg in its own project) - `npm run dress` counts the same runs
 - **Last run**: the latest result of every run of the test - passed / runs, in brackets the devices where it failed, was flaky or has not run yet; the totals and **By tag** count runs too. Each run replaces the results of the tests it ran and keeps the others (`npm run play cyborg` leaves the automated results), in `test-results/last-run.json` (`LAST_RUN_FILE`). A known bug (`@fail`) failing as expected counts as passed
+- **Run history**: a run started with `npm run play ... -- --record` (`RECORD_RUN=1` for any other command, the **Record run** checkbox in UI mode) also keeps its own coverage matrix - every spec and the results of the tests this run ran - in `run-history/<end of the run>.json` (`RUN_HISTORY_DIR`, gitignored), one file per run, none overwritten. It is the data for a coverage trend
 - **By tag**: the same counts for every spec tag across suites, most tests first; run settings (`@retries:N`, `@timeout:N`, `@fail:<device>`) get no row. The rows do not add up to the total: a test with several tags counts in each, tests without a tag are only counted in the note under the table. `npm run matrix -- @smoke` keeps only the tests with the tag
 - **HTML** is a single self-contained file with filters by status and light/dark theme; **JSON** is the same data for CI, TMS or agents
 
@@ -200,6 +201,7 @@ npm run ci                            # dress -> automated tests -> coverage mat
 - Runs every automated test (`play auto`); cyborg tests need a person and are skipped
 - Failed tests do not stop the coverage matrix and reports; the exit code is 1 when any stage failed
 - `CI_MIN_COVERAGE=80 npm run ci` also fails when automated tests are below 80%
+- `RECORD_RUN=1 npm run ci` keeps the run in the run history: point `RUN_HISTORY_DIR` at a cached or persistent directory, CI workspaces start empty
 - Keep `test-results/` as the job artifacts: `junit.xml` (most CI services show it as test results, the device in `hostname`), `cucumber/`, `monocart-report/`, `coverage-matrix.{html,json,md}`
 
 ## ⚡ Spec-Driven Testing Platform
@@ -285,6 +287,7 @@ A combined visual interface - the Director UI (built in this project) together w
 - **File Explorer** - browse and edit Markdown and Gherkin specs with File Editor
 - **Stage** - format the Markdown specs
 - **Rename and convert** - double-click the file name above the editor: type a new name (Enter) or pick the other format from the `.md` / `.feature` list. A new format runs `npm run adapt`, a new name runs `npm run rename`, both - the conversion first, and only when the name is free; Escape cancels. The output (the "Not finished" warning too) goes to Output
+- **Record run** - checkbox in Testing Options: every run started while it is on keeps its coverage matrix in the run history (as `npm run play -- --record`)
 
 **Playwright UI (Playwright's part):**
 
@@ -528,6 +531,8 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 | `GENERATION_ERRORS_FILE` | `test-results/generation-errors.md` | Failed generation with stack traces (the console omits them) |
 | `JUNIT_REPORT_FILE`      | `test-results/junit.xml`            | JUnit XML of every run                                       |
 | `LAST_RUN_FILE`          | `test-results/last-run.json`        | Latest result per test and device for the coverage matrix    |
+| `RUN_HISTORY_DIR`        | `run-history`                       | Coverage matrix of every recorded run, one file each         |
+| `RECORD_RUN`             | -                                   | `1` records the run in the run history (`play -- --record`)  |
 | `CI_MIN_COVERAGE`        | -                                   | `npm run ci` fails below this automated tests share          |
 
 ### 2. Playwright Config
@@ -590,6 +595,7 @@ npm run play @smoke                 # All tests tagged @smoke
 npm run play ui auth @smoke         # UI auth tests tagged @smoke
 npm run play e2e mobile             # E2E tests on the mobile device
 npm run play auto chrome firefox    # Automated tests on desktop browsers only
+npm run play auto -- --record       # Automated tests, the run kept in the run history
 ```
 
 **Supported test types:** `auto`, `cyborg`, `api`, `ui`, `e2e`. Help: `npm run play -- --help`.
@@ -661,7 +667,7 @@ npm run test:coverage # Generate coverage report
 
 **Validation (`src/framework/validation/`):** `md-validator.ts` - Markdown structure check and formatting (`stage`).
 
-**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, last-run reporter (results for the matrix), `dress` report, Cucumber JSON / messages / HTML reporter, console formatter.
+**Reporting (`src/framework/reporting/`):** coverage matrix and its renderers, last-run reporter (results for the matrix, run history of recorded runs), `dress` report, Cucumber JSON / messages / HTML reporter, console formatter.
 
 **Test Utilities (`src/test-utils/`):**
 

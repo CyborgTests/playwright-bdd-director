@@ -18,7 +18,9 @@ export const CONFIG = {
     cucumberReports: process.env.CUCUMBER_REPORTS_DIR ?? 'test-results/cucumber',
     junitReport: process.env.JUNIT_REPORT_FILE ?? 'test-results/junit.xml',
     // Latest result of every test per project, merged run after run - the coverage matrix shows it
-    lastRun: process.env.LAST_RUN_FILE ?? 'test-results/last-run.json'
+    lastRun: process.env.LAST_RUN_FILE ?? 'test-results/last-run.json',
+    // Coverage matrix of every recorded run (RECORD_RUN=1), one file each - kept, not test results
+    runHistory: process.env.RUN_HISTORY_DIR ?? 'run-history'
   },
   /**
    * Step definitions: files of `steps` are loaded before generation; `npm run steps <suite>` writes

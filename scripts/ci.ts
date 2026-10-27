@@ -11,6 +11,7 @@ import { getIcon } from '@/framework/utils/icons'
  *
  * Usage: npm run ci
  *   CI_MIN_COVERAGE=80 npm run ci   # also fail when automated coverage < 80%
+ *   RECORD_RUN=1 npm run ci         # keep the run in the run history (RUN_HISTORY_DIR)
  */
 main()
 

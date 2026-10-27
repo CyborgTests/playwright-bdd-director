@@ -29,7 +29,7 @@ npm run steps <suite...>             # step definition skeletons into src/steps/
 npm run stage                        # format Markdown specs (`---` before every ###)
 npm run adapt <suite...>             # move a spec between .md and .feature (replaces the file)
 npm run rename <suite> <new-name>    # rename a spec and its step file (the suite tag changes too)
-npm run play <types...> [suites...] [@tags...] [devices...]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile
+npm run play <types...> [suites...] [@tags...] [devices...] [-- --record]  # types: auto|cyborg|api|ui|e2e; devices: chrome|firefox|tablet|mobile; --record: run-history/
 npm run matrix [-- --html --json --md --min=80]  # coverage matrix: layer, auto/cyborg/fixme, automated steps, last run, by tag
 npm run ci                           # CI: dress → automated tests → matrix (CI_MIN_COVERAGE=80 optional)
 npm run show | review                # Playwright UI mode with Director | Monocart report

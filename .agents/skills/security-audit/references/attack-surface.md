@@ -10,6 +10,7 @@ Reads, writes and deletes specs, runs `scripts/md-ts-director.ts`, `scripts/adap
 - Path traversal in `resolveSuitePath`: `..`, absolute paths, the `test-suites/` prefix, symlinks inside `test-suites/`, Windows drive letters and case.
 - `RUN_STAGE` spawns with `shell: true`: can any message field reach the command line?
 - `ADAPT_FILE` / `RENAME_FILE` pass a spec name (and a new base name) to `scripts/adapt.ts` / `scripts/rename.ts` (no shell, `runDirectorScript`): is it still checked against `resolveSuitePath` and an existing file, and can it start with `-` or name a spec outside `test-suites/`?
+- `SET_RECORD_RUN` (UI "Record run") sets or deletes `RECORD_RUN` in the runner process: does it still take only `record === true` and nothing that reaches other env vars?
 - Token exposure: console output, files readable by other local users, the served HTML read cross-origin.
 
 ## Director UI (`packages/director`, `packages/trace-viewer`)

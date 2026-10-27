@@ -26,4 +26,4 @@ export type {
 export { DirectorOutput } from './DirectorOutput'
 export { DirectorPanel } from './DirectorPanel'
 export { FileExplorer } from './FileExplorer'
-export { connectWs, getFiles, saveFile } from './wsClient'
+export { connectWs, getFiles, saveFile, setRecordRun } from './wsClient'

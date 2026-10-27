@@ -91,6 +91,11 @@ export async function renameFile(name: string, newName: string, check = false) {
   return result as { output: string; target: string }
 }
 
+/** "Record run" checkbox: the next run keeps its coverage matrix in the run history or not */
+export async function setRecordRun(record: boolean) {
+  return sendRequest('SET_RECORD_RUN', { record })
+}
+
 export async function runStage() {
   const result = await sendRequest('RUN_STAGE', undefined, 300000)
   return result as { output: string; code: number }

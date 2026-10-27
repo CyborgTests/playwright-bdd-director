@@ -219,6 +219,14 @@ wss.on('connection', (ws) => {
         }
       }
 
+      // "Record run" checkbox of UI mode, sent before every run: the last-run reporter of this
+      // process reads RECORD_RUN when the run ends (only a boolean, nothing else is taken)
+      else if (msg.type === 'SET_RECORD_RUN') {
+        if (msg.data && msg.data.record === true) process.env.RECORD_RUN = '1';
+        else delete process.env.RECORD_RUN;
+        ws.send(JSON.stringify({ id: msg.id, type: 'SUCCESS' }));
+      }
+
     } catch (e) {
       ws.send(JSON.stringify({ id: msg?.id || 0, type: 'ERROR', error: String(e) }));
     }

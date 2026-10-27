@@ -14,7 +14,7 @@ description: Use when running, filtering, debugging or reporting Playwright test
 
 1. **Pick the command**:
    - `npm run play <types...> [suites...] [@tags...] [devices...]`. Examples: `play auto`, `play api auth-api`, `play ui auth`, `play cyborg navigation`, `play auth`, `play ui @smoke`.
-   - A device name selects its project: `play e2e mobile`. Layers alone (`api`, `ui`, `e2e`) run automated tests; add `cyborg` for cyborg ones.
+   - A device name selects its project: `play e2e mobile`. `-- --record` (or `RECORD_RUN=1`) keeps the run's coverage matrix in `run-history/`. Layers alone (`api`, `ui`, `e2e`) run automated tests; add `cyborg` for cyborg ones.
    - Raw: `npx playwright test --grep "(?=.*(@ui)(\s|$))(?=.*(@auth)(\s|$))"` - every group required, a tag ends at a space.
    - Single test: `npx playwright test --grep "User Login"`.
    - Visual runner with Director: `npm run show` (the list follows spec edits).

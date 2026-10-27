@@ -52,3 +52,6 @@ CLAUDE.local.md
 
 # Tests generated from the specs on every run
 .director/
+
+# Coverage matrix of every recorded run (RECORD_RUN=1) - local history, RUN_HISTORY_DIR
+run-history/

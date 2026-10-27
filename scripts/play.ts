@@ -2,11 +2,12 @@
 import { execSync } from 'child_process'
 
 import { desktopDevices, handheldDevices } from '@/config/devices'
+import { CONFIG } from '@/framework/config'
 import { getIcon } from '@/framework/utils/icons'
 
 /**
  * Play - run the tests by type, suite, spec tag and device: `npm run play [types] [suites] [@tags]
- * [devices]` (see showUsage). Nothing to validate first: the tests are generated from the specs on
+ * [devices] [--record]` (see showUsage). Nothing to validate first: the tests are generated from the specs on
  * every run (playwright.config.ts).
  */
 
@@ -21,6 +22,7 @@ interface PlayConfig {
   suiteNames?: string[]
   tags?: string[] // spec tags as written: '@smoke'
   devices?: string[] // device ids: 'chrome', 'mobile'
+  record?: boolean // keep the run's coverage matrix in the run history (RECORD_RUN=1)
 }
 
 /**
@@ -69,7 +71,10 @@ function runPlaywrightTests(config: PlayConfig): void {
   const command = buildPlaywrightCommand(config)
 
   try {
-    execSync(command, { stdio: 'inherit' })
+    execSync(command, {
+      stdio: 'inherit',
+      env: config.record ? { ...process.env, RECORD_RUN: '1' } : process.env
+    })
     console.log(`\n${getIcon('success')}  Curtain call!`)
   } catch (_error) {
     console.error(`\n${getIcon('error')}  Show failed`)
@@ -85,11 +90,12 @@ function showUsage(): void {
 ${getIcon('info')}  Play CLI - Run Playwright tests with tag-based filtering
 
 Usage:
-  npm run play [types] [suites] [@tags] [devices]
+  npm run play [types] [suites] [@tags] [devices] [-- --record]
 
   Test types come before suite names
   Spec tags (@tag lines above MD / Gherkin headings) start with @ and may go anywhere
   Devices (${DEVICE_IDS.join(', ')}) may go anywhere - without one every device runs
+  --record keeps the coverage matrix of the run in ${CONFIG.paths.runHistory}/ (RECORD_RUN=1 too)
 
 Test Types:
   auto      Run all automated tests (@auto)
@@ -113,6 +119,7 @@ Examples:
   npm run play ui auth @smoke       # UI auth tests tagged @smoke
   npm run play e2e mobile           # E2E tests on the mobile device only
   npm run play auto chrome firefox  # Automated tests on desktop browsers only
+  npm run play auto -- --record     # Automated tests, the run kept in the run history
 
 Note:
   - Tests are generated from the specs on every run; a step without step definition is walked
@@ -127,7 +134,8 @@ Note:
  * Parse CLI arguments
  */
 function parseArgs(): PlayConfig | null {
-  const allArgs = process.argv.slice(2)
+  const record = process.argv.includes('--record')
+  const allArgs = process.argv.slice(2).filter((arg) => arg !== '--record')
 
   if (allArgs[0] === 'help' || allArgs[0] === '--help' || allArgs[0] === '-h') {
     showUsage()
@@ -143,7 +151,8 @@ function parseArgs(): PlayConfig | null {
   return {
     ...config,
     ...(tags.length > 0 ? { tags } : {}),
-    ...(devices.length > 0 ? { devices } : {})
+    ...(devices.length > 0 ? { devices } : {}),
+    ...(record ? { record } : {})
   }
 }
 

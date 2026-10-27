@@ -44,7 +44,7 @@ import { TestListView } from './uiModeTestListView'
 import { TraceView } from './uiModeTraceView'
 import { SettingsView } from './settingsView'
 import { DefaultSettingsView } from './defaultSettingsView'
-import { DirectorPanel, saveFile } from '@director/index'
+import { DirectorPanel, saveFile, setRecordRun } from '@director/index'
 import type { TestFile } from '@director/index'
 import '@director/index.css'
 
@@ -201,6 +201,7 @@ export const UIModeView: React.FC<{}> = ({}) => {
   >('updateSnapshots', 'missing')
   const [onlyChanged, setOnlyChanged] = useSetting<boolean>('only-changed', false)
   const [stopOnFailure, setStopOnFailure] = useSetting<boolean>('stop-on-failure', false)
+  const [recordRun, setRecordRunSetting] = useSetting<boolean>('director-record-run', false)
   const [mergeFiles] = useSetting('mergeFiles', false)
 
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -413,6 +414,10 @@ export const UIModeView: React.FC<{}> = ({}) => {
         setProgress({ total: 0, passed: 0, failed: 0, skipped: 0 })
         setRunningState({ testIds })
 
+        // Director: the run keeps its coverage matrix in the run history or not
+        await setRecordRun(recordRun).catch((error) =>
+          console.error('Director: record run not set', error)
+        )
         await testServerConnection.runTests({
           locations: [...locations].map(escapeRegex),
           grep: queryParams.grep,
@@ -440,7 +445,8 @@ export const UIModeView: React.FC<{}> = ({}) => {
       testServerConnection,
       updateSnapshots,
       singleWorker,
-      stopOnFailure
+      stopOnFailure,
+      recordRun
     ]
   )
 
@@ -819,6 +825,13 @@ export const UIModeView: React.FC<{}> = ({}) => {
                         value: stopOnFailure,
                         set: setStopOnFailure,
                         name: 'Stop on first failure'
+                      },
+                      {
+                        type: 'check',
+                        value: recordRun,
+                        set: setRecordRunSetting,
+                        name: 'Record run',
+                        title: 'Keep the coverage matrix of every run in run-history/ (npm run play --record)'
                       },
                       {
                         type: 'select',
