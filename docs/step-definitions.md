@@ -282,6 +282,17 @@ Write new steps in step files with fixtures ([Steps](#steps)) - the one way this
 
 Add a layer tag to every migrated feature (`@ui` above `Feature:`) - see [Layers](#layers).
 
+### From plain Playwright tests
+
+`npm run migrate tests/login.spec.ts` turns a Playwright test file into `test-suites/login.md` and `src/steps/login.steps.ts`:
+
+- `test.describe` → `## suite`, each `test` → `### test case` (`{ tag }` → tags line, `test.skip` / `test.fixme` → `@skip` / `@fixme`)
+- each `await test.step(title, fn)` → `#### title` and a step definition with the code of `fn` and only the fixtures it uses; the same title in several tests is one step definition
+- layer: `@api` for tests with `request` and no `page`, else `@ui`; hooks → `Before` / `After` / `BeforeAll` / `AfterAll` of the suite tag; imports and other declarations go to the step file
+- only tests made of `test.step` calls: the step titles are the spec. Code outside a step (codegen output), `testInfo`, `test.use`, nested describes, one step title with different code, a step matching an existing step definition - every such line is listed and nothing is written
+- a value passed from one step to another needs a fixture (each step is its own function); step texts stay literal - turn values into `{string}` parameters by hand
+- the test file stays: run `npm run dress` and the suite, then delete it
+
 ### From Cucumber: World style
 
 Cucumber steps written on a shared `this` object run as they are - no rewrite into fixtures. The world is an ordinary fixture:

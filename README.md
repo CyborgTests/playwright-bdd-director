@@ -337,6 +337,7 @@ npm run show
   - `npm run adapt <suite...>` - moves a spec between Markdown and Gherkin
   - `npm run rename <suite> <new-name>` - renames a spec and its step file
   - `npm run reword "<old>" "<new>"` - rewords a step in every spec and in its step definition pattern; `-- --at <suite> <line> "<title>"` - a suite, rule or test case title
+  - `npm run migrate <file.spec.ts...>` - turns Playwright tests built of `test.step` into a spec and step definitions
   - `npm run play` - runs tests by type, suite and tag
 
 ## 📝 Specs
@@ -460,7 +461,7 @@ Step('Click {string} Brand in Sidebar', async ({ homePage }, brand: string) => {
 - **Ambiguous step** → `dress` and the run fail with the definitions' locations; **unused definition** → `dress` warns
 - **Hooks** `Before/After/BeforeAll/AfterAll/BeforeStep/AfterStep` with tag expressions (`@cyborg` matches the tests a person walks)
 - **Step context** `bdd` next to the fixtures: tags, test title, step title, `skip()`, `attach()`, the step error in `AfterStep`
-- **Migration**: existing Cucumber suites move over without rewriting their steps ([guide](docs/step-definitions.md#migrating-from-other-tools))
+- **Migration**: existing Cucumber suites move over without rewriting their steps; plain Playwright tests built of `test.step` become a spec and step definitions with `npm run migrate` ([guide](docs/step-definitions.md#migrating-from-other-tools))
 
 Full guide: [docs/step-definitions.md](docs/step-definitions.md).
 
@@ -611,6 +612,7 @@ npm run stage        # format the Markdown specs
 npm run adapt auth   # auth.md → auth.feature (and back)
 npm run rename auth login  # auth.md → login.md, src/steps/auth.steps.ts → login.steps.ts
 npm run reword "user adds {string} to cart" "user puts {string} in the cart"  # a step everywhere
+npm run migrate tests/login.spec.ts  # Playwright tests (test.step) → login.md + login.steps.ts
 npm run show         # Playwright UI mode with the Director
 npm run lint:fix     # ESLint fix
 npm run format       # Prettier format
@@ -659,6 +661,7 @@ npm run test:coverage # Generate coverage report
 - `prepare.ts` - generation when Playwright loads the config; regenerates on changes in UI mode and the IDE
 - `runtime.ts` - `autoStep`, hooks and the `bdd` context of generated tests
 - `skeletons.ts` - step definition skeletons for `npm run steps`
+- `migrate.ts` - Playwright tests built of `test.step` as a spec and step definitions (`npm run migrate`)
 - `step-reword.ts` - new text for a step in every spec and its definition pattern, or for a title on its line, all or nothing (`npm run reword`)
 
 **Parsers (`src/framework/core/`):**

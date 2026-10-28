@@ -1,6 +1,6 @@
 ---
 name: framework-change
-description: Use when changing the Director framework itself — src/framework (parsers, step registry, generator, runtime, reports), scripts/*.ts (dress, steps, stage, adapt, rename, reword, play, matrix, ci), Playwright patch or the Director UI package.
+description: Use when changing the Director framework itself — src/framework (parsers, step registry, generator, runtime, reports), scripts/*.ts (dress, steps, stage, adapt, rename, reword, migrate, play, matrix, ci), Playwright patch or the Director UI package.
 ---
 
 # Change the Framework

@@ -46,6 +46,11 @@ export default tseslint.config(
       'playwright/no-page-pause': 'error'
     }
   },
+  // Step definitions and hooks run inside the generated tests: expect there is in a test
+  {
+    files: ['src/steps/**/*.ts'],
+    rules: { 'playwright/no-standalone-expect': 'off' }
+  },
   {
     ignores: [
       'node_modules/**',

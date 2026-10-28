@@ -836,7 +836,7 @@ function tagNames(tags: readonly Tag[]): string[] {
  * Spec text reaches generated code only through quoteString and commentText: a spec is data, and
  * a line terminator in it (U+2028 is invisible in diffs) must not end a string or a comment early
  */
-function quoteString(text: string): string {
+export function quoteString(text: string): string {
   const escaped = text
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\'")

@@ -11,6 +11,7 @@
     "adapt": "tsx scripts/adapt.ts",
     "rename": "tsx scripts/rename.ts",
     "reword": "tsx scripts/reword.ts",
+    "migrate": "tsx scripts/migrate.ts",
     "show": "playwright test --ui",
     "review": "npx monocart show-report test-results/monocart-report/index.html",
     "matrix": "tsx scripts/coverage-matrix.ts",
