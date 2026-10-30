@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const child = vi.hoisted(() => ({
   spawnSync: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('@/framework/bdd/generator', async (importOriginal) => ({
 }))
 
 const { buildTests, findSpecFiles } = await import('@/framework/bdd/build')
-const { prepareTests, renderGenerationErrors, withoutStack } =
+const { lastProgress, prepareTests, renderGenerationErrors, withoutStack } =
   await import('@/framework/bdd/prepare')
 const { clearStepDefinitions, createBdd } = await import('@/framework/bdd/registry')
 
@@ -48,6 +48,10 @@ afterEach(() => {
   vi.unstubAllEnvs()
   child.spawnSync.mockReset()
   fs.rmSync(suitesDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 })
+})
+
+afterAll(() => {
+  fs.rmSync(path.dirname(errorsFile), { recursive: true, force: true })
 })
 
 const write = (relative: string, content: string) => {
@@ -188,5 +192,13 @@ describe('buildTests progress', () => {
       [1, 2],
       [2, 2]
     ])
+  })
+})
+
+describe('lastProgress', () => {
+  it('should take last whole line and skip one cut by a chunk', () => {
+    expect(lastProgress('1/300\n2/300\n')).toEqual({ done: 2, total: 300 })
+    expect(lastProgress('1/300\n2/3')).toEqual({ done: 1, total: 300 })
+    expect(lastProgress('12')).toBeUndefined()
   })
 })

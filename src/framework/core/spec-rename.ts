@@ -31,19 +31,6 @@ export function renameSpec(
   const oldBase = getMarkdownBaseName(specPath)
   const oldSteps = path.join(stepsDir, `${oldBase}.steps.ts`)
   const newSteps = path.join(stepsDir, `${newBase}.steps.ts`)
-  if (!BASE_NAME.test(newBase) || SPEC_FILE_EXTENSION.test(newBase)) {
-    throw new Error(
-      `Invalid spec name "${newBase}"\n  Fix: Letters, digits, ".", "_" and "-" only, no extension and no folder`
-    )
-  }
-  if (newBase === oldBase) throw new Error(`"${oldBase}" is the name already`)
-  const taken = specFiles.find((spec) => getMarkdownBaseName(spec) === newBase)
-  if (taken) {
-    throw new Error(
-      `Spec ${toPosix(taken)} has the name "${newBase}"\n  Fix: Pick a name no spec uses - the name is the suite tag`
-    )
-  }
-
   const newSpec = path.join(path.dirname(specPath), `${newBase}${path.extname(specPath)}`)
   fs.renameSync(specPath, newSpec)
   let steps: SpecRename['steps']

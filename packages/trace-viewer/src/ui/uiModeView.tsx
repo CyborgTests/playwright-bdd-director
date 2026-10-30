@@ -620,10 +620,6 @@ export const UIModeView: React.FC<{}> = ({}) => {
     )
   }, [])
 
-  const handleDirectorSyncWithTest = React.useCallback((scenarioName: string) => {
-    // Find and highlight corresponding test in PW panel
-  }, [])
-
   const handleDirectorFilesRefresh = React.useCallback((files: TestFile[]) => {
     setDirectorFiles(files)
   }, [])
@@ -682,7 +678,6 @@ export const UIModeView: React.FC<{}> = ({}) => {
             onFileSelect={handleDirectorFileSelect}
             onFileContentChange={handleDirectorFileContentChange}
             onStage={handleDirectorStage}
-            onSyncWithTest={handleDirectorSyncWithTest}
             onFilesRefresh={handleDirectorFilesRefresh}
           />
         }

@@ -30,7 +30,6 @@ export interface DirectorPanelProps {
   onFileSelect: (file: TestFile) => void
   onFileContentChange: (path: string, content: string) => void
   onStage: (file: TestFile) => void
-  onSyncWithTest: (scenarioName: string) => void
   onFilesRefresh?: (files: TestFile[]) => void
 }
 
@@ -41,7 +40,6 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   onFileSelect,
   onFileContentChange,
   onStage,
-  onSyncWithTest: _onSyncWithTest,
   onFilesRefresh
 }) => {
   const [selectedFile, setSelectedFile] = React.useState<TestFile | null>(null)

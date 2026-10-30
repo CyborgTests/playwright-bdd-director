@@ -6,11 +6,12 @@ import path from 'path'
 import { CONFIG } from '../config'
 import { toPosix } from '../utils/helpers'
 
-// tsx as a loader, not its CLI: the CLI starts one more process, which would not get the progress channel
+// tsx as a loader: its CLI starts one more process, which would not get the progress channel
 const GENERATE = ['--import', 'tsx', 'scripts/generate-tests.ts']
 const WATCH_DELAY_MS = 300
 const LOCK_POLL_MS = 100
 const UI_UPDATE_MS = 250
+const PROGRESS_TAIL = 64 // characters of the channel kept: more than two lines
 /**
  * Set by a test server once it watches the sources, its loader processes inherit it: the path of a
  * file that exists while the tests are being regenerated
@@ -65,10 +66,12 @@ export function prepareTests(): void {
   fs.rmSync(CONFIG.paths.generationErrors, { force: true })
   process.stderr.write(`Generated tests in ${secondsSince(startedAt)} s\n`)
   if (isTestServer()) {
-    const generating = path.join(os.tmpdir(), `director-generating-${process.pid}`)
+    // Own folder: a fixed name in the shared temp folder could be someone else's link
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'director-'))
+    const generating = path.join(folder, 'generating')
     watchSources(generating)
     process.env[TESTS_WATCHED] = generating
-    process.on('exit', () => fs.rmSync(generating, { force: true }))
+    process.on('exit', () => fs.rmSync(folder, { recursive: true, force: true }))
   }
 }
 
@@ -115,6 +118,12 @@ function isTestServer(): boolean {
   return process.argv.some((arg) => arg === 'test-server' || /^--ui(-host|-port)?(=|$)/.test(arg))
 }
 
+/** Last whole `done/total` line - a chunk of the channel may end in the middle of one */
+export function lastProgress(reported: string): { done: number; total: number } | undefined {
+  const last = [...reported.matchAll(/(?:^|\n)(\d+)\/(\d+)(?=\n)/g)].at(-1)
+  return last ? { done: Number(last[1]), total: Number(last[2]) } : undefined
+}
+
 /** Regeneration as the Director Output panel shows it; the server exists in UI mode only */
 function notifyUi(event: { done: number; total: number } | { seconds: string; failed: boolean }) {
   const { directorBroadcast } = globalThis as { directorBroadcast?: (message: unknown) => void }
@@ -138,11 +147,13 @@ function watchSources(generating: string): void {
       env: { ...process.env, [GENERATION_PROGRESS]: 'lines' }
     })
     let shownAt = 0
+    let reported = ''
     child.stdio[PROGRESS_FD]?.on('data', (chunk: Buffer) => {
-      if (Date.now() - shownAt < UI_UPDATE_MS) return
+      reported = (reported + chunk.toString()).slice(-PROGRESS_TAIL)
+      const progress = lastProgress(reported)
+      if (!progress || Date.now() - shownAt < UI_UPDATE_MS) return
       shownAt = Date.now()
-      const [done, total] = chunk.toString().trim().split('\n').pop()!.split('/').map(Number)
-      notifyUi({ done, total })
+      notifyUi(progress)
     })
     let output = ''
     child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
