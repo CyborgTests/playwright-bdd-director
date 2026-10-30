@@ -11,6 +11,7 @@
     "destructures",
     "domcontentloaded",
     "doubleclick",
+    "Étant",
     "firstname",
     "googleads",
     "googleadservices",
@@ -28,13 +29,17 @@
     "Pohanovskyi",
     "SDET",
     "Segoe",
+    "Soit",
     "spreadsheetml",
     "strikethrough",
     "Subfolders",
     "templatize",
     "Tshirt",
     "tsmorph",
-    "Ttls"
+    "Ttls",
+    "unstub"
   ],
-  "ignoreRegExpList": ["/[\\u0400-\\u04FF]+/g"]
+  "ignoreRegExpList": [
+    "/[\\u0400-\\u04FF]+/g"
+  ]
 }

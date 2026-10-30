@@ -89,6 +89,14 @@ describe('prepareTests', () => {
     expect(child.spawnSync).not.toHaveBeenCalled()
   })
 
+  it('should leave generation to test server watching sources', () => {
+    vi.stubEnv('DIRECTOR_TESTS_WATCHED', '1')
+
+    prepareTests()
+
+    expect(child.spawnSync).not.toHaveBeenCalled()
+  })
+
   it('should generate in a child process and stop a CLI run with its output on failure', () => {
     vi.stubEnv('TEST_WORKER_INDEX', undefined)
     const exit = vi.spyOn(process, 'exit').mockImplementation((code) => {

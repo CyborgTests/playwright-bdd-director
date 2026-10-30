@@ -78,48 +78,63 @@ export async function autoStep(
   const stepHooks = stepHooksByTest.get(testInfo) ?? []
   const before = stepHooks.filter(({ hook }) => hook.kind === 'BeforeStep')
   const after = stepHooks.filter(({ hook }) => hook.kind === 'AfterStep').reverse()
+  const location = getCallerLocation()
 
-  await test.step(title, async (stepInfo) => {
-    let skipped = false
-    const step: BddStep = {
-      title,
-      skip: (description) => {
-        skipped = true
-        stepInfo.skip(true, description)
-      },
-      attach: (name, attachment) => stepInfo.attach(name, attachment)
-    }
-    const context = toContext(testInfo, step)
-
-    let failure: { error: unknown } | undefined
-    let skip: { error: unknown } | undefined
-    try {
-      for (const { hook, fixtures: hookFixtures } of before) {
-        await callHook(hook, hookFixtures, context)
+  await test.step(
+    title,
+    async (stepInfo) => {
+      let skipped = false
+      const step: BddStep = {
+        title,
+        skip: (description) => {
+          skipped = true
+          stepInfo.skip(true, description)
+        },
+        attach: (name, attachment) => stepInfo.attach(name, attachment)
       }
-      await callStep(definition, fixtures, args, context)
-    } catch (error: unknown) {
-      if (skipped) skip = { error }
-      else failure = { error }
-    }
+      const context = toContext(testInfo, step)
 
-    // AfterStep runs for a failed or skipped step too and sees the error; it cannot skip the step
-    step.error = failure?.error
-    step.skip = () => {
-      throw new Error(`AfterStep hook cannot skip step "${title}"
-  Fix: Skip in BeforeStep or the step`)
-    }
-    for (const { hook, fixtures: hookFixtures } of after) {
+      let failure: { error: unknown } | undefined
+      let skip: { error: unknown } | undefined
       try {
-        await callHook(hook, hookFixtures, context)
+        for (const { hook, fixtures: hookFixtures } of before) {
+          await callHook(hook, hookFixtures, context)
+        }
+        await callStep(definition, fixtures, args, context)
       } catch (error: unknown) {
-        failure ??= { error }
+        if (skipped) skip = { error }
+        else failure = { error }
       }
-    }
 
-    if (failure) throw failure.error
-    if (skip) throw skip.error // Playwright marks the step skipped
-  })
+      // AfterStep runs for a failed or skipped step too and sees the error; it cannot skip the step
+      step.error = failure?.error
+      step.skip = () => {
+        throw new Error(`AfterStep hook cannot skip step "${title}"
+  Fix: Skip in BeforeStep or the step`)
+      }
+      for (const { hook, fixtures: hookFixtures } of after) {
+        try {
+          await callHook(hook, hookFixtures, context)
+        } catch (error: unknown) {
+          failure ??= { error }
+        }
+      }
+
+      if (failure) throw failure.error
+      if (skip) throw skip.error // Playwright marks the step skipped
+    },
+    { location }
+  )
+}
+
+/**
+ * Where the generated test called autoStep - its source map turns that into the spec line, which
+ * reports show for the step instead of this file
+ */
+function getCallerLocation(): { file: string; line: number; column: number } | undefined {
+  const frame = new Error().stack?.split('\n')[3] ?? ''
+  const match = frame.match(/\((.+):(\d+):(\d+)\)$/) ?? frame.match(/at (.+):(\d+):(\d+)$/)
+  return match ? { file: match[1], line: Number(match[2]), column: Number(match[3]) } : undefined
 }
 
 /**

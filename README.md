@@ -232,7 +232,7 @@ A new spec runs at once as a cyborg test - a person walks its steps. Automation 
 
 ### 4. Built for Playwright
 
-The generated tests are plain Playwright tests: fixtures, projects, traces, UI mode, the VS Code extension, parallel runs and reporters work as usual, with full TypeScript support.
+Steps in traces and reports point to their spec lines (`cart.feature:29`) through a source map in the generated file. The generated tests are plain Playwright tests: fixtures, projects, traces, UI mode, the VS Code extension, parallel runs and reporters work as usual, with full TypeScript support.
 
 ## 🤖 AI-Friendly by Design
 
@@ -540,7 +540,7 @@ All paths support environment variable overrides via `src/framework/config.ts`:
 
 ### 2. Playwright Config
 
-`playwright.config.ts` generates the tests when Playwright loads it (`prepareTests()`), then runs them in projects that pick their tests by tag (`src/config/projects.ts`, devices in `src/config/devices.ts`):
+`playwright.config.ts` generates the tests when Playwright loads it (`prepareTests()`; UI mode and IDE servers on start, then on every change of specs or source), then runs them in projects that pick their tests by tag (`src/config/projects.ts`, devices in `src/config/devices.ts`):
 
 | Project             | Device                              | Tests                                                      |
 | ------------------- | ----------------------------------- | ---------------------------------------------------------- |

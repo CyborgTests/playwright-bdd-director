@@ -12,7 +12,17 @@ export default defineConfig({
   outputDir: 'test-results/artifacts',
   fullyParallel: true,
   reporter: [
-    ['monocart-reporter', { outputFile: 'test-results/monocart-report/index.html' }],
+    [
+      'monocart-reporter',
+      {
+        outputFile: 'test-results/monocart-report/index.html',
+        // Anonymous describes group tests by hooks and settings: Playwright UI hides them, Monocart
+        // titles them "describe"
+        visitor: (data: { suiteType?: string; title: string }, metadata: { title: string }) => {
+          if (data.suiteType === 'describe' && !metadata.title) data.title = 'Scenarios'
+        }
+      }
+    ],
     ['list'],
     // Test management tools (Xray, Zephyr, TestRail, CI): spec-structured Cucumber JSON, JUnit XML
     ['./src/framework/reporting/cucumber-reporter.ts'],

@@ -1,5 +1,5 @@
 import { CucumberExpressionGenerator } from '@cucumber/cucumber-expressions'
-import type { Background, Rule, Scenario, Step, Tag } from '@cucumber/messages'
+import type { Background, Location, Rule, Scenario, Step, Tag } from '@cucumber/messages'
 import { parse as parseTagExpression } from '@cucumber/tag-expressions'
 import { glob } from 'glob'
 import path from 'path'
@@ -38,6 +38,7 @@ import {
   type StepKeyword
 } from './registry'
 import { formatAmbiguous, splitStepKeyword } from './runtime'
+import { attachSourceMap, specMarker } from './source-map'
 
 /** Step without a step definition */
 export interface MissingStep {
@@ -94,6 +95,7 @@ interface Context {
   testPath: string
   language: string // Gherkin dialect of the spec (`# language: uk`), passed to autoStep when not English
   markdown: boolean
+  specLine: (line: number) => number // line of the parsed document → line of the spec file
 }
 
 /** Background as beforeEach lines with what its tests inherit from it */
@@ -161,7 +163,7 @@ export async function loadStepDefinitions(pattern = CONFIG.bdd.steps): Promise<v
  * @fail:<device> → the modifier on that device only, @retries:N / @timeout:N → configure.
  */
 export async function generateTest(specPath: string, testPath: string): Promise<Generation> {
-  const { feature, markdown } = parseSpecDocument(specPath)
+  const { feature, markdown, specLine } = parseSpecDocument(specPath)
   const context: Context = {
     modules: new Set(),
     errors: [],
@@ -171,7 +173,8 @@ export async function generateTest(specPath: string, testPath: string): Promise<
     tests: [],
     testPath,
     language: feature.language,
-    markdown
+    markdown,
+    specLine
   }
   const featureTags = tagNames(feature.tags)
   const reserved = [
@@ -247,7 +250,8 @@ export async function generateTest(specPath: string, testPath: string): Promise<
     .join('\n')
 
   const options = await prettier.resolveConfig(testPath)
-  const content = await prettier.format(source, { ...options, filepath: testPath })
+  const formatted = await prettier.format(source, { ...options, filepath: testPath })
+  const content = attachSourceMap(formatted, specPath, testPath)
   return {
     specPath,
     testPath,
@@ -272,6 +276,7 @@ function emitBackground(
   const title = quoteString(getBackgroundTitle(background, ruleName))
   return {
     lines: [
+      toMarker(background.location, context),
       `test.beforeEach(${title}, async (${fixtureParam(fixtures)}) => {`,
       ...lines,
       '})',
@@ -611,6 +616,7 @@ function emitSteps(
   )
 
   resolved.forEach(({ step, title, definition }, i) => {
+    emitted.lines.push(toMarker(step.location, context))
     if (!definition) {
       emitted.manual.push(title)
       emitted.fixtures.add('manualStep')
@@ -772,6 +778,16 @@ function flattenUnits(children: Child[]): TestUnit[] {
 
 function hookKey(hooks: HookDefinition[]): string {
   return hooks.map((hook) => `${hook.kind}:${hook.title}`).join('\n')
+}
+
+/**
+ * Marker of a Background or step: the source map leads it to the spec. Tests and describes stay in
+ * the generated file - if all tests of a file moved to the spec, Playwright would rename the file
+ * suite, and the VS Code extension, which lists files before their tests, would lose them.
+ * Markdown headings start a line.
+ */
+function toMarker({ line, column = 1 }: Location, context: Context): string {
+  return specMarker(context.specLine(line), context.markdown ? 1 : column)
 }
 
 /** `bdd` in the first parameter is the runtime context, not a fixture */

@@ -7,9 +7,15 @@ const runner = vi.hoisted(() => {
   class StepSkip extends Error {}
   const state = {
     info: { tags: ['@ui'], title: 'Scenario' } as Record<string, unknown>,
-    steps: [] as Array<{ title: string; status: 'passed' | 'failed' | 'skipped' }>
+    steps: [] as Array<{ title: string; status: 'passed' | 'failed' | 'skipped' }>,
+    locations: [] as Array<{ file: string; line: number } | undefined>
   }
-  const step = async (title: string, body: (info: unknown) => Promise<unknown>) => {
+  const step = async (
+    title: string,
+    body: (info: unknown) => Promise<unknown>,
+    options?: { location?: { file: string; line: number } }
+  ) => {
+    state.locations.push(options?.location)
     const info = {
       skip: (condition: boolean, description?: string) => {
         if (condition) throw new StepSkip(description)
@@ -60,6 +66,7 @@ beforeEach(() => {
   calls = []
   runner.state.info = { tags: ['@ui'], title: 'Scenario' }
   runner.state.steps = []
+  runner.state.locations = []
 })
 
 afterEach(() => clearStepDefinitions())
@@ -237,5 +244,22 @@ describe('runHook', () => {
     await runHook('Before', 'Tags')
 
     expect(tags).toEqual(['@ui'])
+  })
+})
+
+describe('autoStep - step location', () => {
+  it('should give test.step the place autoStep was called from', async () => {
+    Given('user opens home page', async () => {
+      calls.push('step')
+    })
+
+    await autoStep('Given user opens home page')
+
+    expect(runner.state.locations).toEqual([
+      expect.objectContaining({
+        file: expect.stringContaining('runtime.test.ts'),
+        line: expect.any(Number)
+      })
+    ])
   })
 })

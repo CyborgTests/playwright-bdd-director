@@ -7,20 +7,24 @@ import { toPosix } from '../utils/helpers'
 
 const GENERATE = [require.resolve('tsx/cli'), 'scripts/generate-tests.ts']
 const WATCH_DELAY_MS = 300
+/** Set by a test server once it watches the sources: its loader processes inherit it */
+const TESTS_WATCHED = 'DIRECTOR_TESTS_WATCHED'
 
 /**
  * Generate the tests from the specs before Playwright collects them - called by
  * playwright.config.ts, so every run (CLI, UI mode, IDE) gets tests of the current specs and step
  * definitions. Runs in a child process: generation is async and loads the step files, the config
  * must stay sync and keep its module cache clean. Workers load the config too - they skip it.
- * UI mode and IDE test servers load the config once, so they also regenerate on every change of
- * specs or source; Playwright picks up the changed test files itself.
+ * UI mode and IDE test servers generate once on start, then on every change of specs or source;
+ * the loader processes they start for each list and run reload the config and skip generation -
+ * Playwright picks up the changed test files itself.
  * Failed generation (invalid specs, ambiguous steps, missing layers) stops a CLI run with exit
  * code 1 and its output; stack traces go to CONFIG.paths.generationErrors only.
  * @throws Error with the generation output in UI mode and IDE test servers - they must stay up
  */
 export function prepareTests(): void {
-  if (process.env.TEST_WORKER_INDEX !== undefined) return
+  if (process.env.TEST_WORKER_INDEX !== undefined || process.env[TESTS_WATCHED] !== undefined)
+    return
   const result = spawnSync(process.execPath, GENERATE, { encoding: 'utf-8' })
   if (result.status !== 0) {
     const output = `${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`
@@ -35,7 +39,10 @@ export function prepareTests(): void {
     process.exit(1)
   }
   fs.rmSync(CONFIG.paths.generationErrors, { force: true })
-  if (isTestServer()) watchSources()
+  if (isTestServer()) {
+    watchSources()
+    process.env[TESTS_WATCHED] = '1'
+  }
 }
 
 /**

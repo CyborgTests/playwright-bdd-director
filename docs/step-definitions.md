@@ -194,6 +194,8 @@ Then('discount is shown', async ({ cartPage, bdd }) => {
 | step with a definition                 | `await autoStep('Given …', { fixtures })` - a `test.step` titled as the spec step               |
 | step without one (or one without code) | `await manualStep('Given …')`                                                                   |
 
+Each generated file carries an inline source map to its spec: steps and Backgrounds point to their spec line (`cart.feature:29`) in traces, stacks and reports, a browser action inside a step to the code that runs it. Tests and describes stay in the generated file, so Playwright UI and the VS Code extension list and run them as usual.
+
 - A manual Background step makes every test under it a cyborg test.
 - **Languages**: a Gherkin spec may start with `# language: fr` (any [Gherkin dialect](https://cucumber.io/docs/gherkin/languages/)). Step titles keep the localized keyword and `autoStep` gets `{ language: 'fr' }`, so `Soit user opens …` finds `Given('user opens …')`. Step definitions stay the same for every language.
 - Spec base names are unique across `test-suites/**` - the name is the suite tag (`npm run play auth`) and pairs reports with the spec.

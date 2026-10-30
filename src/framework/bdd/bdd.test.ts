@@ -1,6 +1,7 @@
 import { test } from '@playwright/test'
 import crypto from 'crypto'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -18,7 +19,7 @@ import {
 import { DataTable, findStepDefinition, runHook, stripStepKeyword } from '@/framework/bdd/runtime'
 import { addStepSkeletons } from '@/framework/bdd/skeletons'
 import { parseMDFile } from '@/framework/core/md-parser'
-import { markdownToGherkin } from '@/framework/core/spec-document'
+import { markdownToGherkin, parseSpecDocument } from '@/framework/core/spec-document'
 
 const { Given, When, Then, Step, Before, After, BeforeAll, AfterAll } = createBdd(test)
 let testDir: string
@@ -883,5 +884,42 @@ When('user pays', async ({}) => {
   // TODO: implement step
 })
 `)
+  })
+})
+
+describe('parseSpecDocument', () => {
+  it('should lead Markdown lines of Gherkin form back to spec file', () => {
+    const specPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'spec-lines-')), 'shop.md')
+    fs.writeFileSync(
+      specPath,
+      [
+        '@ui',
+        '## Shop',
+        '- notes',
+        '### Add <product>',
+        '| product |',
+        '| --- |',
+        '| Top |',
+        '| Hat |',
+        '#### Open <product>',
+        '- notes',
+        '---',
+        '### Background',
+        '#### Open home'
+      ].join('\n')
+    )
+
+    const { feature, specLine } = parseSpecDocument(specPath)
+
+    const [background, outline] = feature!.children
+    const lineOf = (location: { line: number }) => specLine(location.line)
+    expect(lineOf(feature!.location)).toBe(2)
+    expect(lineOf(background.background!.location)).toBe(12)
+    expect(lineOf(background.background!.steps[0].location)).toBe(13)
+    expect(lineOf(outline.scenario!.location)).toBe(4)
+    expect(lineOf(outline.scenario!.steps[0].location)).toBe(9)
+    expect(outline.scenario!.examples[0].tableBody.map((row) => lineOf(row.location))).toEqual([
+      7, 8
+    ])
   })
 })
