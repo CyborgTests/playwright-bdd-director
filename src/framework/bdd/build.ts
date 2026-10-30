@@ -18,8 +18,12 @@ export interface BuildResult {
 /**
  * Generate (in memory) the test file of every spec - tests always follow the specs and step
  * definitions as they are now, nothing to keep in sync by hand
+ * @param onProgress - called before the first spec and after each one
  */
-export async function buildTests(specFiles = findSpecFiles()): Promise<BuildResult> {
+export async function buildTests(
+  specFiles = findSpecFiles(),
+  onProgress?: (done: number, total: number) => void
+): Promise<BuildResult> {
   const result: BuildResult = { generations: [], errors: [], unused: [] }
   try {
     await loadStepDefinitions()
@@ -43,7 +47,9 @@ export async function buildTests(specFiles = findSpecFiles()): Promise<BuildResu
     }
   }
 
-  for (const specPath of specFiles) {
+  onProgress?.(0, specFiles.length)
+  for (const [index, specPath] of specFiles.entries()) {
+    if (index > 0) onProgress?.(index, specFiles.length)
     if (byName.get(getMarkdownBaseName(specPath))!.length > 1) continue
     const structure = specPath.endsWith('.md') ? validateMDStructure(specPath) : []
     if (structure.length > 0) {
@@ -64,6 +70,7 @@ export async function buildTests(specFiles = findSpecFiles()): Promise<BuildResu
     }
   }
 
+  if (specFiles.length > 0) onProgress?.(specFiles.length, specFiles.length)
   const used = new Set(result.generations.flatMap((g) => [...g.used]))
   result.unused = getStepDefinitions().filter((definition) => !used.has(definition))
   return result

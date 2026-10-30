@@ -87,6 +87,11 @@ const wss = new WebSocketServer({
   verifyClient: ({ req }) => hasToken(req)
 });
 
+// Regeneration of the tests (bdd/prepare.ts) reports here, it runs in this process
+global.directorBroadcast = (message) => {
+  wss.clients.forEach((client) => client.send(JSON.stringify(message)));
+};
+
 let wsPort = null;
 wss.on('listening', () => {
   wsPort = wss.address().port;

@@ -2,10 +2,18 @@ import type { TestFile } from './DirectorModel'
 
 let ws: WebSocket | null = null
 let messageId = 0
+let generationListener: ((event: GenerationEvent) => void) | undefined
 const pendingRequests = new Map<
   number,
   { resolve: (data: unknown) => void; reject: (error: string) => void }
 >()
+
+/** Regeneration of the tests after a change of specs or source */
+export type GenerationEvent = { done: number; total: number } | { seconds: string; failed: boolean }
+
+export function onGeneration(listener: (event: GenerationEvent) => void): void {
+  generationListener = listener
+}
 
 /** The server accepts only loopback connections with the token it put into uiMode.html */
 export function connectWs(port: number, token: string): Promise<void> {
@@ -19,6 +27,7 @@ export function connectWs(port: number, token: string): Promise<void> {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data)
+        if (msg.type === 'GENERATION') generationListener?.(msg.data)
         const pending = pendingRequests.get(msg.id)
         if (pending) {
           pendingRequests.delete(msg.id)

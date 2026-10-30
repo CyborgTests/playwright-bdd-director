@@ -23,6 +23,7 @@ import { DirectorEditor, type LineToReword } from './DirectorEditor'
 import type { DirectorOutputEntry, StageProgress, TestFile } from './DirectorModel'
 import { DirectorOutput } from './DirectorOutput'
 import { FileExplorer } from './FileExplorer'
+import { onGeneration } from './wsClient'
 
 export interface DirectorPanelProps {
   files: TestFile[]
@@ -32,6 +33,8 @@ export interface DirectorPanelProps {
   onSyncWithTest: (scenarioName: string) => void
   onFilesRefresh?: (files: TestFile[]) => void
 }
+
+const GENERATING = 'Generating tests'
 
 export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   files,
@@ -46,6 +49,29 @@ export const DirectorPanel: React.FC<DirectorPanelProps> = ({
   const [stageProgress, setStageProgress] = React.useState<StageProgress | undefined>()
   const [isStaging, setIsStaging] = React.useState(false)
   const [editorRevision, setEditorRevision] = React.useState(0) // remounts the editor: file reloaded
+  // Regeneration keeps one line of the output up to date instead of a line per update
+  React.useEffect(() => {
+    onGeneration((event) => {
+      const entry = (type: DirectorOutputEntry['type'], message: string) => ({
+        type,
+        message,
+        timestamp: Date.now()
+      })
+      setOutputEntries((prev) => {
+        const earlier = prev.at(-1)?.message.startsWith(GENERATING) ? prev.slice(0, -1) : prev
+        if ('total' in event) {
+          const counter = event.total > 0 ? `: ${event.done} / ${event.total}` : '...'
+          return [...earlier, entry('progress', `${GENERATING}${counter}`)]
+        }
+        return [
+          ...earlier,
+          event.failed
+            ? entry('error', 'Tests not generated - the terminal shows why')
+            : entry('success', `Generated tests in ${event.seconds} s`)
+        ]
+      })
+    })
+  }, [])
   // Handle file selection
   const handleFileSelect = (file: TestFile) => {
     setSelectedFile(file)

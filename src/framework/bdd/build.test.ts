@@ -1,6 +1,7 @@
 import { test } from '@playwright/test'
 import crypto from 'crypto'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -115,7 +116,8 @@ describe('prepareTests', () => {
     expect(() => prepareTests()).toThrow('exit 1')
 
     expect(child.spawnSync.mock.calls[0][1]).toEqual([
-      expect.stringMatching(/tsx/),
+      '--import',
+      'tsx',
       'scripts/generate-tests.ts'
     ])
     expect(stderr).toHaveBeenCalledWith(
@@ -167,5 +169,24 @@ describe('renderGenerationErrors', () => {
 
   it('should leave out the stack section without a stack', () => {
     expect(renderGenerationErrors('No layer', '')).not.toContain('## Stack trace')
+  })
+})
+
+describe('buildTests progress', () => {
+  it('should report start, each spec and end', async () => {
+    const specs = ['a', 'b'].map((name) => {
+      const specPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'progress-')), `${name}.md`)
+      fs.writeFileSync(specPath, '@ui\n## Shop\n### Open\n#### Open Home\n')
+      return specPath
+    })
+    const reported: number[][] = []
+
+    await buildTests(specs, (done, total) => reported.push([done, total]))
+
+    expect(reported).toEqual([
+      [0, 2],
+      [1, 2],
+      [2, 2]
+    ])
   })
 })
