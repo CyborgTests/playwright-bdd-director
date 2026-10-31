@@ -26,23 +26,12 @@ When(
   }
 )
 
-Then(
-  'cart total for {string} is {price}',
-  async ({ cartPage }, product: string, amount: number) => {
-    await cartPage.expectTotal(product, amount)
-  }
-)
-
 // One step made of others: each gets only the fixtures it uses
 Given('cart has {string}', async ({ productsPage, cartPage }, product: string) => {
   await addToCart({ productsPage }, product)
   await openCart({ cartPage })
 
   await cartPage.expectInCart(product)
-})
-
-When('user removes {string} from cart', async ({ cartPage }, product: string) => {
-  await cartPage.removeProduct(product)
 })
 
 Then('cart is empty', async ({ cartPage }) => {

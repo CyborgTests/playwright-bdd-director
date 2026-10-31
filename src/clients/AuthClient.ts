@@ -60,10 +60,4 @@ export class AuthClient extends BaseClient {
     const data = apiExpect.getData<UserLoginResponse>()
     expect.soft(data.message).toContain(this.loginFailedMsg)
   }
-
-  async expectAccountDeleted(response: APIResponse): Promise<void> {
-    const apiExpect = new APIExpect(response)
-    await apiExpect.expectStatus(200)
-    await apiExpect.expectMatchSchema(AuthSchemas.userDelete)
-  }
 }

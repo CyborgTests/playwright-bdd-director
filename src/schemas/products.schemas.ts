@@ -16,14 +16,6 @@ export const ProductsSchemas = {
   }),
 
   /**
-   * Used for: GET /api/brandsList
-   */
-  brandsList: createAPISchema({
-    responseCode: SchemaValidator.number(),
-    brands: SchemaValidator.array()
-  }),
-
-  /**
    * Error body of every catalog endpoint: unsupported method, missing parameter
    */
   error: createAPISchema({

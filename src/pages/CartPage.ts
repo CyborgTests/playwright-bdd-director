@@ -30,12 +30,6 @@ export class CartPage extends BasePage {
     await this.goto()
   }
 
-  async removeProduct(name: string): Promise<void> {
-    await this.rowByName(name).locator('.cart_quantity_delete').click()
-    // Removal is an XHR - the row goes once the server has dropped the product
-    await expect(this.rowByName(name)).toBeHidden()
-  }
-
   async clickProceedToCheckout(): Promise<void> {
     await this.proceedToCheckoutBtn.click()
   }
@@ -49,10 +43,6 @@ export class CartPage extends BasePage {
     await expect.soft(row.locator('.cart_price')).toHaveText(price)
     await expect.soft(row.locator('.cart_quantity')).toHaveText(quantity)
     await expect.soft(row.locator('.cart_total')).toHaveText(total)
-  }
-
-  async expectTotal(name: string, amount: number): Promise<void> {
-    await expect.soft(this.rowByName(name).locator('.cart_total')).toHaveText(`Rs. ${amount}`)
   }
 
   async expectEmpty(): Promise<void> {

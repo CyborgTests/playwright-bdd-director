@@ -194,7 +194,7 @@ Then('discount is shown', async ({ cartPage, bdd }) => {
 | step with a definition                 | `await autoStep('Given …', { fixtures })` - a `test.step` titled as the spec step               |
 | step without one (or one without code) | `await manualStep('Given …')`                                                                   |
 
-Each generated file carries an inline source map to its spec: steps and Backgrounds point to their spec line (`cart.feature:29`) in traces, stacks and reports, a browser action inside a step to the code that runs it. Tests and describes stay in the generated file, so Playwright UI and the VS Code extension list and run them as usual.
+Each generated file carries an inline source map to its spec: steps and Backgrounds point to their spec line (`cart.feature:32`) in traces, stacks and reports, a browser action inside a step to the code that runs it. Tests and describes stay in the generated file, so Playwright UI and the VS Code extension list and run them as usual.
 
 Generation takes longer the more specs there are, so it reports progress: `Generating tests: 312 / 1000` in the terminal (stderr, reporter output stays clean), the same in the Director Output panel when UI mode regenerates after a change. UI mode generates on start and on every change of specs or source; a list or run started meanwhile waits for fresh tests.
 

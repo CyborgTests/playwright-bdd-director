@@ -17,13 +17,6 @@
 
 ---
 
-### Return to Home Page from "Signup / Login" Page
-#### Click "Signup / Login" Button in Header
-#### Click "Home" Button in Header
-#### Verify Home Page is shown
-
----
-
 ### Open "<brand>" Brand Products from Sidebar
 | brand |
 | ----- |

@@ -65,11 +65,4 @@ export class LoginPage extends BasePage {
   async expectLoginError(): Promise<void> {
     await expect.soft(this.loginErrorMsg).toBeVisible()
   }
-
-  async expectEmailInputInvalid(): Promise<void> {
-    const isInvalid = await this.loginEmailInput.evaluate(
-      (element) => !(element as unknown as { validity: { valid: boolean } }).validity.valid
-    )
-    expect.soft(isInvalid).toBe(true)
-  }
 }

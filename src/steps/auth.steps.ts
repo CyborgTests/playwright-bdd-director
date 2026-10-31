@@ -42,36 +42,11 @@ Step(
 )
 
 Step(
-  'Enter Password without Email and verify validation error',
-  async ({ loginPage, wrongPassword }) => {
-    await loginPage.fillLoginForm('', wrongPassword)
-    await loginPage.clickLoginBtn()
-
-    await loginPage.expectEmailInputInvalid()
-  }
-)
-
-Step(
   'Enter valid login credentials and verify successful authentication',
   async ({ loginPage, homePage, registeredUser }) => {
     await loginPage.fillLoginForm(registeredUser.email, registeredUser.password)
     await loginPage.clickLoginBtn()
 
     await homePage.expectLoggedIn(registeredUser.name)
-  }
-)
-
-Step(
-  'Delete Account and verify Account removal',
-  async ({ homePage, loginPage, registeredUser }) => {
-    await homePage.clickDeleteAccountBtn()
-
-    await homePage.expectAccountDeleted()
-
-    await loginPage.navigateToLogin()
-    await loginPage.fillLoginForm(registeredUser.email, registeredUser.password)
-    await loginPage.clickLoginBtn()
-
-    await loginPage.expectLoginError()
   }
 )

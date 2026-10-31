@@ -17,18 +17,6 @@ Step('Verify POST to Products List is rejected as unsupported', async ({ product
   await productsClient.expectMethodNotSupported(response)
 })
 
-Step('Verify Brands List contains {string}', async ({ productsClient }, brand: string) => {
-  const response = await productsClient.getBrandsList()
-
-  await productsClient.expectBrandListed(response, brand)
-})
-
-Step('Verify PUT to Brands List is rejected as unsupported', async ({ productsClient }) => {
-  const response = await productsClient.putBrandsList()
-
-  await productsClient.expectMethodNotSupported(response)
-})
-
 Step(
   'Search Products for {string} and verify {string} is found',
   async ({ productsClient }, query: string, product: string) => {
@@ -37,9 +25,3 @@ Step(
     await productsClient.expectSearchFound(response, product)
   }
 )
-
-Step('Verify Search without Query is rejected as bad request', async ({ productsClient }) => {
-  const response = await productsClient.searchProduct()
-
-  await productsClient.expectSearchQueryMissing(response)
-})

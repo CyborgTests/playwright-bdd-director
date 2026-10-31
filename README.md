@@ -159,7 +159,7 @@ npm run matrix -- @smoke                 # only tests tagged @smoke
 
     Test                                            Layer  Devices  Status      Steps auto  Last run
     Open "Signup / Login" Page from Header          UI     all      ✔ auto      4/4         ✔ passed 4/4
-    Return to Home Page from "Signup / Login" Page  UI     all      ✔ auto      4/4         ✘ failed 2/4 (failed: firefox; not run: mobile)
+    Open "Polo" Brand Products from Sidebar         UI     all      ✔ auto      4/4         ✘ failed 2/4 (failed: firefox; not run: mobile)
     Subscribe to Newsletter from Footer             UI     all      ✋ cyborg    1/5         · not run
 
   By tag
@@ -232,7 +232,7 @@ A new spec runs at once as a cyborg test - a person walks its steps. Automation 
 
 ### 4. Built for Playwright
 
-Steps in traces and reports point to their spec lines (`cart.feature:29`) through a source map in the generated file. The generated tests are plain Playwright tests: fixtures, projects, traces, UI mode, the VS Code extension, parallel runs and reporters work as usual, with full TypeScript support.
+Steps in traces and reports point to their spec lines (`cart.feature:32`) through a source map in the generated file. The generated tests are plain Playwright tests: fixtures, projects, traces, UI mode, the VS Code extension, parallel runs and reporters work as usual, with full TypeScript support.
 
 ## 🤖 AI-Friendly by Design
 
@@ -416,13 +416,13 @@ Both formats tag the same way: a line of `@tags` right above the heading - `##` 
 
 Where the example uses each kind of tag:
 
-| Tag                           | Example                                                                                                                          |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Layer `@ui` / `@api` / `@e2e` | every suite; `@e2e` overrides the suite on a Rule (`cart.feature`) and a scenario (`products.feature`)                           |
-| `@all-devices`                | suite `navigation.md`; test cases `auth.md` (User Login), `cart.feature` (adding, placing an order), `products.feature` (search) |
-| `@retries:N`, `@timeout:N`    | `cart.feature`: placing an order, Rule Checkout                                                                                  |
-| `@fail`, `@fail:<device>`     | `cart.feature`: quantity 0 and -2, placing an order on a tablet (real bugs)                                                      |
-| Own tags                      | `@smoke` in every suite, tagged Examples in `cart.feature`; `@logged-in` picks a `Before` hook (`cart.feature`)                  |
+| Tag                           | Example                                                                                                         |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Layer `@ui` / `@api` / `@e2e` | every suite; `@e2e` overrides the suite on a Rule (`cart.feature`) and a scenario (`products.feature`)          |
+| `@all-devices`                | suite `navigation.md`; test cases `cart.feature` (adding, placing an order)                                     |
+| `@retries:N`, `@timeout:N`    | `cart.feature`: placing an order, Rule Checkout                                                                 |
+| `@fail`, `@fail:<device>`     | `cart.feature`: quantity 0, placing an order on a tablet (real bugs)                                            |
+| Own tags                      | `@smoke` in every suite, tagged Examples in `cart.feature`; `@logged-in` picks a `Before` hook (`cart.feature`) |
 
 ### 5. Parametrized test cases
 
@@ -499,10 +499,10 @@ The repository automates [automationexercise.com](https://www.automationexercise
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
 | `test-suites/auth.md` `@ui`            | Markdown suite, Background, fixtures with cleanup (`testUser`, `registeredUser`)                                                                                                                                                                                                                                                                                                                                               | `src/steps/auth.steps.ts`                                          |
 | `test-suites/auth-api.md` `@api`       | API layer through clients; "Update User City" has a step without code, so the API test stays `fixme`                                                                                                                                                                                                                                                                                                                           | `src/steps/auth-api.steps.ts`                                      |
-| `test-suites/products-api.md` `@api`   | Catalog API: lists, unsupported methods (405), search and its missing parameter (400); a step function reused by an e2e scenario                                                                                                                                                                                                                                                                                               | `src/steps/products-api.steps.ts`, `src/clients/ProductsClient.ts` |
+| `test-suites/products-api.md` `@api`   | Catalog API: products list, unsupported method (405), search; a step function reused by an e2e scenario                                                                                                                                                                                                                                                                                                                        | `src/steps/products-api.steps.ts`, `src/clients/ProductsClient.ts` |
 | `test-suites/navigation.md` `@ui`      | Markdown examples table (brands); the newsletter case is a cyborg test: one automated step, the rest skeletons without code                                                                                                                                                                                                                                                                                                    | `src/steps/navigation.steps.ts`                                    |
 | `test-suites/cart.feature` `@ui`       | Gherkin: Background, Scenario Outline with tagged Examples, DataTable, DocString, Rule with its own Background, `@e2e` and `@timeout:90000` on a Rule, `@retries:1`, `@fail` on a real bug (quantity 0 and -2 get into the cart), `@fail:tablet` on a tablet-only one, own parameter type `{price}`, one step calling others, a cyborg scenario (invoice); adding to cart and placing an order on all devices (`@all-devices`) | `src/steps/cart.steps.ts`                                          |
-| `test-suites/products.feature` `@ui`   | Steps on Page Object methods (`@StepsFor`, a migration path); search on all devices, a desktop-only `@e2e` scenario (catalog price = API price)                                                                                                                                                                                                                                                                                | `src/pages/ProductsPage.ts`, `src/steps/products.steps.ts`         |
+| `test-suites/products.feature` `@ui`   | Steps on Page Object methods (`@StepsFor`, a migration path); a desktop-only `@e2e` scenario (catalog price = API price)                                                                                                                                                                                                                                                                                                       | `src/pages/ProductsPage.ts`, `src/steps/products.steps.ts`         |
 | `test-suites/contact-us.feature` `@ui` | A suite migrated from Cucumber: World style steps on `this`; `BeforeAll` / `AfterAll` create and remove the file it uploads                                                                                                                                                                                                                                                                                                    | `src/steps/contact-us.steps.ts`                                    |
 
 Hooks (`src/steps/hooks.steps.ts`): `BeforeAll` checks the catalog API once per worker for `@cart`, `Before` logs in a fresh user for `@logged-in`, `AfterStep` attaches the page URL under a failed step (`bdd.step`).

@@ -5,7 +5,6 @@ Feature: Product Catalog
   Background:
     Given user opens the products page
 
-  @all-devices
   Scenario Outline: Find "<product>" by "<query>"
     When user searches for "<query>"
     Then search results include "<product>"

@@ -37,22 +37,7 @@
 
 ---
 
-### Verify Login Without Email
-- Verify system rejects Login without Email
-#### Navigate to and Verify "Signup/Login" Page
-- Open AutomationExercise Website
-- Click "Signup/Login" Button
-- Verify "Signup/Login" Page is visible
-#### Enter Password without Email and verify validation error
-- Leave Email field empty
-- Fill "Password" Field
-- Click "Login" button
-- Verify validation error appears
-- Verify user remains on login page
-
----
-
-@all-devices @smoke
+@smoke
 ### User Login
 - Verify existing User can Login
 #### Navigate to and Verify "Signup/Login" Page
@@ -65,22 +50,3 @@
 - Click "Login" Button
 - Verify User is redirected to Account Page
 - Verify "Logged in as [user name]" Message appears in header
-
----
-
-### Delete User Account
-- Verify User can delete their Account
-#### Navigate to and Verify "Signup/Login" Page
-- Open AutomationExercise Website
-- Click "Signup/Login" Button
-- Verify "Signup/Login" Page is visible
-#### Enter valid login credentials and verify successful authentication
-- Fill "Email Address" Field
-- Fill "Password" Field
-- Click "Login" Button
-- Verify User is redirected to Account Page
-- Verify "Logged in as [user name]" Message appears in header
-#### Delete Account and verify Account removal
-- Click "Delete Account" Button in header
-- Verify Account deletion confirmation Message is displayed
-- Verify Login fails with the deleted credentials

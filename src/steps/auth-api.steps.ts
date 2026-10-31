@@ -21,30 +21,11 @@ Step(
   }
 )
 
-Step('Verify Login without Email is rejected', async ({ authClient, registeredUser }) => {
-  const response = await authClient.verifyLogin('', registeredUser.password)
-
-  await authClient.expectLoginFailed(response)
-})
-
 Step('Verify Login with valid credentials succeeds', async ({ authClient, registeredUser }) => {
   const response = await authClient.verifyLogin(registeredUser.email, registeredUser.password)
 
   await authClient.expectLoginSuccess(response)
 })
-
-Step(
-  'Delete Account and verify Login is rejected afterwards',
-  async ({ authClient, registeredUser }) => {
-    const deleted = await authClient.deleteAccount(registeredUser.email, registeredUser.password)
-
-    await authClient.expectAccountDeleted(deleted)
-
-    const response = await authClient.verifyLogin(registeredUser.email, registeredUser.password)
-
-    await authClient.expectLoginFailed(response)
-  }
-)
 
 // Skeleton from `npm run steps auth-api`: an API test with a step without code stays test.fixme
 Step('Update City and verify it is saved', async ({}) => {

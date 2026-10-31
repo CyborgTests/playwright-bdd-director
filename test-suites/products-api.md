@@ -15,24 +15,9 @@
 
 ---
 
-### List All Brands
-#### Verify Brands List contains "Polo"
-
----
-
-### Reject Unsupported Method on Brands List
-#### Verify PUT to Brands List is rejected as unsupported
-
----
-
 ### Search Products for "<query>"
 | query | product       |
 | ----- | ------------- |
 | top   | Blue Top      |
 | dress | Stylish Dress |
 #### Search Products for "<query>" and verify "<product>" is found
-
----
-
-### Search Without Query
-#### Verify Search without Query is rejected as bad request

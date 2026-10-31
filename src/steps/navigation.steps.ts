@@ -26,10 +26,6 @@ Step('Verify {string} Form is visible', async ({ loginPage }, form: string) => {
   }
 })
 
-Step('Verify Home Page is shown', async ({ homePage }) => {
-  await homePage.expectOnHomePage()
-})
-
 Step('Click {string} Brand in Sidebar', async ({ homePage }, brand: string) => {
   await homePage.clickBrand(brand)
 })
